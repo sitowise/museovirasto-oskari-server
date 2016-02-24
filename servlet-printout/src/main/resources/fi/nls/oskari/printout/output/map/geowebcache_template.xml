@@ -173,22 +173,22 @@ http://geowebcache.org/schema/1.4.0/geowebcache.xsd">
 			<metersPerUnit>1.0</metersPerUnit>
 			<pixelSize>2.8E-4</pixelSize>
 			<scaleNames>
-				<string>JHS180:0</string>
-				<string>JHS180:1</string>
-				<string>JHS180:2</string>
-				<string>JHS180:3</string>
-				<string>JHS180:4</string>
-				<string>JHS180:5</string>
-				<string>JHS180:6</string>
-				<string>JHS180:7</string>
-				<string>JHS180:8</string>
-				<string>JHS180:9</string>
-				<string>JHS180:10</string>
-				<string>JHS180:11</string>
-				<string>JHS180:12</string>
-				<string>JHS180:13</string>
-				<string>JHS180:14</string>	
-				<string>JHS180:15</string>			
+				<string>0</string>
+				<string>1</string>
+				<string>2</string>
+				<string>3</string>
+				<string>4</string>
+				<string>5</string>
+				<string>6</string>
+				<string>7</string>
+				<string>8</string>
+				<string>9</string>
+				<string>10</string>
+				<string>11</string>
+				<string>12</string>
+				<string>13</string>
+				<string>14</string>
+				<string>15</string>
 			</scaleNames>
 			<tileHeight>256</tileHeight>
 			<tileWidth>256</tileWidth>
