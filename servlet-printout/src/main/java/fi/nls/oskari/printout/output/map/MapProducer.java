@@ -529,6 +529,11 @@ public class MapProducer {
                 if (format == null) {
                     format = "image/png";
                 }
+
+                if (isLocalUrl(layerUrl)) {
+                    layerUrl = fixLocalUrl(layerUrl);
+                }
+
                 String[] gridNames = gridSubset.getGridNames();
                 url = layerUrl
                         + separator
