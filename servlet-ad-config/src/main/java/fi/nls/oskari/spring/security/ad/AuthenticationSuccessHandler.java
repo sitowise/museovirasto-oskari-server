@@ -21,7 +21,7 @@ public class AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccess
 
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
             throws IOException, javax.servlet.ServletException {
-        log.debug("Database based login successful:", authentication.getPrincipal());
+        log.debug("AD based login successful:", authentication.getPrincipal());
         super.onAuthenticationSuccess(request, response, authentication);
         helper.onAuthenticationSuccess(request, response, ((User)authentication.getPrincipal()).getUsername());
     }
