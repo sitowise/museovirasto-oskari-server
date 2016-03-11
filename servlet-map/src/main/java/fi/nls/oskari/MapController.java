@@ -129,6 +129,11 @@ public class MapController {
                     model.addAttribute("_login_field_user", env.getParam_username());
                     model.addAttribute("_login_field_pass", env.getParam_password());
                 }
+                if(env.isADLoginEnabled()) {
+                    model.addAttribute("_login_uri", env.getLoginUrl());
+                    model.addAttribute("_login_field_user", env.getParam_username());
+                    model.addAttribute("_login_field_pass", env.getParam_password());
+                }
             }
         }
     }
