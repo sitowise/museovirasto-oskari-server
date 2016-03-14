@@ -13,7 +13,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
 
-import fi.nls.oskari.domain.Role;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.service.UserService;
@@ -27,12 +26,12 @@ class UserDetailsContextMapperImpl
     private static final long serialVersionUID = -7984892256457231051L;
     private Logger log = LogFactory
             .getLogger(UserDetailsContextMapperImpl.class);
+
+    private OskariUserMapper userMapper = null;
     private Map<String, String> attributeMapping = new HashMap<String, String>();
 
     public enum ATTRIBUTE {
-        FIRSTNAME("firstname"),
-        LASTNAME("lastname"),
-        EMAIL("email");
+        FIRSTNAME("firstname"), LASTNAME("lastname"), EMAIL("email");
 
         private String property;
 
@@ -55,6 +54,24 @@ class UserDetailsContextMapperImpl
                 attributeMapping.put(a.getKey(), a.getKey());
             }
         }
+        userMapper = getUserMapper();
+    }
+
+    private OskariUserMapper getUserMapper() {
+        final String mapperClassName = PropertyUtil
+                .getOptional("oskari.ad.mapper");
+        if (mapperClassName == null) {
+            // no mapper specified
+            return null;
+        }
+        try {
+            final Class<?> clazz = Class.forName(mapperClassName.trim());
+            return (OskariUserMapper) clazz.newInstance();
+        } catch (Exception e) {
+            log.error(e, "Error loading AD user mapper from classname:",
+                    mapperClassName);
+        }
+        return null;
     }
 
     @Override
@@ -93,14 +110,9 @@ class UserDetailsContextMapperImpl
                 attributeMapping.get(ATTRIBUTE.EMAIL.getKey())));
 
         user.setScreenname(username);
-        user.addRole(Role.getDefaultUserRole());
 
-        // TODO: Add proper configurable role mapping
-        for (GrantedAuthority granted : authority) {
-            if (granted.getAuthority()
-                    .equalsIgnoreCase("Sito Software Engineers")) {
-                user.addRole(Role.getAdminRole());
-            }
+        if (userMapper != null) {
+            userMapper.mapUser(authority, user);
         }
 
         log.debug("Saving user:", user, "with roles:", user.getRoles());
