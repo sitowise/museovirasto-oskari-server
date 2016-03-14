@@ -285,6 +285,12 @@
             </dependency>
 
             <dependency>
+                <groupId>fi.nls.oskari</groupId>
+                <artifactId>servlet-ad-config</artifactId>
+                <version>${fi.nls.oskari.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>fi.nls.oskari.service</groupId>
                 <artifactId>oskari-webapp-helpers</artifactId>
                 <version>${fi.nls.oskari.service.version}</version>
@@ -931,6 +937,7 @@
         <!-- oskari map -->
         <module>servlet-map</module>
         <module>servlet-saml-config</module>
+        <module>servlet-ad-config</module>
         <module>webapp-map</module>
         <!-- Standalone Jetty doesn't work with the new spring-based servlet-map so
         removing it for now and possibly refactoring it later to use spring-boot -->
