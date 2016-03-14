@@ -111,7 +111,9 @@ class UserDetailsContextMapperImpl
 
         user.setScreenname(username);
 
-        userMapper.mapUser(authority, user);
+        if (userMapper != null) {
+            userMapper.mapUser(authority, user);
+        }
 
         log.debug("Saving user:", user, "with roles:", user.getRoles());
         final fi.nls.oskari.domain.User savedUser = service
