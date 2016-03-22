@@ -17,6 +17,7 @@ public class EnvHelper {
 
     public static final String PROFILE_LOGIN_DB = "LoginDatabase";
     public static final String PROFILE_LOGIN_SAML = "LoginSAML";
+    public static final String PROFILE_LOGIN_AD = "LoginAD";
 
     // login related properties
     private boolean handleLoginForm;
@@ -48,6 +49,9 @@ public class EnvHelper {
     }
     public boolean isDBLoginEnabled() {
         return springEnvironment.acceptsProfiles(PROFILE_LOGIN_DB);
+    }
+    public boolean isADLoginEnabled() {
+        return springEnvironment.acceptsProfiles(PROFILE_LOGIN_AD);
     }
 
     public boolean isHandleLoginForm() {

@@ -125,7 +125,8 @@ public class MapLayerJSONParser {
             layersParam = URLEncoder.encode(layerDefinition.getWmsname(),
                     "UTF-8");
             if (layerURL != null) {
-                if (layerURL.indexOf('?') != -1) {
+                //GetLayerTile proxy is used if layer uses authentication
+                if (layerURL.indexOf('?') != -1 && layerURL.indexOf("action_route=GetLayerTile") == -1) {
                     layerURL = layerURL.substring(0, layerURL.indexOf('?'));
                 }
             }
