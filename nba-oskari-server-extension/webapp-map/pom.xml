@@ -19,7 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>fi.nba.oskari</groupId>
-            <artifactId>app-resources</artifactId>
+            <artifactId>nba-resources</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -37,6 +37,18 @@
         </dependency>
         
         <!-- oskari -->
+        <dependency>
+            <groupId>fi.nls.oskari</groupId>
+            <artifactId>servlet-ad-config</artifactId>
+            <version>${oskari.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>fi.nls.oskari.service</groupId>
+            <artifactId>oskari-search-nls</artifactId>
+            <version>${oskari.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>fi.nls.oskari.service</groupId>
             <artifactId>oskari-control-example</artifactId>
