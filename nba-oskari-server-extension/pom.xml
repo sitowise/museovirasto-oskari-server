@@ -17,8 +17,28 @@
         <postgresql.version>9.3-1102-jdbc41</postgresql.version>
         <junit.version>4.11</junit.version>
         <slf4j.version>1.7.12</slf4j.version>
-		<jackson.version>1.9.11</jackson.version>
+		<jackson.version>2.5.4</jackson.version>
     </properties>
+	
+	<dependencyManagement>
+        <dependencies>
+			<dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-xml</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+		</dependencies>
+	</dependencyManagement>
 
     <repositories>
         <repository>
