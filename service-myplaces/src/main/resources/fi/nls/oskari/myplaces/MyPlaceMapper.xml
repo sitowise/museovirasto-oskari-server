@@ -28,6 +28,7 @@
         <result property="link" column="link" />
         <result property="imageUrl" column="image_url" />
         <result property="attentionText" column="attention_text" />
+        <result property="attributes" column="attributes" />
     </resultMap>
 
     <select id="findPlace"
@@ -40,7 +41,8 @@
             place_desc,
             link,
             image_url,
-            attention_text
+            attention_text,
+            attributes
         from
             my_places
         where id = #{id}
