@@ -229,7 +229,9 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			if (registryObject instanceof AncientMonumentMaintenanceItem) {
 				item.put("mapLayerID", "69"); // "Oskari:MJHOITO"
 			} else if (registryObject instanceof AncientMonument) {
-				item.put("mapLayerID", "64"); // "Oskari:MJOHDE"
+				//item.put("mapLayerID", "64"); // "Oskari:MJOHDE"
+				item.put("mapLayerID", "84"); // "WFS_MJrekisteri_WFS:mjpiste_kiintea_ja_muukp"
+				item.put("mapLayerID2", "85"); // "WFS_MJrekisteri_WFS:mjpiste_muut"
 			} else if (registryObject instanceof BuildingHeritageItem) {
 				item.put("mapLayerID", "70"); // "Oskari:RAPEAKOHDE"
 			} else if (registryObject instanceof RKY1993) {
@@ -302,7 +304,9 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("coordinateX", monument.getCentroid().getX());
 					item.put("coordinateY", monument.getCentroid().getY());
 					item.put("nbaUrl", monument.getNbaUrl());
-					item.put("mapLayerID", "64"); // "Oskari:MJOHDE"
+					//item.put("mapLayerID", "64"); // "Oskari:MJOHDE"
+					item.put("mapLayerID", "84"); // "WFS_MJrekisteri_WFS:mjpiste_kiintea_ja_muukp"
+					item.put("mapLayerID2", "85"); // "WFS_MJrekisteri_WFS:mjpiste_muut"
 					resultArray.put(item);
 				} catch (JSONException e) {
 					return null;
