@@ -10,6 +10,7 @@ public class MyPlace {
     private String link;
     private String imageUrl;
     private String attentionText;
+    private String attributes;
 
     public long getId() {
         return id;
@@ -80,6 +81,14 @@ public class MyPlace {
             return false;
         }
         return getUuid().equals(uuid);
+    }
+
+    public String getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(String attributes) {
+        this.attributes = attributes;
     }
     
 }
