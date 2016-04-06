@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -50,7 +51,7 @@ public class GetNbaRegistersHandler extends RestActionHandler {
 		try {
 			HashMap<String, String> map = new HashMap<String, String>();
 			map.put("ancientMaintenance", "Muinaisjaann. hoitorekisteri"); //Ancient Monument Maintenance
-			map.put("ancientMonument", "Muinaisperintorekisteri"); //Ancient Monument
+			map.put("ancientMonument", "Muinaisjäännösrekisteri"); //Ancient Monument
 			map.put("buildingHeritage", "Rakennusperintorekisteri"); //Building Heritage
 			map.put("rky1993", "RKY1993"); //RKY1993
 			map.put("rky2000", "RKY2000"); //RKY2000
@@ -62,7 +63,7 @@ public class GetNbaRegistersHandler extends RestActionHandler {
 				item.put("name", "Kaikki"); //All
 				result.put(item);
 
-				for (HashMap.Entry<String, String> entry : map.entrySet()) {
+				for (Map.Entry<String, String> entry : map.entrySet()) {
 					JSONObject itemX = new JSONObject();
 					itemX.put("id", entry.getKey());
 					itemX.put("name", entry.getValue());
