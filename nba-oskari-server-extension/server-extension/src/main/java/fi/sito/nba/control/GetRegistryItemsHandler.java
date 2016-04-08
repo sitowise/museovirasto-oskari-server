@@ -1,39 +1,37 @@
 package fi.sito.nba.control;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.sql.Connection;
+import java.util.Iterator;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.swing.event.ListSelectionEvent;
-
-import org.deegree.io.DBConnectionPool;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
+import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.io.WKTReader;
+
 import fi.nls.oskari.annotation.OskariActionRoute;
-import fi.nls.oskari.control.ActionDeniedException;
 import fi.nls.oskari.control.ActionException;
 import fi.nls.oskari.control.ActionParameters;
-import fi.nls.oskari.control.ActionParamsException;
 import fi.nls.oskari.control.RestActionHandler;
-import fi.nls.oskari.db.DatasourceHelper;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.util.ResponseHelper;
-import fi.sito.nba.registry.models.*;
-import fi.sito.nba.registry.services.*;
-import fi.sito.nba.registry.infrastructure.*;
-import java.sql.*;
-import com.microsoft.sqlserver.jdbc.*;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.io.WKTReader;
+import fi.sito.nba.registry.models.AncientMonument;
+import fi.sito.nba.registry.models.AncientMonumentMaintenanceItem;
+import fi.sito.nba.registry.models.BuildingHeritageItem;
+import fi.sito.nba.registry.models.IRegistryObject;
+import fi.sito.nba.registry.models.RKY1993;
+import fi.sito.nba.registry.models.RKY2000;
+import fi.sito.nba.registry.services.AncientMonumentMaintenanceItemService;
+import fi.sito.nba.registry.services.AncientMonumentService;
+import fi.sito.nba.registry.services.BuildingHeritageItemService;
+import fi.sito.nba.registry.services.RKY1993Service;
+import fi.sito.nba.registry.services.RKY2000Service;
 
 @OskariActionRoute("GetRegistryItems")
 public class GetRegistryItemsHandler extends RestActionHandler {
@@ -45,6 +43,12 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 	private static final Logger LOG = LogFactory
 			.getLogger(GetRegistryItemsHandler.class);
+
+	private static final ObjectMapper mapper = new ObjectMapper();
+
+	static {
+		mapper.registerModule(new JsonOrgModule());
+	}
 
 	public void preProcess(ActionParameters params) throws ActionException {
 		// common method called for all request methods
@@ -64,7 +68,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			ds.setPassword(PropertyUtil.get("nba.db.password"));
 			ds.setURL(PropertyUtil.get("nba.db.url"));
 			connection = ds.getConnection();
-			
+
 			String registriesParam = "";
 			String keywordParam = null;
 			Geometry geometryParam = null;
@@ -76,39 +80,44 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					&& params.getHttpParam(PARAM_REGISTER_NAME) != null
 					&& !params.getHttpParam(PARAM_REGISTER_NAME).equals("")) {
 
-				itemIdParam = Integer.parseInt(params.getHttpParam(PARAM_ITEM_ID));
+				itemIdParam = Integer
+						.parseInt(params.getHttpParam(PARAM_ITEM_ID));
 				registryNameParam = params.getHttpParam(PARAM_REGISTER_NAME);
 				JSONObject itemObj = new JSONObject();
 
 				Object service = null;
 				IRegistryObject registryItem = null;
-				
+
 				switch (registryNameParam) {
 				case "ancientMonument":
 					service = new AncientMonumentService(connection);
-					registryItem = ((AncientMonumentService)service).getAncientMonumentById(itemIdParam);
+					registryItem = ((AncientMonumentService) service)
+							.getAncientMonumentById(itemIdParam);
 					itemObj = getItemObject(registryItem);
 					break;
 				case "ancientMaintenance":
 					service = new AncientMonumentMaintenanceItemService(
 							connection);
-					registryItem = ((AncientMonumentMaintenanceItemService)service).getAncientMonumentMaintenanceItemById(itemIdParam);
+					registryItem = ((AncientMonumentMaintenanceItemService) service)
+							.getAncientMonumentMaintenanceItemById(itemIdParam);
 					itemObj = getItemObject(registryItem);
 					break;
 				case "buildingHeritage":
-					service = new BuildingHeritageItemService(
-							connection);
-					registryItem = ((BuildingHeritageItemService)service).getBuildingHeritageItemById(itemIdParam);
+					service = new BuildingHeritageItemService(connection);
+					registryItem = ((BuildingHeritageItemService) service)
+							.getBuildingHeritageItemById(itemIdParam);
 					itemObj = getItemObject(registryItem);
 					break;
 				case "rky1993":
 					service = new RKY1993Service(connection);
-					registryItem = ((RKY1993Service)service).getRKY1993ById(itemIdParam);
+					registryItem = ((RKY1993Service) service)
+							.getRKY1993ById(itemIdParam);
 					itemObj = getItemObject(registryItem);
 					break;
 				case "rky2000":
 					service = new RKY2000Service(connection);
-					registryItem = ((RKY2000Service)service).getRKY2000ById(itemIdParam);
+					registryItem = ((RKY2000Service) service)
+							.getRKY2000ById(itemIdParam);
 					itemObj = getItemObject(registryItem);
 					break;
 				}
@@ -143,24 +152,24 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 						switch (registry) {
 						case "ancientMonument":
-							registerResultArray = getAncientMonumentItems(connection,
-									keywordParam, geometryParam);
+							registerResultArray = getAncientMonumentItems(
+									connection, keywordParam, geometryParam);
 							break;
 						case "ancientMaintenance":
 							registerResultArray = getAncientMonumentMaintenanceItems(
 									connection, keywordParam, geometryParam);
 							break;
 						case "buildingHeritage":
-							registerResultArray = getBuildingHeritageItems(connection,
-									keywordParam, geometryParam);
+							registerResultArray = getBuildingHeritageItems(
+									connection, keywordParam, geometryParam);
 							break;
 						case "rky1993":
-							registerResultArray = getRKY1993Items(connection, keywordParam,
-									geometryParam);
+							registerResultArray = getRKY1993Items(connection,
+									keywordParam, geometryParam);
 							break;
 						case "rky2000":
-							registerResultArray = getRKY2000Items(connection, keywordParam,
-									geometryParam);
+							registerResultArray = getRKY2000Items(connection,
+									keywordParam, geometryParam);
 							break;
 						}
 
@@ -205,10 +214,10 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				response = generalResultArray;
 			}
 		} catch (Exception e) {
-			throw new ActionException("Error during geting registry item");
+			throw new ActionException("Error during geting registry item", e);
 		} finally {
 			try {
-			connection.close();
+				connection.close();
 			} catch (Exception e) {
 			}
 		}
@@ -217,19 +226,22 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 	}
 
 	private JSONObject getItemObject(IRegistryObject registryObject) {
-		JSONObject item = new JSONObject();
+		JSONObject item = null;
 		try {
-
+			item = mapper.convertValue(registryObject, JSONObject.class);
 			item.put("id", registryObject.getObjectId());
 			// item.put("desc", registryObject.getObjectName());
-			item.put("coordinateX", registryObject.getCentroid().getX());
-			item.put("coordinateY", registryObject.getCentroid().getY());
+			if (registryObject.getCentroid() != null) {
+				item.put("coordinateX", registryObject.getCentroid().getX());
+				item.put("coordinateY", registryObject.getCentroid().getY());
+			}
 			item.put("nbaUrl", registryObject.getNbaUrl());
+			item.put("type", registryObject.getClass().getSimpleName());
 
 			if (registryObject instanceof AncientMonumentMaintenanceItem) {
 				item.put("mapLayerID", "69"); // "Oskari:MJHOITO"
 			} else if (registryObject instanceof AncientMonument) {
-				//item.put("mapLayerID", "64"); // "Oskari:MJOHDE"
+				// item.put("mapLayerID", "64"); // "Oskari:MJOHDE"
 				item.put("mapLayerID", "84"); // "WFS_MJrekisteri_WFS:mjpiste_kiintea_ja_muukp"
 				item.put("mapLayerID2", "85"); // "WFS_MJrekisteri_WFS:mjpiste_muut"
 			} else if (registryObject instanceof BuildingHeritageItem) {
@@ -243,36 +255,36 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			}
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOG.error(e, "Error writing JSON");
 		}
 		return item;
 	}
-	
+
 	private JSONArray getAncientMonumentMaintenanceItems(Connection con,
 			String keyword, Geometry geometry) {
 
 		JSONArray resultArray = new JSONArray();
 
-		String results = "";
-
 		AncientMonumentMaintenanceItemService svc = new AncientMonumentMaintenanceItemService(
 				con);
 
-		RegistryObjectCollection<AncientMonumentMaintenanceItem> monuments = (RegistryObjectCollection<AncientMonumentMaintenanceItem>) svc
+		Iterable<AncientMonumentMaintenanceItem> monuments = svc
 				.findAncientMonumentMaintenanceItems(keyword, geometry);
 
 		if (monuments != null) {
-			RegistryObjectIterator iterator = (RegistryObjectIterator) monuments
+			Iterator<AncientMonumentMaintenanceItem> iterator = monuments
 					.iterator();
 			while (iterator.hasNext()) {
 				try {
-					AncientMonumentMaintenanceItem monument = (AncientMonumentMaintenanceItem) iterator
-							.next();
+					AncientMonumentMaintenanceItem monument = iterator.next();
 					JSONObject item = new JSONObject();
+					item.put("type", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
-					item.put("coordinateX", monument.getCentroid().getX());
-					item.put("coordinateY", monument.getCentroid().getY());
+					if (monument.getCentroid() != null) {
+						item.put("coordinateX", monument.getCentroid().getX());
+						item.put("coordinateY", monument.getCentroid().getY());
+					}
 					item.put("nbaUrl", monument.getNbaUrl());
 					item.put("mapLayerID", "69"); // "Oskari:MJHOITO"
 					resultArray.put(item);
@@ -289,22 +301,23 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 		JSONArray resultArray = new JSONArray();
 
-		String results = "";
-
 		AncientMonumentService svc = new AncientMonumentService(con);
 
-		List<AncientMonument> monuments = (List<AncientMonument>) svc
-				.findAncientMonuments(keyword, geometry);
+		Iterable<AncientMonument> monuments = svc.findAncientMonuments(keyword,
+				geometry);
 		if (monuments != null) {
 			for (AncientMonument monument : monuments) {
 				try {
 					JSONObject item = new JSONObject();
+					item.put("type", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
-					item.put("coordinateX", monument.getCentroid().getX());
-					item.put("coordinateY", monument.getCentroid().getY());
+					if (monument.getCentroid() != null) {
+						item.put("coordinateX", monument.getCentroid().getX());
+						item.put("coordinateY", monument.getCentroid().getY());
+					}
 					item.put("nbaUrl", monument.getNbaUrl());
-					//item.put("mapLayerID", "64"); // "Oskari:MJOHDE"
+					// item.put("mapLayerID", "64"); // "Oskari:MJOHDE"
 					item.put("mapLayerID", "84"); // "WFS_MJrekisteri_WFS:mjpiste_kiintea_ja_muukp"
 					item.put("mapLayerID2", "85"); // "WFS_MJrekisteri_WFS:mjpiste_muut"
 					resultArray.put(item);
@@ -321,20 +334,21 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 		JSONArray resultArray = new JSONArray();
 
-		String results = "";
-
 		BuildingHeritageItemService svc = new BuildingHeritageItemService(con);
 
-		List<BuildingHeritageItem> monuments = (List<BuildingHeritageItem>) svc
+		Iterable<BuildingHeritageItem> monuments = svc
 				.findBuildingHeritageItems(keyword, geometry);
 		if (monuments != null) {
 			for (BuildingHeritageItem monument : monuments) {
 				try {
 					JSONObject item = new JSONObject();
+					item.put("type", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
-					item.put("coordinateX", monument.getCentroid().getX());
-					item.put("coordinateY", monument.getCentroid().getY());
+					if (monument.getCentroid() != null) {
+						item.put("coordinateX", monument.getCentroid().getX());
+						item.put("coordinateY", monument.getCentroid().getY());
+					}
 					item.put("nbaUrl", monument.getNbaUrl());
 					item.put("mapLayerID", "70"); // "Oskari:RAPEAKOHDE"
 					resultArray.put(item);
@@ -351,20 +365,20 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 		JSONArray resultArray = new JSONArray();
 
-		String results = "";
-
 		RKY1993Service svc = new RKY1993Service(con);
 
-		List<RKY1993> monuments = (List<RKY1993>) svc.findRKY1993(keyword,
-				geometry);
+		Iterable<RKY1993> monuments = svc.findRKY1993(keyword, geometry);
 		if (monuments != null) {
 			for (RKY1993 monument : monuments) {
 				try {
 					JSONObject item = new JSONObject();
+					item.put("type", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
-					item.put("coordinateX", monument.getCentroid().getX());
-					item.put("coordinateY", monument.getCentroid().getY());
+					if (monument.getCentroid() != null) {
+						item.put("coordinateX", monument.getCentroid().getX());
+						item.put("coordinateY", monument.getCentroid().getY());
+					}
 					item.put("nbaUrl", monument.getNbaUrl());
 					item.put("mapLayerID", "72"); // "Oskari:RKY1993"
 					resultArray.put(item);
@@ -381,29 +395,25 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 		JSONArray resultArray = new JSONArray();
 
-		String results = "";
-
 		RKY2000Service svc = new RKY2000Service(con);
 
-		RegistryObjectCollection<RKY2000> monuments = (RegistryObjectCollection<RKY2000>) svc
-				.findRKY2000(keyword, geometry);
+		Iterable<RKY2000> monuments = svc.findRKY2000(keyword, geometry);
 
 		if (monuments != null) {
-			RegistryObjectIterator iterator = (RegistryObjectIterator) monuments
-					.iterator();
+			Iterator<RKY2000> iterator = monuments.iterator();
 
-			// List<RKY2000> monuments = (List<RKY2000>) svc
-			// .findRKY2000(keyword, null);
-			// for (RKY2000 monument : monuments) {
 			while (iterator.hasNext()) {
 				try {
-					RKY2000 monument = (RKY2000) iterator.next();
+					RKY2000 monument = iterator.next();
 
 					JSONObject item = new JSONObject();
+					item.put("type", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
-					item.put("coordinateX", monument.getCentroid().getX());
-					item.put("coordinateY", monument.getCentroid().getY());
+					if (monument.getCentroid() != null) {
+						item.put("coordinateX", monument.getCentroid().getX());
+						item.put("coordinateY", monument.getCentroid().getY());
+					}
 					item.put("nbaUrl", monument.getNbaUrl());
 					item.put("mapLayerID", "71"); // "Oskari:RKY2000"
 					resultArray.put(item);
