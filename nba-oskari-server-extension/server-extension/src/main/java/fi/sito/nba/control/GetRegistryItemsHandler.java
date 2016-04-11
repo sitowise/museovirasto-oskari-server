@@ -236,7 +236,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				item.put("coordinateY", registryObject.calculateCentroid().getY());
 			}
 			item.put("nbaUrl", registryObject.generateNbaUrl());
-			item.put("type", registryObject.getClass().getSimpleName());
+			item.put("itemtype", registryObject.getClass().getSimpleName());
 
 			if (registryObject instanceof AncientMonumentMaintenanceItem) {
 				item.put("mapLayerID", "69"); // "Oskari:MJHOITO"
@@ -278,7 +278,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				try {
 					AncientMonumentMaintenanceItem monument = iterator.next();
 					JSONObject item = new JSONObject();
-					item.put("type", monument.getClass().getSimpleName());
+					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					if (monument.calculateCentroid() != null) {
@@ -309,7 +309,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			for (AncientMonument monument : monuments) {
 				try {
 					JSONObject item = new JSONObject();
-					item.put("type", monument.getClass().getSimpleName());
+					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					if (monument.calculateCentroid() != null) {
@@ -342,7 +342,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			for (BuildingHeritageItem monument : monuments) {
 				try {
 					JSONObject item = new JSONObject();
-					item.put("type", monument.getClass().getSimpleName());
+					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					if (monument.calculateCentroid() != null) {
@@ -372,7 +372,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			for (RKY1993 monument : monuments) {
 				try {
 					JSONObject item = new JSONObject();
-					item.put("type", monument.getClass().getSimpleName());
+					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					if (monument.calculateCentroid() != null) {
@@ -407,7 +407,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					RKY2000 monument = iterator.next();
 
 					JSONObject item = new JSONObject();
-					item.put("type", monument.getClass().getSimpleName());
+					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					if (monument.calculateCentroid() != null) {
