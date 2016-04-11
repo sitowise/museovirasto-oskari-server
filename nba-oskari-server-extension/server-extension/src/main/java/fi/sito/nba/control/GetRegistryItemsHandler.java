@@ -231,11 +231,11 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			item = mapper.convertValue(registryObject, JSONObject.class);
 			item.put("id", registryObject.getObjectId());
 			// item.put("desc", registryObject.getObjectName());
-			if (registryObject.getCentroid() != null) {
-				item.put("coordinateX", registryObject.getCentroid().getX());
-				item.put("coordinateY", registryObject.getCentroid().getY());
+			if (registryObject.calculateCentroid() != null) {
+				item.put("coordinateX", registryObject.calculateCentroid().getX());
+				item.put("coordinateY", registryObject.calculateCentroid().getY());
 			}
-			item.put("nbaUrl", registryObject.getNbaUrl());
+			item.put("nbaUrl", registryObject.generateNbaUrl());
 			item.put("type", registryObject.getClass().getSimpleName());
 
 			if (registryObject instanceof AncientMonumentMaintenanceItem) {
@@ -281,11 +281,11 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("type", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
-					if (monument.getCentroid() != null) {
-						item.put("coordinateX", monument.getCentroid().getX());
-						item.put("coordinateY", monument.getCentroid().getY());
+					if (monument.calculateCentroid() != null) {
+						item.put("coordinateX", monument.calculateCentroid().getX());
+						item.put("coordinateY", monument.calculateCentroid().getY());
 					}
-					item.put("nbaUrl", monument.getNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl());
 					item.put("mapLayerID", "69"); // "Oskari:MJHOITO"
 					resultArray.put(item);
 				} catch (JSONException e) {
@@ -312,11 +312,11 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("type", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
-					if (monument.getCentroid() != null) {
-						item.put("coordinateX", monument.getCentroid().getX());
-						item.put("coordinateY", monument.getCentroid().getY());
+					if (monument.calculateCentroid() != null) {
+						item.put("coordinateX", monument.calculateCentroid().getX());
+						item.put("coordinateY", monument.calculateCentroid().getY());
 					}
-					item.put("nbaUrl", monument.getNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl());
 					// item.put("mapLayerID", "64"); // "Oskari:MJOHDE"
 					item.put("mapLayerID", "84"); // "WFS_MJrekisteri_WFS:mjpiste_kiintea_ja_muukp"
 					item.put("mapLayerID2", "85"); // "WFS_MJrekisteri_WFS:mjpiste_muut"
@@ -345,11 +345,11 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("type", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
-					if (monument.getCentroid() != null) {
-						item.put("coordinateX", monument.getCentroid().getX());
-						item.put("coordinateY", monument.getCentroid().getY());
+					if (monument.calculateCentroid() != null) {
+						item.put("coordinateX", monument.calculateCentroid().getX());
+						item.put("coordinateY", monument.calculateCentroid().getY());
 					}
-					item.put("nbaUrl", monument.getNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl());
 					item.put("mapLayerID", "70"); // "Oskari:RAPEAKOHDE"
 					resultArray.put(item);
 				} catch (JSONException e) {
@@ -375,11 +375,11 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("type", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
-					if (monument.getCentroid() != null) {
-						item.put("coordinateX", monument.getCentroid().getX());
-						item.put("coordinateY", monument.getCentroid().getY());
+					if (monument.calculateCentroid() != null) {
+						item.put("coordinateX", monument.calculateCentroid().getX());
+						item.put("coordinateY", monument.calculateCentroid().getY());
 					}
-					item.put("nbaUrl", monument.getNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl());
 					item.put("mapLayerID", "72"); // "Oskari:RKY1993"
 					resultArray.put(item);
 				} catch (JSONException e) {
@@ -410,11 +410,11 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("type", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
-					if (monument.getCentroid() != null) {
-						item.put("coordinateX", monument.getCentroid().getX());
-						item.put("coordinateY", monument.getCentroid().getY());
+					if (monument.calculateCentroid() != null) {
+						item.put("coordinateX", monument.calculateCentroid().getX());
+						item.put("coordinateY", monument.calculateCentroid().getY());
 					}
-					item.put("nbaUrl", monument.getNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl());
 					item.put("mapLayerID", "71"); // "Oskari:RKY2000"
 					resultArray.put(item);
 				} catch (JSONException e) {
