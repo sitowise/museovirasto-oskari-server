@@ -23,25 +23,25 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-		
-		<dependency>
+
+        <dependency>
             <groupId>fi.sito</groupId>
             <artifactId>nba-registry-api</artifactId>
-            <version>1.0.46.c1f7b2a-SNAPSHOT</version>
+            <version>1.0.52.8af8eef-SNAPSHOT</version>
         </dependency>
-		
-		<dependency>
+
+        <dependency>
             <groupId>com.vividsolutions</groupId>
             <artifactId>jts</artifactId>
             <version>1.13</version>
         </dependency>
-        
+
         <dependency>
-		  <groupId>com.fasterxml.jackson.datatype</groupId>
-		  <artifactId>jackson-datatype-json-org</artifactId>
-		  <version>${jackson.version}</version>
-		</dependency>
-		
+          <groupId>com.fasterxml.jackson.datatype</groupId>
+          <artifactId>jackson-datatype-json-org</artifactId>
+          <version>${jackson.version}</version>
+        </dependency>
+
     </dependencies>
 
     <repositories>
