@@ -1,7 +1,12 @@
 package fi.sito.nba.control;
 
+import java.io.IOException;
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -19,6 +24,9 @@ import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.util.ResponseHelper;
 import fi.sito.nba.registry.infrastructure.NotImplementedException;
 import fi.sito.nba.registry.models.AncientMonument;
+import fi.sito.nba.registry.models.AncientMonumentArea;
+import fi.sito.nba.registry.models.AncientMonumentSubItem;
+import fi.sito.nba.registry.repositories.AncientMonumentRepository;
 import fi.sito.nba.registry.services.AncientMonumentService;
 
 @OskariActionRoute("UpdateRegistryItems")
@@ -33,19 +41,20 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 	static {
 		mapper.registerModule(new JsonOrgModule());
-		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+				false);
 	}
 
 	public void preProcess(ActionParameters params) throws ActionException {
 		// common method called for all request methods
 		LOG.info(params.getUser(), "accessing route", getName());
 		params.requireLoggedInUser();
-		//FIXME: needs to check if user has specific role
+		// FIXME: needs to check if user has specific role
 	}
 
 	@Override
 	public void handlePost(ActionParameters params) throws ActionException {
-		
+
 		LOG.info("update start");
 
 		Object response = null;
@@ -72,14 +81,15 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 				switch (registryNameParam) {
 				case "ancientMonument":
-					AncientMonumentService service = new AncientMonumentService(connection);
-					AncientMonument monument = mapper.readValue(itemJson, AncientMonument.class);
-					
-					//FIXME: do update when api has support
-					//((AncientMonumentService) service).update(monument);
-					
-					response = new JSONObject("{'updated': true}");
-					
+					AncientMonumentService service = new AncientMonumentService(
+							connection);
+					AncientMonumentRepository repo = new AncientMonumentRepository(
+							connection);
+					AncientMonument monument = mapper.readValue(itemJson,
+							AncientMonument.class);
+
+					response = update(monument, service, repo);
+
 					break;
 				case "ancientMaintenance":
 				case "buildingHeritage":
@@ -88,7 +98,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 					throw new NotImplementedException();
 				}
 			}
-		} catch (Exception e) {
+		} catch (IOException | SQLException | JSONException e) {
 			throw new ActionException("Error during updating registry item", e);
 		} finally {
 			try {
@@ -98,6 +108,101 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		}
 
 		ResponseHelper.writeResponse(params, response);
+	}
+
+	private JSONObject update(AncientMonument monument,
+			AncientMonumentService service, AncientMonumentRepository repo)
+			throws SQLException, JSONException {
+
+		JSONObject ret = new JSONObject();
+		ret.put("updated", false);
+
+		AncientMonument original = service
+				.getAncientMonumentById(monument.getId());
+		Map<Integer, AncientMonumentSubItem> originalSubItems = new HashMap<Integer, AncientMonumentSubItem>();
+		for (AncientMonumentSubItem subItem : original.getSubItems()) {
+			originalSubItems.put(subItem.getId(), subItem);
+		}
+
+		Map<Integer, AncientMonumentArea> originalAreas = new HashMap<Integer, AncientMonumentArea>();
+		for (AncientMonumentArea areaItem : original.getAreas()) {
+			originalAreas.put(areaItem.getId(), areaItem);
+		}
+
+		if (monument.getSurveyingAccuracy() != original.getSurveyingAccuracy()
+				|| monument.getSurveyingType() != original.getSurveyingType()
+				|| !monument.getDescription().equals(original.getDescription())
+				|| !monument.getGeometry().equals(original.getGeometry())) {
+			repo.update(monument.getId(), monument.getSurveyingAccuracy(),
+					monument.getSurveyingType(), monument.getDescription(),
+					monument.getGeometry());
+			ret.put("updated", true);
+			ret.put("mainItems", 1);
+		}
+
+		for (AncientMonumentSubItem subItem : monument.getSubItems()) {
+			AncientMonumentSubItem originalSubItem = originalSubItems
+					.get(subItem.getId());
+			if (subItem.getSurveyingAccuracy() != originalSubItem
+					.getSurveyingAccuracy()
+					|| subItem.getSurveyingType() != originalSubItem
+							.getSurveyingType()
+					|| !subItem.getDescription()
+							.equals(originalSubItem.getDescription())
+					|| !subItem.getGeometry()
+							.equals(originalSubItem.getGeometry())) {
+				repo.updateSubItem(subItem.getId(),
+						subItem.getSurveyingAccuracy(),
+						subItem.getSurveyingType(), subItem.getDescription(),
+						subItem.getGeometry());
+				ret.put("updated", true);
+				ret.put("subItems", ret.optInt("subItems", 0) + 1);
+			}
+		}
+
+		for (AncientMonumentArea area : monument.getAreas()) {
+			AncientMonumentArea originalArea = originalAreas
+					.get(area.getId());
+			if (!area.getName().equals(originalArea.getName())
+					|| !area.getMunicipalityName()
+							.equals(originalArea.getMunicipalityName())
+					|| !area.getDescription()
+							.equals(originalArea.getDescription())
+					|| area.getClassification() != originalArea
+							.getClassification()
+					|| !area.getCopyright().equals(originalArea.getCopyright())
+					|| !area.getDigiMk().equals(originalArea.getDigiMk())
+					|| !area.getDigiMkYear().equals(originalArea.getDigiMkYear())
+					|| !area.getDigitizationAuthor()
+							.equals(originalArea.getDigitizationAuthor())
+					|| !area.getDigitizationDate()
+							.equals(originalArea.getDigitizationDate())
+					|| area.getAreaSelectionType() != originalArea
+							.getAreaSelectionType()
+					|| area.getAreaSelectionSource() != originalArea
+							.getAreaSelectionSource()
+					|| area.getSurveyingAccuracy() != originalArea
+							.getSurveyingAccuracy()
+					|| area.getSurveyingType() != originalArea
+							.getSurveyingType()
+					|| !area.getGeometry().equals(originalArea.getGeometry())) {
+
+				repo.updateArea(area.getId(), area.getName(),
+						area.getMunicipalityName(), area.getDescription(),
+						area.getClassification(), area.getCopyright(),
+						area.getDigiMk(), area.getDigiMkYear(),
+						area.getDigitizationAuthor(),
+						area.getDigitizationDate(), area.getAreaSelectionType(),
+						area.getAreaSelectionSource(),
+						area.getSurveyingAccuracy(), area.getSurveyingType(),
+						area.getGeometry());
+
+				ret.put("updated", true);
+				ret.put("areas", ret.optInt("areas", 0) + 1);
+			}
+		}
+
+		return ret;
 	}
 
 }
