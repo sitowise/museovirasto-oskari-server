@@ -54,6 +54,18 @@
             <artifactId>oskari-control-example</artifactId>
             <version>${oskari.version}</version>
         </dependency>
+		
+		<dependency>
+            <groupId>fi.nls.oskari.service</groupId>
+            <artifactId>oskari-control-myplaces</artifactId>
+            <version>${oskari.version}</version>
+        </dependency>
+		
+		<dependency>
+            <groupId>fi.nls.oskari.service</groupId>
+            <artifactId>oskari-control-admin</artifactId>
+            <version>${oskari.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>fi.nls.oskari</groupId>
