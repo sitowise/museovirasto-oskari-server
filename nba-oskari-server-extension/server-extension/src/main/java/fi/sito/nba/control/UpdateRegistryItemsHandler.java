@@ -3,9 +3,12 @@ package fi.sito.nba.control;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -20,19 +23,20 @@ import fi.nls.oskari.control.ActionParameters;
 import fi.nls.oskari.control.RestActionHandler;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
+import fi.nls.oskari.util.JSONHelper;
 import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.util.ResponseHelper;
 import fi.sito.nba.registry.infrastructure.NotImplementedException;
 import fi.sito.nba.registry.models.AncientMonument;
 import fi.sito.nba.registry.models.AncientMonumentArea;
 import fi.sito.nba.registry.models.AncientMonumentSubItem;
-import fi.sito.nba.registry.repositories.AncientMonumentRepository;
 import fi.sito.nba.registry.services.AncientMonumentService;
 
 @OskariActionRoute("UpdateRegistryItems")
 public class UpdateRegistryItemsHandler extends RestActionHandler {
 	private static final String PARAM_REGISTER_NAME = "registerName";
 	private static final String PARAM_ITEM = "item";
+	private static final String PARAM_EDITED = "edited";
 
 	private static final Logger LOG = LogFactory
 			.getLogger(GetRegistryItemsHandler.class);
@@ -70,25 +74,29 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 			String registryNameParam = "";
 			String itemJson = "";
+			String editInfoJson = "";
 
 			if (params.getHttpParam(PARAM_REGISTER_NAME) != null
 					&& !params.getHttpParam(PARAM_REGISTER_NAME).equals("")
 					&& params.getHttpParam(PARAM_ITEM) != null
-					&& !params.getHttpParam(PARAM_ITEM).equals("")) {
+					&& !params.getHttpParam(PARAM_ITEM).equals("")
+					&& params.getHttpParam(PARAM_EDITED) != null
+					&& !params.getHttpParam(PARAM_EDITED).equals("")) {
 
 				registryNameParam = params.getHttpParam(PARAM_REGISTER_NAME);
 				itemJson = params.getHttpParam(PARAM_ITEM);
+				editInfoJson = params.getHttpParam(PARAM_EDITED);
 
 				switch (registryNameParam) {
 				case "ancientMonument":
 					AncientMonumentService service = new AncientMonumentService(
 							connection);
-					AncientMonumentRepository repo = new AncientMonumentRepository(
-							connection);
 					AncientMonument monument = mapper.readValue(itemJson,
 							AncientMonument.class);
 
-					response = update(monument, service, repo);
+					JSONObject editInfo = new JSONObject(editInfoJson);
+
+					response = update(monument, service, editInfo);
 
 					break;
 				case "ancientMaintenance":
@@ -111,29 +119,39 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 	}
 
 	private JSONObject update(AncientMonument monument,
-			AncientMonumentService service, AncientMonumentRepository repo)
+			AncientMonumentService service, JSONObject editInfo)
 			throws SQLException, JSONException {
 
 		JSONObject ret = new JSONObject();
 		ret.put("updated", false);
 
+		boolean mainItemEdited = JSONHelper.getBooleanFromJSON(editInfo, "edited", false);
+
+		JSONArray editedSubItemJson = editInfo.getJSONArray("subItems");
+		JSONArray editedAreaIdJson = editInfo.getJSONArray("areas");
+
+		List<Integer> editedSubItemIds = new ArrayList<Integer>();
+		List<Integer> editedAreaIds = new ArrayList<Integer>();
+		
+		for(int i = 0; i < editedSubItemJson.length(); ++i) {
+			editedSubItemIds.add(editedSubItemJson.getInt(i));
+		}
+		
+		for(int i = 0; i < editedAreaIdJson.length(); ++i) {
+			editedAreaIds.add(editedAreaIdJson.getInt(i));
+		}
+
 		AncientMonument original = service
 				.getAncientMonumentById(monument.getId());
-		Map<Integer, AncientMonumentSubItem> originalSubItems = new HashMap<Integer, AncientMonumentSubItem>();
-		for (AncientMonumentSubItem subItem : original.getSubItems()) {
-			originalSubItems.put(subItem.getId(), subItem);
-		}
 
 		Map<Integer, AncientMonumentArea> originalAreas = new HashMap<Integer, AncientMonumentArea>();
 		for (AncientMonumentArea areaItem : original.getAreas()) {
 			originalAreas.put(areaItem.getId(), areaItem);
 		}
 
-		if (monument.getSurveyingAccuracy() != original.getSurveyingAccuracy()
-				|| monument.getSurveyingType() != original.getSurveyingType()
-				|| !monument.getDescription().equals(original.getDescription())
-				|| !monument.getGeometry().equals(original.getGeometry())) {
-			repo.update(monument.getId(), monument.getSurveyingAccuracy(),
+		if (mainItemEdited) {
+			service.updateAncientMonument(monument.getId(),
+					monument.getSurveyingAccuracy(),
 					monument.getSurveyingType(), monument.getDescription(),
 					monument.getGeometry());
 			ret.put("updated", true);
@@ -141,17 +159,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		}
 
 		for (AncientMonumentSubItem subItem : monument.getSubItems()) {
-			AncientMonumentSubItem originalSubItem = originalSubItems
-					.get(subItem.getId());
-			if (subItem.getSurveyingAccuracy() != originalSubItem
-					.getSurveyingAccuracy()
-					|| subItem.getSurveyingType() != originalSubItem
-							.getSurveyingType()
-					|| !subItem.getDescription()
-							.equals(originalSubItem.getDescription())
-					|| !subItem.getGeometry()
-							.equals(originalSubItem.getGeometry())) {
-				repo.updateSubItem(subItem.getId(),
+			if (editedSubItemIds.contains(subItem.getId())) {
+				service.updateAncientMonumentSubItem(subItem.getId(),
 						subItem.getSurveyingAccuracy(),
 						subItem.getSurveyingType(), subItem.getDescription(),
 						subItem.getGeometry());
@@ -161,33 +170,19 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		}
 
 		for (AncientMonumentArea area : monument.getAreas()) {
-			AncientMonumentArea originalArea = originalAreas
-					.get(area.getId());
-			if (!area.getName().equals(originalArea.getName())
-					|| !area.getMunicipalityName()
-							.equals(originalArea.getMunicipalityName())
-					|| !area.getDescription()
-							.equals(originalArea.getDescription())
-					|| area.getClassification() != originalArea
-							.getClassification()
-					|| !area.getCopyright().equals(originalArea.getCopyright())
-					|| !area.getDigiMk().equals(originalArea.getDigiMk())
-					|| !area.getDigiMkYear().equals(originalArea.getDigiMkYear())
-					|| !area.getDigitizationAuthor()
-							.equals(originalArea.getDigitizationAuthor())
-					|| !area.getDigitizationDate()
-							.equals(originalArea.getDigitizationDate())
-					|| area.getAreaSelectionType() != originalArea
-							.getAreaSelectionType()
-					|| area.getAreaSelectionSource() != originalArea
-							.getAreaSelectionSource()
-					|| area.getSurveyingAccuracy() != originalArea
-							.getSurveyingAccuracy()
-					|| area.getSurveyingType() != originalArea
-							.getSurveyingType()
-					|| !area.getGeometry().equals(originalArea.getGeometry())) {
-
-				repo.updateArea(area.getId(), area.getName(),
+			AncientMonumentArea originalArea = originalAreas.get(area.getId());
+			if (originalArea == null) {
+				service.addAncientMonumentArea(monument.getId(), area.getName(),
+						area.getMunicipalityName(), area.getDescription(),
+						area.getClassification(), area.getCopyright(),
+						area.getDigiMk(), area.getDigiMkYear(),
+						area.getDigitizationAuthor(),
+						area.getDigitizationDate(), area.getAreaSelectionType(),
+						area.getAreaSelectionSource(),
+						area.getSurveyingAccuracy(), area.getSurveyingType(),
+						area.getGeometry());
+			} else if (editedAreaIds.contains(area.getId())) {
+				service.updateAncientMonumentArea(area.getId(), area.getName(),
 						area.getMunicipalityName(), area.getDescription(),
 						area.getClassification(), area.getCopyright(),
 						area.getDigiMk(), area.getDigiMkYear(),
