@@ -3,12 +3,10 @@ package fi.sito.nba.control;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -125,21 +123,13 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		JSONObject ret = new JSONObject();
 		ret.put("updated", false);
 
-		boolean mainItemEdited = JSONHelper.getBooleanFromJSON(editInfo, "edited", false);
+		boolean mainItemEdited = JSONHelper.getBooleanFromJSON(editInfo,
+				"edited", false);
 
-		JSONArray editedSubItemJson = editInfo.getJSONArray("subItems");
-		JSONArray editedAreaIdJson = editInfo.getJSONArray("areas");
-
-		List<Integer> editedSubItemIds = new ArrayList<Integer>();
-		List<Integer> editedAreaIds = new ArrayList<Integer>();
-		
-		for(int i = 0; i < editedSubItemJson.length(); ++i) {
-			editedSubItemIds.add(editedSubItemJson.getInt(i));
-		}
-		
-		for(int i = 0; i < editedAreaIdJson.length(); ++i) {
-			editedAreaIds.add(editedAreaIdJson.getInt(i));
-		}
+		List<Integer> editedSubItemIds = JSONHelper
+				.getArrayAsList(editInfo.getJSONArray("subItems"));
+		List<Integer> editedAreaIds = JSONHelper
+				.getArrayAsList(editInfo.getJSONArray("areas"));
 
 		AncientMonument original = service
 				.getAncientMonumentById(monument.getId());
