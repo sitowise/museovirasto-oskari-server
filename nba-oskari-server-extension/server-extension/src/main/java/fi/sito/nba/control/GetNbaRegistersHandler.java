@@ -27,8 +27,12 @@ import fi.nls.oskari.db.DatasourceHelper;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.util.ResponseHelper;
+import fi.sito.nba.model.NbaRegistry;
 import fi.sito.nba.registry.services.AncientMonumentService;
 import fi.sito.nba.registry.models.AncientMonument;
+import fi.sito.nba.service.NbaRegistryService;
+import fi.sito.nba.service.NbaRegistryServiceInterface;
+
 import java.sql.*;
 import com.microsoft.sqlserver.jdbc.*;
 
@@ -37,6 +41,8 @@ public class GetNbaRegistersHandler extends RestActionHandler {
 
 	private static final Logger LOG = LogFactory
 			.getLogger(GetNbaRegistersHandler.class);
+	private static NbaRegistryServiceInterface registryService = new NbaRegistryService();
+	private static final String PARAM_LANG = "lang";
 
 	public void preProcess(ActionParameters params) throws ActionException {
 		// common method called for all request methods
@@ -47,20 +53,37 @@ public class GetNbaRegistersHandler extends RestActionHandler {
 	public void handleGet(ActionParameters params) throws ActionException {
 
 		JSONArray result = new JSONArray();
+		Object response;
 
 		try {
+			String langParam = params.getHttpParam(PARAM_LANG);
+			
 			HashMap<String, String> map = new HashMap<String, String>();
-			map.put("ancientMaintenance", "Muinaisjaann. hoitorekisteri"); //Ancient Monument Maintenance
-			map.put("ancientMonument", "Muinaisjäännösrekisteri"); //Ancient Monument
-			map.put("buildingHeritage", "Rakennusperintorekisteri"); //Building Heritage
-			map.put("rky1993", "RKY1993"); //RKY1993
-			map.put("rky2000", "RKY2000"); //RKY2000
-
+			
+			List<NbaRegistry> registries = registryService.findRegistries();
+			for (NbaRegistry nbaRegistry : registries) {
+				
+				JSONObject localeJson = new JSONObject(nbaRegistry.getLocale());
+				String registryName;
+				
+				if (localeJson.has(langParam)) {
+					registryName = localeJson.getJSONObject(langParam).getString("name");
+				} else {
+					registryName = nbaRegistry.getName();
+				}
+				map.put(nbaRegistry.getName(), registryName);
+			}
+			
 			try {
-
+				//TODO move adding 'All' element to frontend
 				JSONObject item = new JSONObject();
 				item.put("id", "");
-				item.put("name", "Kaikki"); //All
+				if (langParam.equals("fi")) {
+					item.put("name", "Kaikki");
+				} else {
+					item.put("name", "All");
+				}
+				
 				result.put(item);
 
 				for (Map.Entry<String, String> entry : map.entrySet()) {
@@ -68,17 +91,25 @@ public class GetNbaRegistersHandler extends RestActionHandler {
 					itemX.put("id", entry.getKey());
 					itemX.put("name", entry.getValue());
 					result.put(itemX);
-
 				}
+				
+				response = result;
 			} catch (JSONException e) {
 				throw e;
 			}
 
 		} catch (Exception e) {
-			throw new ActionException("Error during getting registries");
+			//throw new ActionException("Error during getting registries");
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			e.printStackTrace(pw);
+
+			response = "Message:\n" + e.getMessage() + "\n" + "Cause:\n"
+					+ e.getCause() + "\n" + "Stak trace:\n" + sw.toString();
 		}
 
-		ResponseHelper.writeResponse(params, result);
+		//ResponseHelper.writeResponse(params, result);
+		ResponseHelper.writeResponse(params, response);
 	}
 
 }

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE sqlMap      
+    PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"      
+    "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="NbaRegistries">
+
+    <typeAlias alias="NbaRegistry"
+        type="fi.sito.nba.model.NbaRegistry" />
+        
+    <typeAlias alias="NbaRegistryLayer"
+        type="fi.sito.nba.model.NbaRegistryLayer" />
+
+    <resultMap id="NbaRegistryResult" class="NbaRegistry">
+        <result property="id" column="id" />
+        <result property="name" column="name" />
+        <result property="locale" column="locale" />
+    </resultMap>
+    
+    <resultMap id="NbaRegistryLayerResult" class="NbaRegistryLayer">
+        <result property="registryId" column="registry_id" />
+        <result property="registryName" column="registry_name" />
+        <result property="layerId" column="layer_id" />
+        <result property="toOpen" column="to_open" />
+        <result property="toHighlight" column="to_highlight" />
+        <result property="itemIdAttribute" column="item_id_attribute" />
+    </resultMap>
+
+    <cacheModel type="LRU" id="wfs-layer-cache" readOnly="true" serialize="false">
+        <flushInterval minutes="15"/>
+        <property name="CacheSize" value="100"/>
+    </cacheModel>
+
+    <statement id="findRegistries" resultMap="NbaRegistryResult">
+		SELECT id, name, locale
+		FROM nba_registries
+        ORDER BY id ASC;
+    </statement>
+    
+    <statement id="findRegistryLayers" resultMap="NbaRegistryLayerResult">
+		SELECT registry_id, nba_registries.name AS registry_name, layer_id, to_open, to_highlight, item_id_attribute
+  		FROM nba_registry_layers
+  		INNER JOIN nba_registries ON nba_registries.id = nba_registry_layers.registry_id 
+    </statement>
+</sqlMap>
