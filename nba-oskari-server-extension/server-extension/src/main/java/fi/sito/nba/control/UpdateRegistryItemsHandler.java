@@ -171,6 +171,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 						area.getAreaSelectionSource(),
 						area.getSurveyingAccuracy(), area.getSurveyingType(),
 						area.getGeometry());
+				ret.put("updated", true);
+				ret.put("areas", ret.optInt("areas", 0) + 1);
 			} else if (editedAreaIds.contains(area.getId())) {
 				service.updateAncientMonumentArea(area.getId(), area.getName(),
 						area.getMunicipalityName(), area.getDescription(),
