@@ -1,46 +1,45 @@
 package fi.sito.nba.control;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.sql.SQLException;
+import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.swing.event.ListSelectionEvent;
-
-import org.deegree.io.DBConnectionPool;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
+import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
+import com.vividsolutions.jts.geom.Envelope;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.io.WKTReader;
+
 import fi.nls.oskari.annotation.OskariActionRoute;
-import fi.nls.oskari.control.ActionDeniedException;
 import fi.nls.oskari.control.ActionException;
 import fi.nls.oskari.control.ActionParameters;
-import fi.nls.oskari.control.ActionParamsException;
 import fi.nls.oskari.control.RestActionHandler;
-import fi.nls.oskari.db.DatasourceHelper;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.util.ResponseHelper;
 import fi.sito.nba.model.NbaRegistryLayer;
-import fi.sito.nba.registry.models.*;
-import fi.sito.nba.registry.services.*;
-import fi.sito.nba.registry.infrastructure.*;
+import fi.sito.nba.registry.infrastructure.RegistryObjectCollection;
+import fi.sito.nba.registry.infrastructure.RegistryObjectIterator;
+import fi.sito.nba.registry.models.AncientMonument;
+import fi.sito.nba.registry.models.AncientMonumentMaintenanceItem;
+import fi.sito.nba.registry.models.BuildingHeritageItem;
+import fi.sito.nba.registry.models.IRegistryObject;
+import fi.sito.nba.registry.models.RKY1993;
+import fi.sito.nba.registry.models.RKY2000;
+import fi.sito.nba.registry.services.AncientMonumentMaintenanceItemService;
+import fi.sito.nba.registry.services.AncientMonumentService;
+import fi.sito.nba.registry.services.BuildingHeritageItemService;
+import fi.sito.nba.registry.services.RKY1993Service;
+import fi.sito.nba.registry.services.RKY2000Service;
 import fi.sito.nba.service.NbaRegistryLayerService;
 import fi.sito.nba.service.NbaRegistryLayerServiceInterface;
-
-import java.sql.*;
-import com.microsoft.sqlserver.jdbc.*;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.Point;
-import com.vividsolutions.jts.io.WKTReader;
-//import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Envelope;
 
 @OskariActionRoute("GetRegistryItems")
 public class GetRegistryItemsHandler extends RestActionHandler {
@@ -53,6 +52,12 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 	private static final Logger LOG = LogFactory
 			.getLogger(GetRegistryItemsHandler.class);
 	private static NbaRegistryLayerServiceInterface registryLayerService = new NbaRegistryLayerService();
+
+	private static final ObjectMapper mapper = new ObjectMapper();
+
+	static {
+		mapper.registerModule(new JsonOrgModule());
+	}
 
 	public void preProcess(ActionParameters params) throws ActionException {
 		// common method called for all request methods
@@ -72,7 +77,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			ds.setPassword(PropertyUtil.get("nba.db.password"));
 			ds.setURL(PropertyUtil.get("nba.db.url"));
 			connection = ds.getConnection();
-			
+
 			//get configuration of registry layers from DB
 			List<NbaRegistryLayer> registryLayers = registryLayerService.findRegistryLayers();
 			
@@ -87,7 +92,8 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					&& params.getHttpParam(PARAM_REGISTER_NAME) != null
 					&& !params.getHttpParam(PARAM_REGISTER_NAME).equals("")) {
 
-				itemIdParam = Integer.parseInt(params.getHttpParam(PARAM_ITEM_ID));
+				itemIdParam = Integer
+						.parseInt(params.getHttpParam(PARAM_ITEM_ID));
 				registryNameParam = params.getHttpParam(PARAM_REGISTER_NAME);
 				
 				//filter list of layers
@@ -96,33 +102,37 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				JSONObject itemObj = new JSONObject();
 				Object service = null;
 				IRegistryObject registryItem = null;
-				
+
 				switch (registryNameParam) {
 				case "ancientMonument":
 					service = new AncientMonumentService(connection);
-					registryItem = ((AncientMonumentService)service).getAncientMonumentById(itemIdParam);
+					registryItem = ((AncientMonumentService) service)
+							.getAncientMonumentById(itemIdParam);
 					itemObj = getItemObject(registryItem, filteredLayerList);
 					break;
 				case "ancientMaintenance":
 					service = new AncientMonumentMaintenanceItemService(
 							connection);
-					registryItem = ((AncientMonumentMaintenanceItemService)service).getAncientMonumentMaintenanceItemById(itemIdParam);
+					registryItem = ((AncientMonumentMaintenanceItemService) service)
+							.getAncientMonumentMaintenanceItemById(itemIdParam);
 					itemObj = getItemObject(registryItem, filteredLayerList);
 					break;
 				case "buildingHeritage":
-					service = new BuildingHeritageItemService(
-							connection);
-					registryItem = ((BuildingHeritageItemService)service).getBuildingHeritageItemById(itemIdParam);
+					service = new BuildingHeritageItemService(connection);
+					registryItem = ((BuildingHeritageItemService) service)
+							.getBuildingHeritageItemById(itemIdParam);
 					itemObj = getItemObject(registryItem, filteredLayerList);
 					break;
 				case "rky1993":
 					service = new RKY1993Service(connection);
-					registryItem = ((RKY1993Service)service).getRKY1993ById(itemIdParam);
+					registryItem = ((RKY1993Service) service)
+							.getRKY1993ById(itemIdParam);
 					itemObj = getItemObject(registryItem, filteredLayerList);
 					break;
 				case "rky2000":
 					service = new RKY2000Service(connection);
-					registryItem = ((RKY2000Service)service).getRKY2000ById(itemIdParam);
+					registryItem = ((RKY2000Service) service)
+							.getRKY2000ById(itemIdParam);
 					itemObj = getItemObject(registryItem, filteredLayerList);
 					break;
 				}
@@ -223,16 +233,10 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				response = generalResultArray;
 			}
 		} catch (Exception e) {
-			//throw new ActionException("Error during geting registry item");
-			StringWriter sw = new StringWriter();
-			PrintWriter pw = new PrintWriter(sw);
-			e.printStackTrace(pw);
-
-			response = "Message:\n" + e.getMessage() + "\n" + "Cause:\n"
-					+ e.getCause() + "\n" + "Stak trace:\n" + sw.toString();
+			throw new ActionException("Error during geting registry item", e);
 		} finally {
 			try {
-			connection.close();
+				connection.close();
 			} catch (Exception e) {
 			}
 		}
@@ -241,13 +245,14 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 	}
 
 	private JSONObject getItemObject(IRegistryObject registryObject, List<NbaRegistryLayer> registryLayers) {
-		JSONObject item = new JSONObject();
+		JSONObject item = null;
 		try {
-
+			item = mapper.convertValue(registryObject, JSONObject.class);
 			item.put("id", registryObject.getObjectId());
 			item.put("coordinateX", registryObject.calculateCentroid().getX());
 			item.put("coordinateY", registryObject.calculateCentroid().getY());
 			item.put("nbaUrl", registryObject.generateNbaUrl());
+			item.put("itemtype", registryObject.getClass().getSimpleName());
 			
 			JSONArray mapLayersArray = new JSONArray(); 
 			for (NbaRegistryLayer registryLayer : registryLayers) {
@@ -269,35 +274,33 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			item.put("bounds", bounds);
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOG.error(e, "Error writing JSON");
 		}
 		return item;
 	}
-	
+
 	private JSONArray getAncientMonumentMaintenanceItems(Connection con,
 			String keyword, Geometry geometry, List<NbaRegistryLayer> registryLayers) {
 
 		JSONArray resultArray = new JSONArray();
 
-		String results = "";
-
 		AncientMonumentMaintenanceItemService svc = new AncientMonumentMaintenanceItemService(
 				con);
 
-		RegistryObjectCollection<AncientMonumentMaintenanceItem> monuments = (RegistryObjectCollection<AncientMonumentMaintenanceItem>) svc
+		Iterable<AncientMonumentMaintenanceItem> monuments = svc
 				.findAncientMonumentMaintenanceItems(keyword, geometry);
 
 		if (monuments != null) {
 			
 			List<NbaRegistryLayer> filteredLayers = getRegistryLayers("ancientMaintenance", registryLayers);
 			
-			RegistryObjectIterator iterator = (RegistryObjectIterator) monuments
+			RegistryObjectIterator<AncientMonumentMaintenanceItem> iterator = (RegistryObjectIterator<AncientMonumentMaintenanceItem>) monuments
 					.iterator();
 			while (iterator.hasNext()) {
 				try {
-					AncientMonumentMaintenanceItem monument = (AncientMonumentMaintenanceItem) iterator
-							.next();
+					AncientMonumentMaintenanceItem monument = iterator.next();
 					JSONObject item = new JSONObject();
+					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					item.put("coordinateX", monument.calculateCentroid().getX());
@@ -336,8 +339,6 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 		JSONArray resultArray = new JSONArray();
 
-		String results = "";
-
 		AncientMonumentService svc = new AncientMonumentService(con);
 
 		RegistryObjectCollection<AncientMonument> monuments = (RegistryObjectCollection<AncientMonument>) svc
@@ -346,13 +347,14 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			
 			List<NbaRegistryLayer> filteredLayers = getRegistryLayers("ancientMonument", registryLayers);
 			
-			RegistryObjectIterator iterator = (RegistryObjectIterator) monuments
+			RegistryObjectIterator<AncientMonument> iterator = (RegistryObjectIterator<AncientMonument>) monuments
 					.iterator();
 			while (iterator.hasNext()) {
 				try {
 					AncientMonument monument = (AncientMonument) iterator.next();
 					
 					JSONObject item = new JSONObject();
+					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					
@@ -397,8 +399,6 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 		JSONArray resultArray = new JSONArray();
 
-		String results = "";
-
 		BuildingHeritageItemService svc = new BuildingHeritageItemService(con);
 
 		RegistryObjectCollection<BuildingHeritageItem> monuments = (RegistryObjectCollection<BuildingHeritageItem>) svc
@@ -407,13 +407,14 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			
 			List<NbaRegistryLayer> filteredLayers = getRegistryLayers("buildingHeritage", registryLayers);
 			
-			RegistryObjectIterator iterator = (RegistryObjectIterator) monuments
+			RegistryObjectIterator<BuildingHeritageItem> iterator = (RegistryObjectIterator<BuildingHeritageItem>) monuments
 					.iterator();
 			while (iterator.hasNext()) {
 				try {
 					BuildingHeritageItem monument = (BuildingHeritageItem) iterator.next();
 					
 					JSONObject item = new JSONObject();
+					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 
@@ -458,8 +459,6 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 		JSONArray resultArray = new JSONArray();
 
-		String results = "";
-
 		RKY1993Service svc = new RKY1993Service(con);
 
 		RegistryObjectCollection<RKY1993> monuments = (RegistryObjectCollection<RKY1993>) svc.findRKY1993(keyword,
@@ -468,13 +467,14 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			
 			List<NbaRegistryLayer> filteredLayers = getRegistryLayers("rky1993", registryLayers);
 			
-			RegistryObjectIterator iterator = (RegistryObjectIterator) monuments
+			RegistryObjectIterator<RKY1993> iterator = (RegistryObjectIterator<RKY1993>) monuments
 					.iterator();
 			while (iterator.hasNext()) {
 				try {
 					RKY1993 monument = (RKY1993) iterator.next();
 					
 					JSONObject item = new JSONObject();
+					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 
@@ -519,25 +519,23 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 		JSONArray resultArray = new JSONArray();
 
-		String results = "";
-
 		RKY2000Service svc = new RKY2000Service(con);
 
-		RegistryObjectCollection<RKY2000> monuments = (RegistryObjectCollection<RKY2000>) svc
-				.findRKY2000(keyword, geometry);
+		Iterable<RKY2000> monuments = svc.findRKY2000(keyword, geometry);
 
 		if (monuments != null) {
 			
 			List<NbaRegistryLayer> filteredLayers = getRegistryLayers("rky2000", registryLayers);
 			
-			RegistryObjectIterator iterator = (RegistryObjectIterator) monuments
+			RegistryObjectIterator<RKY2000> iterator = (RegistryObjectIterator<RKY2000>) monuments
 					.iterator();
-			
+
 			while (iterator.hasNext()) {
 				try {
-					RKY2000 monument = (RKY2000) iterator.next();
+					RKY2000 monument = iterator.next();
 
 					JSONObject item = new JSONObject();
+					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 
