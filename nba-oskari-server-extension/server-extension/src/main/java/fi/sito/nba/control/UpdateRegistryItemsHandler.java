@@ -16,9 +16,11 @@ import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
 
 import fi.nls.oskari.annotation.OskariActionRoute;
+import fi.nls.oskari.control.ActionDeniedException;
 import fi.nls.oskari.control.ActionException;
 import fi.nls.oskari.control.ActionParameters;
 import fi.nls.oskari.control.RestActionHandler;
+import fi.nls.oskari.domain.User;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.util.JSONHelper;
@@ -35,6 +37,9 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 	private static final String PARAM_REGISTER_NAME = "registerName";
 	private static final String PARAM_ITEM = "item";
 	private static final String PARAM_EDITED = "edited";
+	private static final String[] ALLOWED_ROLES = new String[] { "Admin",
+			"Pääkäyttäjä", "Ylläpitäjä", "Viraston muokkaaja",
+			"Ulk. viranomaismuokkaaja", "Ulk. muu muokkaaja" };
 
 	private static final Logger LOG = LogFactory
 			.getLogger(GetRegistryItemsHandler.class);
@@ -49,9 +54,12 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 	public void preProcess(ActionParameters params) throws ActionException {
 		// common method called for all request methods
-		LOG.info(params.getUser(), "accessing route", getName());
+		User user = params.getUser();
+		LOG.info(user, "accessing route", getName());
 		params.requireLoggedInUser();
-		// FIXME: needs to check if user has specific role
+		if (!user.hasAnyRoleIn(ALLOWED_ROLES)) {
+			throw new ActionDeniedException("Not allowed");
+		}
 	}
 
 	@Override
