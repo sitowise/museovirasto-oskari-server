@@ -102,7 +102,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 					JSONObject editInfo = new JSONObject(editInfoJson);
 
-					response = update(monument, service, editInfo);
+					response = update(monument, service, editInfo,
+							params.getUser());
 
 					break;
 				case "ancientMaintenance":
@@ -125,7 +126,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 	}
 
 	private JSONObject update(AncientMonument monument,
-			AncientMonumentService service, JSONObject editInfo)
+			AncientMonumentService service, JSONObject editInfo, User user)
 			throws SQLException, JSONException {
 
 		JSONObject ret = new JSONObject();
@@ -149,9 +150,9 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 		if (mainItemEdited) {
 			service.updateAncientMonument(monument.getId(),
+					user.getScreenname(), monument.getDescription(),
 					monument.getSurveyingAccuracy(),
-					monument.getSurveyingType(), monument.getDescription(),
-					monument.getGeometry());
+					monument.getSurveyingType(), monument.getGeometry());
 			ret.put("updated", true);
 			ret.put("mainItems", 1);
 		}
@@ -159,9 +160,9 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		for (AncientMonumentSubItem subItem : monument.getSubItems()) {
 			if (editedSubItemIds.contains(subItem.getId())) {
 				service.updateAncientMonumentSubItem(subItem.getId(),
+						user.getScreenname(), subItem.getDescription(),
 						subItem.getSurveyingAccuracy(),
-						subItem.getSurveyingType(), subItem.getDescription(),
-						subItem.getGeometry());
+						subItem.getSurveyingType(), subItem.getGeometry());
 				ret.put("updated", true);
 				ret.put("subItems", ret.optInt("subItems", 0) + 1);
 			}
@@ -170,25 +171,15 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		for (AncientMonumentArea area : monument.getAreas()) {
 			AncientMonumentArea originalArea = originalAreas.get(area.getId());
 			if (originalArea == null) {
-				service.addAncientMonumentArea(monument.getId(), area.getName(),
-						area.getMunicipalityName(), area.getDescription(),
-						area.getClassification(), area.getCopyright(),
-						area.getDigiMk(), area.getDigiMkYear(),
-						area.getDigitizationAuthor(),
-						area.getDigitizationDate(), area.getAreaSelectionType(),
-						area.getAreaSelectionSource(),
+				service.addAncientMonumentArea(monument.getId(),
+						user.getScreenname(), area.getDescription(),
 						area.getSurveyingAccuracy(), area.getSurveyingType(),
 						area.getGeometry());
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
 			} else if (editedAreaIds.contains(area.getId())) {
-				service.updateAncientMonumentArea(area.getId(), area.getName(),
-						area.getMunicipalityName(), area.getDescription(),
-						area.getClassification(), area.getCopyright(),
-						area.getDigiMk(), area.getDigiMkYear(),
-						area.getDigitizationAuthor(),
-						area.getDigitizationDate(), area.getAreaSelectionType(),
-						area.getAreaSelectionSource(),
+				service.updateAncientMonumentArea(area.getId(),
+						user.getScreenname(), area.getDescription(),
 						area.getSurveyingAccuracy(), area.getSurveyingType(),
 						area.getGeometry());
 
