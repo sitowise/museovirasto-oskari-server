@@ -249,8 +249,13 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		try {
 			item = mapper.convertValue(registryObject, JSONObject.class);
 			item.put("id", registryObject.getObjectId());
-			item.put("coordinateX", registryObject.calculateCentroid().getX());
-			item.put("coordinateY", registryObject.calculateCentroid().getY());
+			
+			Point centroid = registryObject.calculateCentroid(); 
+			if (centroid != null) {
+				item.put("coordinateX", centroid.getX());
+				item.put("coordinateY", centroid.getY());
+			}
+			
 			item.put("nbaUrl", registryObject.generateNbaUrl());
 			item.put("itemtype", registryObject.getClass().getSimpleName());
 			
@@ -265,13 +270,16 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			}
 			item.put("mapLayers", mapLayersArray);
 			
-			Envelope envelope = registryObject.calculateEnvelope().getEnvelopeInternal();
-			JSONArray bounds = new JSONArray();
-			bounds.put(envelope.getMinX());
-			bounds.put(envelope.getMinY());
-			bounds.put(envelope.getMaxX());
-			bounds.put(envelope.getMaxY());
-			item.put("bounds", bounds);
+			Geometry envelope = registryObject.calculateEnvelope();
+			if (envelope != null) {
+				Envelope envelopeInternal = envelope.getEnvelopeInternal();
+				JSONArray bounds = new JSONArray();
+				bounds.put(envelopeInternal.getMinX());
+				bounds.put(envelopeInternal.getMinY());
+				bounds.put(envelopeInternal.getMaxX());
+				bounds.put(envelopeInternal.getMaxY());
+				item.put("bounds", bounds);
+			}
 
 		} catch (Exception e) {
 			LOG.error(e, "Error writing JSON");
@@ -303,8 +311,14 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
-					item.put("coordinateX", monument.calculateCentroid().getX());
-					item.put("coordinateY", monument.calculateCentroid().getY());
+
+					Point centroid = monument.calculateCentroid(); 
+					
+					if (centroid != null) {
+						item.put("coordinateX", centroid.getX());
+						item.put("coordinateY", centroid.getY());
+					}
+					
 					item.put("nbaUrl", monument.generateNbaUrl());
 					JSONArray mapLayersArray = new JSONArray(); 
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
@@ -317,13 +331,16 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					}
 					item.put("mapLayers", mapLayersArray);
 					
-					Envelope envelope = monument.calculateEnvelope().getEnvelopeInternal();
-					JSONArray bounds = new JSONArray();
-					bounds.put(envelope.getMinX());
-					bounds.put(envelope.getMinY());
-					bounds.put(envelope.getMaxX());
-					bounds.put(envelope.getMaxY());
-					item.put("bounds", bounds);
+					Geometry envelope = monument.calculateEnvelope();
+					if (envelope != null) {
+						Envelope envelopeInternal = envelope.getEnvelopeInternal();
+						JSONArray bounds = new JSONArray();
+						bounds.put(envelopeInternal.getMinX());
+						bounds.put(envelopeInternal.getMinY());
+						bounds.put(envelopeInternal.getMaxX());
+						bounds.put(envelopeInternal.getMaxY());
+						item.put("bounds", bounds);
+					}
 					
 					resultArray.put(item);
 				} catch (JSONException e) {
@@ -537,7 +554,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					JSONObject item = new JSONObject();
 					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
-					item.put("desc", monument.getObjectName());
+					//item.put("desc", monument.getObjectName());
 
 					Point centroid = monument.calculateCentroid();
 					if (centroid != null) {
