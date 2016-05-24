@@ -144,7 +144,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 					throw new NotImplementedException();
 				}
 			}
-		} catch (IOException | SQLException | JSONException e) {
+		} catch (IOException | SQLException | JSONException | InvalidArgumentException e) {
 			throw new ActionException("Error during updating registry item", e);
 		} finally {
 			try {

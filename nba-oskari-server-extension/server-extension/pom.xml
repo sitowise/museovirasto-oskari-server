@@ -46,8 +46,19 @@
 
     <repositories>
         <repository>
+            <id>mirror</id>
+            <name>Internal Mirror Repository</name>
+            <url>http://nbadev.sitois.local:8890/repository/mirror/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
             <id>snapshots</id>
-            <name>Internal Managed Snapshot Repository</name>
+            <name>Internal Snapshot Repository</name>
             <url>http://nbadev.sitois.local:8890/repository/snapshots/</url>
             <releases>
                 <enabled>false</enabled>
@@ -59,8 +70,19 @@
     </repositories>
     <pluginRepositories>
         <pluginRepository>
+            <id>mirror</id>
+            <name>Internal Mirror Repository</name>
+            <url>http://nbadev.sitois.local:8890/repository/mirror/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+        <pluginRepository>
             <id>snapshots</id>
-            <name>Internal Managed Snapshot Repository</name>
+            <name>Internal Snapshot Repository</name>
             <url>http://nbadev.sitois.local:8890/repository/snapshots/</url>
             <releases>
                 <enabled>false</enabled>
