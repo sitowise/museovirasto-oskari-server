@@ -27,10 +27,19 @@ import fi.nls.oskari.util.JSONHelper;
 import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.util.ResponseHelper;
 import fi.sito.nba.registry.infrastructure.NotImplementedException;
+import fi.sito.nba.registry.infrastructure.InvalidArgumentException;
 import fi.sito.nba.registry.models.AncientMonument;
 import fi.sito.nba.registry.models.AncientMonumentArea;
 import fi.sito.nba.registry.models.AncientMonumentSubItem;
 import fi.sito.nba.registry.services.AncientMonumentService;
+import fi.sito.nba.registry.services.AncientMonumentMaintenanceItemService;
+import fi.sito.nba.registry.services.BuildingHeritageItemService;
+import fi.sito.nba.registry.models.AncientMonumentMaintenanceItem;
+import fi.sito.nba.registry.models.AncientMonumentMaintenanceItemSubArea;
+import fi.sito.nba.registry.models.BuildingHeritageItemPoint;
+import fi.sito.nba.registry.models.BuildingHeritageItemArea;
+import fi.sito.nba.registry.models.BuildingHeritageItem;
+
 
 @OskariActionRoute("UpdateRegistryItems")
 public class UpdateRegistryItemsHandler extends RestActionHandler {
@@ -102,12 +111,34 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 					JSONObject editInfo = new JSONObject(editInfoJson);
 
-					response = update(monument, service, editInfo,
+					response = updateAncientMonument(monument, service, editInfo,
 							params.getUser());
 
 					break;
 				case "ancientMaintenance":
+					AncientMonumentMaintenanceItemService ammService = new AncientMonumentMaintenanceItemService(
+							connection);
+					AncientMonumentMaintenanceItem ammMonument = mapper.readValue(itemJson,
+							AncientMonumentMaintenanceItem.class);
+
+					JSONObject ammeditInfo = new JSONObject(editInfoJson);
+
+					response = updateMaintenance(ammMonument, ammService, ammeditInfo,
+							params.getUser());
+
+					break;
 				case "buildingHeritage":
+					BuildingHeritageItemService bhService = new BuildingHeritageItemService(
+							connection);
+					BuildingHeritageItem bhMonument = mapper.readValue(itemJson,
+							BuildingHeritageItem.class);
+
+					JSONObject bhEditInfo = new JSONObject(editInfoJson);
+
+					response = updateBuildingHeritage(bhMonument, bhService, bhEditInfo,
+							params.getUser());
+
+					break;
 				case "rky1993":
 				case "rky2000":
 					throw new NotImplementedException();
@@ -124,10 +155,10 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 		ResponseHelper.writeResponse(params, response);
 	}
-
-	private JSONObject update(AncientMonument monument,
+	
+	private JSONObject updateAncientMonument(AncientMonument monument,
 			AncientMonumentService service, JSONObject editInfo, User user)
-			throws SQLException, JSONException {
+			throws SQLException, JSONException, InvalidArgumentException {
 
 		JSONObject ret = new JSONObject();
 		ret.put("updated", false);
@@ -181,6 +212,104 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				service.updateAncientMonumentArea(area.getId(),
 						user.getScreenname(), area.getDescription(),
 						area.getSurveyingAccuracy(), area.getSurveyingType(),
+						area.getGeometry());
+
+				ret.put("updated", true);
+				ret.put("areas", ret.optInt("areas", 0) + 1);
+			}
+		}
+
+		return ret;
+	}
+	
+	private JSONObject updateMaintenance(AncientMonumentMaintenanceItem monument,
+			AncientMonumentMaintenanceItemService service, JSONObject editInfo, User user)
+			throws SQLException, JSONException, InvalidArgumentException  {
+
+		JSONObject ret = new JSONObject();
+		ret.put("updated", false);
+
+		boolean mainItemEdited = JSONHelper.getBooleanFromJSON(editInfo,
+				"edited", false);
+
+		if (mainItemEdited) {
+			if (monument.getPointGeometry() != null) {
+				service.updateAncientMonumentMaintenanceItemPoint(monument.getId(),
+						user.getScreenname(), monument.getPointDescription(),
+						monument.getPointSurveyingAccuracy(),
+						monument.getPointSurveyingType(), monument.getPointGeometry());
+			}
+			
+			if (monument.getAreaGeometry() != null) {
+				service.updateAncientMonumentMaintenanceItemArea(monument.getId(),
+						user.getScreenname(), monument.getAreaGeometry());
+			}
+			
+			ret.put("updated", true);
+			ret.put("mainItems", 1);
+		}
+		
+		List<Integer> editedSubItemIds = JSONHelper
+				.getArrayAsList(editInfo.getJSONArray("subAreas"));
+
+		for (AncientMonumentMaintenanceItemSubArea subArea : monument.getSubAreas()) {
+			if (editedSubItemIds.contains(subArea.getId())) {
+				service.updateAncientMonumentMaintenanceItemSubArea(subArea.getId(),
+						user.getScreenname(), subArea.getGeometry());
+				ret.put("updated", true);
+				ret.put("subItems", ret.optInt("subItems", 0) + 1);
+			}
+		}
+
+		return ret;
+	}
+
+	private JSONObject updateBuildingHeritage(BuildingHeritageItem monument,
+			BuildingHeritageItemService service, JSONObject editInfo, User user)
+			throws SQLException, JSONException, InvalidArgumentException  {
+
+		JSONObject ret = new JSONObject();
+		ret.put("updated", false);
+
+		List<Integer> editedPointIds = JSONHelper
+				.getArrayAsList(editInfo.getJSONArray("points"));
+		List<Integer> editedAreaIds = JSONHelper
+				.getArrayAsList(editInfo.getJSONArray("areas"));
+
+		BuildingHeritageItem original = service
+				.getBuildingHeritageItemById(monument.getId());
+
+		Map<Integer, BuildingHeritageItemArea> originalAreas = new HashMap<Integer, BuildingHeritageItemArea>();
+		for (BuildingHeritageItemArea areaItem : original.getAreas()) {
+			originalAreas.put(areaItem.getId(), areaItem);
+		}
+
+		for (BuildingHeritageItemPoint point : monument.getPoints()) {
+			if (editedPointIds.contains(point.getId())) {
+				service.updateBuildingHeritageItemPoint(point.getId(), user.getScreenname(), 
+						point.getObjectName(),  point.getDescription(), point.getSurveyingAccuracy(), 
+						point.getSurveyingType(), point.getConservationGroup(), point.getConservationStatus(),
+						point.getGeometry());
+				ret.put("updated", true);
+				ret.put("subItems", ret.optInt("subItems", 0) + 1);
+			}
+		}
+
+		for (BuildingHeritageItemArea area : monument.getAreas()) {
+			BuildingHeritageItemArea originalArea = originalAreas.get(area.getId());
+			if (originalArea == null) {
+				service.addBuildingHeritageItemArea(monument.getId(),
+						user.getScreenname(), area.getObjectName(), area.getDescription(),
+						area.getSurveyingAccuracy(), area.getSurveyingType(),
+						area.getConservationGroup(), area.getConservationStatus(),
+						area.getGeometry());
+				ret.put("updated", true);
+				ret.put("areas", ret.optInt("areas", 0) + 1);
+			} else if (editedAreaIds.contains(area.getId())) {
+				service.updateBuildingHeritageItemArea(monument.getId(),
+						user.getScreenname(), area.getObjectName(), area.getDescription(),
+						area.getSurveyingAccuracy(), area.getSurveyingType(),
+						area.getConservationGroup(), area.getConservationStatus(),
 						area.getGeometry());
 
 				ret.put("updated", true);
