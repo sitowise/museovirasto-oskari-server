@@ -84,60 +84,72 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			String registriesParam = "";
 			String keywordParam = null;
 			Geometry geometryParam = null;
-			int itemIdParam = 0;
+			String itemIdParam = "";
 			String registryNameParam = "";
+			JSONArray results = new JSONArray();
 
 			if (params.getHttpParam(PARAM_ITEM_ID) != null
 					&& !params.getHttpParam(PARAM_ITEM_ID).equals("")
 					&& params.getHttpParam(PARAM_REGISTER_NAME) != null
 					&& !params.getHttpParam(PARAM_REGISTER_NAME).equals("")) {
 
-				itemIdParam = Integer
-						.parseInt(params.getHttpParam(PARAM_ITEM_ID));
-				registryNameParam = params.getHttpParam(PARAM_REGISTER_NAME);
+				itemIdParam = params.getHttpParam(PARAM_ITEM_ID);
+				String[] itemIds = itemIdParam.split(",");
 				
-				//filter list of layers
-				List<NbaRegistryLayer> filteredLayerList = getRegistryLayers(registryNameParam, registryLayers);
+				for(String id : itemIds) {
+					
+					int itemId = Integer.parseInt(id);
 				
-				JSONObject itemObj = new JSONObject();
-				Object service = null;
-				IRegistryObject registryItem = null;
-
-				switch (registryNameParam) {
-				case "ancientMonument":
-					service = new AncientMonumentService(connection);
-					registryItem = ((AncientMonumentService) service)
-							.getAncientMonumentById(itemIdParam);
-					itemObj = getItemObject(registryItem, filteredLayerList);
-					break;
-				case "ancientMaintenance":
-					service = new AncientMonumentMaintenanceItemService(
-							connection);
-					registryItem = ((AncientMonumentMaintenanceItemService) service)
-							.getAncientMonumentMaintenanceItemById(itemIdParam);
-					itemObj = getItemObject(registryItem, filteredLayerList);
-					break;
-				case "buildingHeritage":
-					service = new BuildingHeritageItemService(connection);
-					registryItem = ((BuildingHeritageItemService) service)
-							.getBuildingHeritageItemById(itemIdParam);
-					itemObj = getItemObject(registryItem, filteredLayerList);
-					break;
-				case "rky1993":
-					service = new RKY1993Service(connection);
-					registryItem = ((RKY1993Service) service)
-							.getRKY1993ById(itemIdParam);
-					itemObj = getItemObject(registryItem, filteredLayerList);
-					break;
-				case "rky2000":
-					service = new RKY2000Service(connection);
-					registryItem = ((RKY2000Service) service)
-							.getRKY2000ById(itemIdParam);
-					itemObj = getItemObject(registryItem, filteredLayerList);
-					break;
+					registryNameParam = params.getHttpParam(PARAM_REGISTER_NAME);
+					
+					//filter list of layers
+					List<NbaRegistryLayer> filteredLayerList = getRegistryLayers(registryNameParam, registryLayers);
+					
+					JSONObject itemObj = new JSONObject();
+					Object service = null;
+					IRegistryObject registryItem = null;
+	
+					switch (registryNameParam) {
+					case "ancientMonument":
+						service = new AncientMonumentService(connection);
+						registryItem = ((AncientMonumentService) service)
+								.getAncientMonumentById(itemId);
+						itemObj = getItemObject(registryItem, filteredLayerList);
+						break;
+					case "ancientMaintenance":
+						service = new AncientMonumentMaintenanceItemService(
+								connection);
+						registryItem = ((AncientMonumentMaintenanceItemService) service)
+								.getAncientMonumentMaintenanceItemById(itemId);
+						itemObj = getItemObject(registryItem, filteredLayerList);
+						break;
+					case "buildingHeritage":
+						service = new BuildingHeritageItemService(connection);
+						registryItem = ((BuildingHeritageItemService) service)
+								.getBuildingHeritageItemById(itemId);
+						itemObj = getItemObject(registryItem, filteredLayerList);
+						break;
+					case "rky1993":
+						service = new RKY1993Service(connection);
+						registryItem = ((RKY1993Service) service)
+								.getRKY1993ById(itemId);
+						itemObj = getItemObject(registryItem, filteredLayerList);
+						break;
+					case "rky2000":
+						service = new RKY2000Service(connection);
+						registryItem = ((RKY2000Service) service)
+								.getRKY2000ById(itemId);
+						itemObj = getItemObject(registryItem, filteredLayerList);
+						break;
+					}
+					results.put(itemObj);
 				}
 
-				response = itemObj;
+				if(itemIds.length == 1) {
+					response = results.get(0);
+				} else {
+					response = results;
+				}
 			} else {
 
 				// read parameters
