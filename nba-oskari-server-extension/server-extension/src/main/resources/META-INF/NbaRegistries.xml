@@ -25,6 +25,7 @@
         <result property="toOpen" column="to_open" />
         <result property="toHighlight" column="to_highlight" />
         <result property="itemIdAttribute" column="item_id_attribute" />
+        <result property="itemType" column="item_type" />
     </resultMap>
 
     <cacheModel type="LRU" id="wfs-layer-cache" readOnly="true" serialize="false">
@@ -39,7 +40,7 @@
     </statement>
     
     <statement id="findRegistryLayers" resultMap="NbaRegistryLayerResult">
-		SELECT registry_id, nba_registries.name AS registry_name, layer_id, to_open, to_highlight, item_id_attribute
+		SELECT registry_id, nba_registries.name AS registry_name, layer_id, to_open, to_highlight, item_id_attribute, item_type
   		FROM nba_registry_layers
   		INNER JOIN nba_registries ON nba_registries.id = nba_registry_layers.registry_id 
     </statement>

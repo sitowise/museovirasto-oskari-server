@@ -38,6 +38,7 @@ public class NBARegistersModifier extends BundleHandler {
 				JSONObject registry = new JSONObject();
 				registry.put("name", lyr.getRegistryName());
 				registry.put("idAttribute", lyr.getItemIdAttribute());
+				registry.put("itemType", lyr.getItemType());
 				registries.put(Integer.toString(lyr.getLayerId()), registry);
 			}
 			config.put("registryLayers", registries);

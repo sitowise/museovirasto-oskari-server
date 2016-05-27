@@ -7,6 +7,7 @@ public class NbaRegistryLayer {
 	private Boolean toOpen;
 	private Boolean toHighlight;
 	private String itemIdAttribute;
+	private String itemType;
 	
 	public int getRegistryId() {
 		return registryId;
@@ -43,5 +44,11 @@ public class NbaRegistryLayer {
 	}
 	public void setItemIdAttribute(String itemIdAttribute) {
 		this.itemIdAttribute = itemIdAttribute;
+	}
+	public String getItemType() {
+		return itemType;
+	}
+	public void setItemType(String itemType) {
+		this.itemType = itemType;
 	}
 }
