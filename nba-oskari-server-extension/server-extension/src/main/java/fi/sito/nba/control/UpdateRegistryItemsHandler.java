@@ -205,14 +205,14 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				service.addAncientMonumentArea(monument.getId(),
 						user.getScreenname(), area.getDescription(),
 						area.getSurveyingAccuracy(), area.getSurveyingType(),
-						area.getGeometry());
+						area.getAreaChangeReason(), area.getGeometry());
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
 			} else if (editedAreaIds.contains(area.getId())) {
 				service.updateAncientMonumentArea(area.getId(),
 						user.getScreenname(), area.getDescription(),
 						area.getSurveyingAccuracy(), area.getSurveyingType(),
-						area.getGeometry());
+						area.getAreaChangeReason(), area.getGeometry());
 
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
