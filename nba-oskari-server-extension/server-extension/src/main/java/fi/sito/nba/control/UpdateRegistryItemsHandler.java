@@ -39,6 +39,9 @@ import fi.sito.nba.registry.models.AncientMonumentMaintenanceItemSubArea;
 import fi.sito.nba.registry.models.BuildingHeritageItemPoint;
 import fi.sito.nba.registry.models.BuildingHeritageItemArea;
 import fi.sito.nba.registry.models.BuildingHeritageItem;
+import fi.sito.nba.registry.services.RKY2000Service;
+import fi.sito.nba.registry.models.RKY2000;
+import fi.sito.nba.registry.models.RKY2000Geometry;
 
 
 @OskariActionRoute("UpdateRegistryItems")
@@ -140,8 +143,19 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 					break;
 				case "rky1993":
-				case "rky2000":
 					throw new NotImplementedException();
+				case "rky2000":
+					RKY2000Service rk2Service = new RKY2000Service(
+							connection);
+					RKY2000 rk2Monument = mapper.readValue(itemJson,
+							RKY2000.class);
+
+					JSONObject rk2EditInfo = new JSONObject(editInfoJson);
+
+					response = updateRKY2000(rk2Monument, rk2Service, rk2EditInfo,
+							params.getUser());
+
+					break;
 				}
 			}
 		} catch (IOException | SQLException | JSONException | InvalidArgumentException e) {
@@ -314,6 +328,100 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
+			}
+		}
+
+		return ret;
+	}
+	
+	private JSONObject updateRKY2000(RKY2000 monument,
+			RKY2000Service service, JSONObject editInfo, User user)
+			throws SQLException, JSONException, InvalidArgumentException  {
+
+		JSONObject ret = new JSONObject();
+		ret.put("updated", false);
+
+		List<Integer> editedPointIds = JSONHelper
+				.getArrayAsList(editInfo.getJSONArray("points"));
+		List<Integer> editedAreaIds = JSONHelper
+				.getArrayAsList(editInfo.getJSONArray("areas"));
+		List<Integer> editedLineIds = JSONHelper
+				.getArrayAsList(editInfo.getJSONArray("lines"));
+
+		RKY2000 original = service.getRKY2000ById(monument.getId());
+
+		Map<Integer, RKY2000Geometry> originalPoints = new HashMap<Integer, RKY2000Geometry>();
+		for (RKY2000Geometry pointItem : original.getPoints()) {
+			originalPoints.put(pointItem.getId(), pointItem);
+		}
+
+		for (RKY2000Geometry point : monument.getPoints()) {
+			RKY2000Geometry originalPoint = originalPoints.get(point.getId());
+			if (originalPoint == null) {
+				service.addRKY2000Point(monument.getId(),
+						user.getScreenname(), point.getObjectName(), point.getDescription(),
+						point.getSurveyingAccuracy(), point.getSurveyingType(),
+						point.getGeometry());
+				ret.put("updated", true);
+				ret.put("points", ret.optInt("points", 0) + 1);
+			} else if (editedPointIds.contains(point.getId())) {
+				service.updateRKY2000Point(monument.getId(),
+						user.getScreenname(), point.getObjectName(), point.getDescription(),
+						point.getSurveyingAccuracy(), point.getSurveyingType(),
+						point.getGeometry());
+
+				ret.put("updated", true);
+				ret.put("points", ret.optInt("points", 0) + 1);
+			}
+		}
+		
+		Map<Integer, RKY2000Geometry> originalAreas = new HashMap<Integer, RKY2000Geometry>();
+		for (RKY2000Geometry areaItem : original.getAreas()) {
+			originalAreas.put(areaItem.getId(), areaItem);
+		}
+
+		for (RKY2000Geometry area : monument.getAreas()) {
+			RKY2000Geometry originalArea = originalAreas.get(area.getId());
+			if (originalArea == null) {
+				service.addRKY2000Area(monument.getId(),
+						user.getScreenname(), area.getObjectName(), area.getDescription(),
+						area.getSurveyingAccuracy(), area.getSurveyingType(),
+						area.getGeometry());
+				ret.put("updated", true);
+				ret.put("areas", ret.optInt("areas", 0) + 1);
+			} else if (editedAreaIds.contains(area.getId())) {
+				service.updateRKY2000Area(monument.getId(),
+						user.getScreenname(), area.getObjectName(), area.getDescription(),
+						area.getSurveyingAccuracy(), area.getSurveyingType(),
+						area.getGeometry());
+
+				ret.put("updated", true);
+				ret.put("areas", ret.optInt("areas", 0) + 1);
+			}
+		}
+		
+		Map<Integer, RKY2000Geometry> originalLines = new HashMap<Integer, RKY2000Geometry>();
+		for (RKY2000Geometry lineItem : original.getLines()) {
+			originalLines.put(lineItem.getId(), lineItem);
+		}
+		
+		for (RKY2000Geometry line : monument.getLines()) {
+			RKY2000Geometry originalLine = originalLines.get(line.getId());
+			if (originalLine == null) {
+				service.addRKY2000Line(monument.getId(),
+						user.getScreenname(), line.getObjectName(), line.getDescription(),
+						line.getSurveyingAccuracy(), line.getSurveyingType(),
+						line.getGeometry());
+				ret.put("updated", true);
+				ret.put("lines", ret.optInt("lines", 0) + 1);
+			} else if (editedLineIds.contains(line.getId())) {
+				service.updateRKY2000Line(monument.getId(),
+						user.getScreenname(), line.getObjectName(), line.getDescription(),
+						line.getSurveyingAccuracy(), line.getSurveyingType(),
+						line.getGeometry());
+
+				ret.put("updated", true);
+				ret.put("lines", ret.optInt("lines", 0) + 1);
 			}
 		}
 
