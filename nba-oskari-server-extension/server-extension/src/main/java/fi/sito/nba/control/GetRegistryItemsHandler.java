@@ -406,13 +406,16 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					}
 					item.put("mapLayers", mapLayersArray);
 					
-					Envelope envelope = monument.calculateEnvelope().getEnvelopeInternal();
-					JSONArray bounds = new JSONArray();
-					bounds.put(envelope.getMinX());
-					bounds.put(envelope.getMinY());
-					bounds.put(envelope.getMaxX());
-					bounds.put(envelope.getMaxY());
-					item.put("bounds", bounds);
+					Geometry envelope = monument.calculateEnvelope();
+					if (envelope != null) {
+						Envelope envelopeInternal = envelope.getEnvelopeInternal();
+						JSONArray bounds = new JSONArray();
+						bounds.put(envelopeInternal.getMinX());
+						bounds.put(envelopeInternal.getMinY());
+						bounds.put(envelopeInternal.getMaxX());
+						bounds.put(envelopeInternal.getMaxY());
+						item.put("bounds", bounds);
+					}
 					
 					resultArray.put(item);
 				} catch (JSONException e) {
@@ -466,13 +469,16 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					}
 					item.put("mapLayers", mapLayersArray);
 					
-					Envelope envelope = monument.calculateEnvelope().getEnvelopeInternal();
-					JSONArray bounds = new JSONArray();
-					bounds.put(envelope.getMinX());
-					bounds.put(envelope.getMinY());
-					bounds.put(envelope.getMaxX());
-					bounds.put(envelope.getMaxY());
-					item.put("bounds", bounds);
+					Geometry envelope = monument.calculateEnvelope();
+					if (envelope != null) {
+						Envelope envelopeInternal = envelope.getEnvelopeInternal();
+						JSONArray bounds = new JSONArray();
+						bounds.put(envelopeInternal.getMinX());
+						bounds.put(envelopeInternal.getMinY());
+						bounds.put(envelopeInternal.getMaxX());
+						bounds.put(envelopeInternal.getMaxY());
+						item.put("bounds", bounds);
+					}
 					
 					resultArray.put(item);
 				} catch (JSONException e) {
@@ -526,13 +532,16 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					}
 					item.put("mapLayers", mapLayersArray);
 					
-					Envelope envelope = monument.calculateEnvelope().getEnvelopeInternal();
-					JSONArray bounds = new JSONArray();
-					bounds.put(envelope.getMinX());
-					bounds.put(envelope.getMinY());
-					bounds.put(envelope.getMaxX());
-					bounds.put(envelope.getMaxY());
-					item.put("bounds", bounds);
+					Geometry envelope = monument.calculateEnvelope();
+					if (envelope != null) {
+						Envelope envelopeInternal = envelope.getEnvelopeInternal();
+						JSONArray bounds = new JSONArray();
+						bounds.put(envelopeInternal.getMinX());
+						bounds.put(envelopeInternal.getMinY());
+						bounds.put(envelopeInternal.getMaxX());
+						bounds.put(envelopeInternal.getMaxY());
+						item.put("bounds", bounds);
+					}
 					
 					resultArray.put(item);
 				} catch (JSONException e) {
@@ -586,13 +595,16 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					}
 					item.put("mapLayers", mapLayersArray);
 					
-					Envelope envelope = monument.calculateEnvelope().getEnvelopeInternal();
-					JSONArray bounds = new JSONArray();
-					bounds.put(envelope.getMinX());
-					bounds.put(envelope.getMinY());
-					bounds.put(envelope.getMaxX());
-					bounds.put(envelope.getMaxY());
-					item.put("bounds", bounds);
+					Geometry envelope = monument.calculateEnvelope();
+					if (envelope != null) {
+						Envelope envelopeInternal = envelope.getEnvelopeInternal();
+						JSONArray bounds = new JSONArray();
+						bounds.put(envelopeInternal.getMinX());
+						bounds.put(envelopeInternal.getMinY());
+						bounds.put(envelopeInternal.getMaxX());
+						bounds.put(envelopeInternal.getMaxY());
+						item.put("bounds", bounds);
+					}
 					
 					resultArray.put(item);
 				} catch (JSONException e) {
