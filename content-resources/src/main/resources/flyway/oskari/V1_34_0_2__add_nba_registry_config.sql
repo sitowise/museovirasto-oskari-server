@@ -2,7 +2,7 @@
 
 -- DROP TABLE nba_registries;
 
-CREATE TABLE nba_registries
+CREATE TABLE IF NOT EXISTS nba_registries
 (
   id bigserial NOT NULL,
   name character varying(256) NOT NULL,
@@ -20,7 +20,7 @@ ALTER TABLE nba_registries
 
 -- DROP TABLE nba_registry_layers;
 
-CREATE TABLE nba_registry_layers
+CREATE TABLE IF NOT EXISTS nba_registry_layers
 (
   registry_id bigint NOT NULL,
   layer_id bigint NOT NULL,
@@ -42,12 +42,13 @@ ALTER TABLE nba_registry_layers
   OWNER TO oskari;
 
 -- nba registries
+/*
 INSERT INTO nba_registries (id, name, locale) VALUES (1,'ancientMaintenance','{"fi":{"name":"Muinaisjaann. hoitorekisteri"},"en":{"name":"Ancient Monument Maintenance"}}');
 INSERT INTO nba_registries (id, name, locale) VALUES (2,'ancientMonument','{"fi":{"name":"Muinaisjäännösrekisteri"},"en":{"name":"Ancient Monument"}}');
 INSERT INTO nba_registries (id, name, locale) VALUES (3,'buildingHeritage','{"fi":{"name":"Rakennusperintorekisteri"},"en":{"name":"Building Heritage"}}');
 INSERT INTO nba_registries (id, name, locale) VALUES (4,'rky1993','{"fi":{"name":"RKY1993"},"en":{"name":"RKY1993"}}');
 INSERT INTO nba_registries (id, name, locale) VALUES (5,'rky2000','{"fi":{"name":"RKY2000"},"en":{"name":"RKY2000"}}');
-
+*/
 -- assignings of map layers to registries
 /* TODO need to add map layers first to DB and check if layer ids are correct!
 
