@@ -173,72 +173,74 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 				String[] registries = registriesParam.split(",");
 				
+				if((keywordParam != null && keywordParam.length() > 0) || geometryParam != null) {
 				
-				if (registries[0].length() > 0) {
-					
-					for (String registry : registries) {
+					if (registries[0].length() > 0) {
 
-						JSONArray registerResultArray = new JSONArray();
+						for (String registry : registries) {
 
-						switch (registry) {
-						case "ancientMonument":
-							registerResultArray = getAncientMonumentItems(connection,
-									keywordParam, geometryParam, registryLayers);
-							break;
-						case "ancientMaintenance":
-							registerResultArray = getAncientMonumentMaintenanceItems(
-									connection, keywordParam, geometryParam, registryLayers);
-							break;
-						case "buildingHeritage":
-							registerResultArray = getBuildingHeritageItems(connection,
-									keywordParam, geometryParam, registryLayers);
-							break;
-						case "rky1993":
-							registerResultArray = getRKY1993Items(connection, keywordParam,
-									geometryParam, registryLayers);
-							break;
-						case "rky2000":
-							registerResultArray = getRKY2000Items(connection, keywordParam,
-									geometryParam, registryLayers);
-							break;
+							JSONArray registerResultArray = new JSONArray();
+
+							switch (registry) {
+							case "ancientMonument":
+								registerResultArray = getAncientMonumentItems(connection,
+										keywordParam, geometryParam, registryLayers);
+								break;
+							case "ancientMaintenance":
+								registerResultArray = getAncientMonumentMaintenanceItems(
+										connection, keywordParam, geometryParam, registryLayers);
+								break;
+							case "buildingHeritage":
+								registerResultArray = getBuildingHeritageItems(connection,
+										keywordParam, geometryParam, registryLayers);
+								break;
+							case "rky1993":
+								registerResultArray = getRKY1993Items(connection, keywordParam,
+										geometryParam, registryLayers);
+								break;
+							case "rky2000":
+								registerResultArray = getRKY2000Items(connection, keywordParam,
+										geometryParam, registryLayers);
+								break;
+							}
+
+							for (int i = 0; i < registerResultArray.length(); i++) {
+								generalResultArray.put(registerResultArray.get(i));
+							}
+
+						}
+					} else {
+
+						JSONArray registerResultArray1 = getAncientMonumentItems(
+								connection, keywordParam, geometryParam, registryLayers);
+						JSONArray registerResultArray2 = getAncientMonumentMaintenanceItems(
+								connection, keywordParam, geometryParam, registryLayers);
+						JSONArray registerResultArray3 = getBuildingHeritageItems(
+								connection, keywordParam, geometryParam, registryLayers);
+						JSONArray registerResultArray4 = getRKY1993Items(connection,
+								keywordParam, geometryParam, registryLayers);
+						JSONArray registerResultArray5 = getRKY2000Items(connection,
+								keywordParam, geometryParam, registryLayers);
+
+						for (int i = 0; i < registerResultArray1.length(); i++) {
+							generalResultArray.put(registerResultArray1.get(i));
 						}
 
-						for (int i = 0; i < registerResultArray.length(); i++) {
-							generalResultArray.put(registerResultArray.get(i));
+						for (int i = 0; i < registerResultArray2.length(); i++) {
+							generalResultArray.put(registerResultArray2.get(i));
 						}
 
-					}
-				} else {
-					
-					JSONArray registerResultArray1 = getAncientMonumentItems(
-							connection, keywordParam, geometryParam, registryLayers);
-					JSONArray registerResultArray2 = getAncientMonumentMaintenanceItems(
-							connection, keywordParam, geometryParam, registryLayers);
-					JSONArray registerResultArray3 = getBuildingHeritageItems(
-							connection, keywordParam, geometryParam, registryLayers);
-					JSONArray registerResultArray4 = getRKY1993Items(connection,
-							keywordParam, geometryParam, registryLayers);
-					JSONArray registerResultArray5 = getRKY2000Items(connection,
-							keywordParam, geometryParam, registryLayers);
+						for (int i = 0; i < registerResultArray3.length(); i++) {
+							generalResultArray.put(registerResultArray3.get(i));
+						}
 
-					for (int i = 0; i < registerResultArray1.length(); i++) {
-						generalResultArray.put(registerResultArray1.get(i));
-					}
+						for (int i = 0; i < registerResultArray4.length(); i++) {
+							generalResultArray.put(registerResultArray4.get(i));
+						}
 
-					for (int i = 0; i < registerResultArray2.length(); i++) {
-						generalResultArray.put(registerResultArray2.get(i));
-					}
-
-					for (int i = 0; i < registerResultArray3.length(); i++) {
-						generalResultArray.put(registerResultArray3.get(i));
-					}
-
-					for (int i = 0; i < registerResultArray4.length(); i++) {
-						generalResultArray.put(registerResultArray4.get(i));
-					}
-
-					for (int i = 0; i < registerResultArray5.length(); i++) {
-						generalResultArray.put(registerResultArray5.get(i));
+						for (int i = 0; i < registerResultArray5.length(); i++) {
+							generalResultArray.put(registerResultArray5.get(i));
+						}
 					}
 				}
 
