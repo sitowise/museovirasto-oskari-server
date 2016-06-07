@@ -146,7 +146,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				}
 
 				if(itemIds.length == 1) {
-					response = results.get(0);
+					response = results.opt(0);
 				} else {
 					response = results;
 				}
@@ -258,6 +258,11 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 	private JSONObject getItemObject(IRegistryObject registryObject, List<NbaRegistryLayer> registryLayers) {
 		JSONObject item = null;
+		
+		if(registryObject == null) {
+			return item;
+		}
+		
 		try {
 			item = mapper.convertValue(registryObject, JSONObject.class);
 			item.put("id", registryObject.getObjectId());
