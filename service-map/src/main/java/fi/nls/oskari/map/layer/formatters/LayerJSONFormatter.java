@@ -135,6 +135,8 @@ public class LayerJSONFormatter {
         if(layer.getMaxScale() != null && layer.getMaxScale() != -1) {
             JSONHelper.putValue(layerJson, "maxScale", layer.getMaxScale());
         }
+		JSONHelper.putValue(layerJson, "style", layer.getStyle());
+		
         JSONHelper.putValue(layerJson, "geom", layer.getGeometry());
 
         JSONHelper.putValue(layerJson, "params", layer.getParams());
