@@ -55,6 +55,7 @@ public class PDFProducer {
 		String pageTemplate;
 		float fontSize = 12f;
 		PrintoutContent content = null;
+		boolean pageCoordinates = false;
 
 		public float getFontSize() {
 			return fontSize;
@@ -154,9 +155,15 @@ public class PDFProducer {
         public void setPageLogoResource(String pageLogoResource) {
             this.pageLogoResource = pageLogoResource;
         }
-		
-		
 
+		public boolean isPageCoordinates() {
+			return pageCoordinates;
+		}
+
+		public void setPageCoordinates(boolean pageCoordinates) {
+			this.pageCoordinates = pageCoordinates;
+		}
+		
 	};
 
 	public enum Page {
