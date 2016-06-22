@@ -705,6 +705,8 @@ public class WebServiceMapProducerResource extends MapProducerResource {
                 "PAGESCALE").equals("true") : false);
         pageOptions.setPageLogo(values.get("PAGELOGO") != null ? values.get(
                 "PAGELOGO").equals("true") : false);
+        pageOptions.setPageCoordinates(values.get("PAGECOORDINATES") != null ? values.get(
+                "PAGECOORDINATES").equals("true") : false);
         if (pageOptions.isPageLogo()) {
             String pageLogoResource = ConfigValue.MAPPRODUCER_LOGO_RESOURCE
                     .getConfigProperty(props, "logo.png");

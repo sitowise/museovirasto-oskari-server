@@ -391,7 +391,36 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
                     logoHeight);
 
         }
+        
+        /* coordinates */
+        if(opts.isPageCoordinates()) {
+            float widthX = font.getStringWidth("P: " + (int) centre.getX())
+                    / 1000 * opts.getFontSize();
+            float widthY = font.getStringWidth("I: " + (int) centre.getY())
+                    / 1000 * opts.getFontSize();
+            float width = widthX > widthY ? widthX : widthY;
+            width = width / 72f * 2.54f;
 
+            float offsetX = font.getStringWidth("I: ") / 1000
+                    * opts.getFontSize();
+            float offsetY = font.getStringWidth("P: ") / 1000
+                    * opts.getFontSize();
+            float offset = offsetX > offsetY ? offsetX : offsetY;
+            offset = offset / 72f * 2.54f;
+
+            createTextAt(contentStream, "P:", (page.getWidth() - width) / 2,
+                    0.56f + opts.getFontSize() / 72f * 2.54f,
+                    opts.getFontSize(), 0, 0, 0);
+            createTextAt(contentStream, String.valueOf((int) centre.getY()),
+                    (page.getWidth() - width) / 2 + offset,
+                    0.56f + opts.getFontSize() / 72f * 2.54f,
+                    opts.getFontSize(), 0, 0, 0);
+            createTextAt(contentStream, "I:", (page.getWidth() - width) / 2,
+                    0.56f, opts.getFontSize(), 0, 0, 0);
+            createTextAt(contentStream, String.valueOf((int) centre.getX()),
+                    (page.getWidth() - width) / 2 + offset, 0.56f,
+                    opts.getFontSize(), 0, 0, 0);
+        }
         /* END overlay content */
 
         contentStream.endMarkedContentSequence();
