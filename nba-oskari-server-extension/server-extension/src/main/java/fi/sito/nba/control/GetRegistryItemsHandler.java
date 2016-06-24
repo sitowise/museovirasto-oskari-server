@@ -33,11 +33,13 @@ import fi.sito.nba.registry.models.BuildingHeritageItem;
 import fi.sito.nba.registry.models.IRegistryObject;
 import fi.sito.nba.registry.models.RKY1993;
 import fi.sito.nba.registry.models.RKY2000;
+import fi.sito.nba.registry.models.WorldHeritageItem;
 import fi.sito.nba.registry.services.AncientMonumentMaintenanceItemService;
 import fi.sito.nba.registry.services.AncientMonumentService;
 import fi.sito.nba.registry.services.BuildingHeritageItemService;
 import fi.sito.nba.registry.services.RKY1993Service;
 import fi.sito.nba.registry.services.RKY2000Service;
+import fi.sito.nba.registry.services.WorldHeritageItemService;
 import fi.sito.nba.service.NbaRegistryLayerService;
 import fi.sito.nba.service.NbaRegistryLayerServiceInterface;
 
@@ -139,6 +141,14 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						service = new RKY2000Service(connection);
 						registryItem = ((RKY2000Service) service)
 								.getRKY2000ById(itemId);
+						itemObj = getItemObject(registryItem, filteredLayerList);
+						break;
+					case "worldHeritage":
+						service = new WorldHeritageItemService(connection);
+						registryItem = ((WorldHeritageItemService) service).getWorldHeritageItemAreaById(itemId);
+						if (registryItem == null) {
+							registryItem = ((WorldHeritageItemService) service).getWorldHeritageItemPointById(itemId);
+						}
 						itemObj = getItemObject(registryItem, filteredLayerList);
 						break;
 					}
