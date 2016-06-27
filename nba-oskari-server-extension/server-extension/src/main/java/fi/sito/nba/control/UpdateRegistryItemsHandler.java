@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
+import com.vividsolutions.jts.geom.Geometry;
 
 import fi.nls.oskari.annotation.OskariActionRoute;
 import fi.nls.oskari.control.ActionDeniedException;
@@ -26,23 +27,22 @@ import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.util.JSONHelper;
 import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.util.ResponseHelper;
-import fi.sito.nba.registry.infrastructure.NotImplementedException;
 import fi.sito.nba.registry.infrastructure.InvalidArgumentException;
+import fi.sito.nba.registry.infrastructure.NotImplementedException;
 import fi.sito.nba.registry.models.AncientMonument;
 import fi.sito.nba.registry.models.AncientMonumentArea;
-import fi.sito.nba.registry.models.AncientMonumentSubItem;
-import fi.sito.nba.registry.services.AncientMonumentService;
-import fi.sito.nba.registry.services.AncientMonumentMaintenanceItemService;
-import fi.sito.nba.registry.services.BuildingHeritageItemService;
 import fi.sito.nba.registry.models.AncientMonumentMaintenanceItem;
 import fi.sito.nba.registry.models.AncientMonumentMaintenanceItemSubArea;
-import fi.sito.nba.registry.models.BuildingHeritageItemPoint;
-import fi.sito.nba.registry.models.BuildingHeritageItemArea;
+import fi.sito.nba.registry.models.AncientMonumentSubItem;
 import fi.sito.nba.registry.models.BuildingHeritageItem;
-import fi.sito.nba.registry.services.RKY2000Service;
+import fi.sito.nba.registry.models.BuildingHeritageItemArea;
+import fi.sito.nba.registry.models.BuildingHeritageItemPoint;
 import fi.sito.nba.registry.models.RKY2000;
 import fi.sito.nba.registry.models.RKY2000Geometry;
-
+import fi.sito.nba.registry.services.AncientMonumentMaintenanceItemService;
+import fi.sito.nba.registry.services.AncientMonumentService;
+import fi.sito.nba.registry.services.BuildingHeritageItemService;
+import fi.sito.nba.registry.services.RKY2000Service;
 
 @OskariActionRoute("UpdateRegistryItems")
 public class UpdateRegistryItemsHandler extends RestActionHandler {
@@ -214,6 +214,12 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		}
 
 		for (AncientMonumentArea area : monument.getAreas()) {
+			if (intersectsExistingArea(monument.getId(), area.getId(),
+					area.getGeometry(), service)) {
+				ret.put("updated", false);
+				ret.put("error", "areaIntersects");
+				return ret;
+			}
 			AncientMonumentArea originalArea = originalAreas.get(area.getId());
 			if (originalArea == null) {
 				service.addAncientMonumentArea(monument.getId(),
@@ -235,10 +241,31 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 		return ret;
 	}
-	
-	private JSONObject updateMaintenance(AncientMonumentMaintenanceItem monument,
-			AncientMonumentMaintenanceItemService service, JSONObject editInfo, User user)
-			throws SQLException, JSONException, InvalidArgumentException  {
+
+	private boolean intersectsExistingArea(int monumentId, int areaId,
+			Geometry geometry, AncientMonumentService service) {
+		for (AncientMonument monument : service.findAncientMonuments(null,
+				geometry)) {
+			for (AncientMonumentArea area : monument.getAreas()) {
+				if (area.getGeometry().intersects(geometry)) {
+					if (monument.getId() != monumentId
+							|| area.getId() != areaId) {
+						LOG.warn("new area", monumentId, ":", areaId,
+								"intersects existing", monument.getId(), ":",
+								area.getId());
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	private JSONObject updateMaintenance(
+			AncientMonumentMaintenanceItem monument,
+			AncientMonumentMaintenanceItemService service, JSONObject editInfo,
+			User user)
+			throws SQLException, JSONException, InvalidArgumentException {
 
 		JSONObject ret = new JSONObject();
 		ret.put("updated", false);
@@ -255,21 +282,36 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			}
 			
 			if (monument.getAreaGeometry() != null) {
-				service.updateAncientMonumentMaintenanceItemArea(monument.getId(),
-						user.getScreenname(), monument.getAreaGeometry());
+				if (intersectsExistingArea(monument.getId(), null,
+						monument.getAreaGeometry(), service)) {
+					ret.put("updated", false);
+					ret.put("error", "areaIntersects");
+					return ret;
+				}
+				service.updateAncientMonumentMaintenanceItemArea(
+						monument.getId(), user.getScreenname(),
+						monument.getAreaGeometry());
 			}
-			
+
 			ret.put("updated", true);
 			ret.put("mainItems", 1);
 		}
-		
+
 		List<Integer> editedSubItemIds = JSONHelper
 				.getArrayAsList(editInfo.getJSONArray("subAreas"));
 
-		for (AncientMonumentMaintenanceItemSubArea subArea : monument.getSubAreas()) {
+		for (AncientMonumentMaintenanceItemSubArea subArea : monument
+				.getSubAreas()) {
 			if (editedSubItemIds.contains(subArea.getId())) {
-				service.updateAncientMonumentMaintenanceItemSubArea(subArea.getId(),
-						user.getScreenname(), subArea.getGeometry());
+				if (intersectsExistingArea(monument.getId(), subArea.getId(),
+						monument.getAreaGeometry(), service)) {
+					ret.put("updated", false);
+					ret.put("error", "subAreaIntersects");
+					return ret;
+				}
+				service.updateAncientMonumentMaintenanceItemSubArea(
+						subArea.getId(), user.getScreenname(),
+						subArea.getGeometry());
 				ret.put("updated", true);
 				ret.put("subItems", ret.optInt("subItems", 0) + 1);
 			}
@@ -278,9 +320,36 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		return ret;
 	}
 
+	private boolean intersectsExistingArea(Integer itemId, Integer areaId,
+			Geometry geometry, AncientMonumentMaintenanceItemService service) {
+		for (AncientMonumentMaintenanceItem item : service
+				.findAncientMonumentMaintenanceItems(null, geometry)) {
+			if (item.getAreaGeometry().intersects(geometry)) {
+				if (itemId == null || item.getId() != itemId) {
+					LOG.warn("new area", itemId, "intersects existing",
+							item.getId());
+					return true;
+				}
+			}
+			for (AncientMonumentMaintenanceItemSubArea area : item
+					.getSubAreas()) {
+				if (area.getGeometry().intersects(geometry)) {
+					if (itemId == null || item.getId() != itemId
+							|| areaId == null || area.getId() != areaId) {
+						LOG.warn("new area", itemId, ":", areaId,
+								"intersects existing", item.getId(), ":",
+								area.getId());
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
 	private JSONObject updateBuildingHeritage(BuildingHeritageItem monument,
 			BuildingHeritageItemService service, JSONObject editInfo, User user)
-			throws SQLException, JSONException, InvalidArgumentException  {
+			throws SQLException, JSONException, InvalidArgumentException {
 
 		JSONObject ret = new JSONObject();
 		ret.put("updated", false);
@@ -310,7 +379,14 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		}
 
 		for (BuildingHeritageItemArea area : monument.getAreas()) {
-			BuildingHeritageItemArea originalArea = originalAreas.get(area.getId());
+			if (intersectsExistingArea(monument.getId(), area.getId(),
+					area.getGeometry(), service)) {
+				ret.put("updated", false);
+				ret.put("error", "areaIntersects");
+				return ret;
+			}
+			BuildingHeritageItemArea originalArea = originalAreas
+					.get(area.getId());
 			if (originalArea == null) {
 				service.addBuildingHeritageItemArea(monument.getId(),
 						user.getScreenname(), area.getObjectName(), area.getDescription(),
@@ -333,10 +409,28 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 		return ret;
 	}
-	
-	private JSONObject updateRKY2000(RKY2000 monument,
-			RKY2000Service service, JSONObject editInfo, User user)
-			throws SQLException, JSONException, InvalidArgumentException  {
+
+	private boolean intersectsExistingArea(int itemId, int areaId,
+			Geometry geometry, BuildingHeritageItemService service) {
+		for (BuildingHeritageItem item : service.findBuildingHeritageItems(null,
+				geometry)) {
+			for (BuildingHeritageItemArea area : item.getAreas()) {
+				if (area.getGeometry().intersects(geometry)) {
+					if (item.getId() != itemId || area.getId() != areaId) {
+						LOG.warn("new area", itemId, ":", areaId,
+								"intersects existing", item.getId(), ":",
+								area.getId());
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	private JSONObject updateRKY2000(RKY2000 monument, RKY2000Service service,
+			JSONObject editInfo, User user)
+			throws SQLException, JSONException, InvalidArgumentException {
 
 		JSONObject ret = new JSONObject();
 		ret.put("updated", false);
@@ -381,6 +475,12 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		}
 
 		for (RKY2000Geometry area : monument.getAreas()) {
+			if (intersectsExistingArea(monument.getId(), area.getId(),
+					area.getGeometry(), service)) {
+				ret.put("updated", false);
+				ret.put("error", "areaIntersects");
+				return ret;
+			}
 			RKY2000Geometry originalArea = originalAreas.get(area.getId());
 			if (originalArea == null) {
 				service.addRKY2000Area(monument.getId(),
@@ -426,6 +526,23 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		}
 
 		return ret;
+	}
+
+	private boolean intersectsExistingArea(int itemId, int areaId,
+			Geometry geometry, RKY2000Service service) {
+		for (RKY2000 item : service.findRKY2000(null, geometry)) {
+			for (RKY2000Geometry area : item.getAreas()) {
+				if (area.getGeometry().intersects(geometry)) {
+					if (item.getId() != itemId || area.getId() != areaId) {
+						LOG.warn("new area", itemId, ":", areaId,
+								"intersects existing", item.getId(), ":",
+								area.getId());
+						return true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 }
