@@ -13,6 +13,8 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.referencing.operation.MathTransform;
 
 import java.awt.image.BufferedImage;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.*;
 
 /**
@@ -559,15 +561,20 @@ public abstract class OWSMapLayerJob extends AbstractJob<String> {
      * @param bbox
      */
     protected String createImageURL(final String style, Double[] bbox) {
-        return "/image" +
-                "?" + OUTPUT_LAYER_ID + "=" + this.layerId +
-                "&" + OUTPUT_STYLE + "=" + style +
-                "&" + OUTPUT_IMAGE_SRS + "=" + this.session.getLocation().getSrs() +
-                "&" + OUTPUT_IMAGE_BBOX + "=" + bbox[0] +
-                "," + bbox[1] +
-                "," + bbox[2] +
-                "," + bbox[3] +
-                "&" + OUTPUT_IMAGE_ZOOM + "=" + this.session.getLocation().getZoom();
+        try {
+            return "/image" +
+                    "?" + OUTPUT_LAYER_ID + "=" + this.layerId +
+                    "&" + OUTPUT_STYLE + "=" + URLEncoder.encode(style, "UTF-8") +
+                    "&" + OUTPUT_IMAGE_SRS + "=" + this.session.getLocation().getSrs() +
+                    "&" + OUTPUT_IMAGE_BBOX + "=" + bbox[0] +
+                    "," + bbox[1] +
+                    "," + bbox[2] +
+                    "," + bbox[3] +
+                    "&" + OUTPUT_IMAGE_ZOOM + "=" + this.session.getLocation().getZoom();
+        } catch (UnsupportedEncodingException e) {
+            log.error(e, "Unable to create tile url");
+            return null;
+        }
     }
 
     /**
