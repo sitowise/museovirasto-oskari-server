@@ -179,7 +179,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					geometryParam = (new WKTReader()).read(geometryStr);
 				}
 
-				JSONArray generalResultArray = new JSONArray();
+				List<JSONArray> resultArrays = new ArrayList<JSONArray>();
 
 				String[] registries = registriesParam.split(",");
 				
@@ -188,73 +188,58 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					if (registries[0].length() > 0) {
 
 						for (String registry : registries) {
-
-							JSONArray registerResultArray = new JSONArray();
-
 							switch (registry) {
 							case "ancientMonument":
-								registerResultArray = getAncientMonumentItems(connection,
-										keywordParam, geometryParam, registryLayers);
+								resultArrays.add(getAncientMonumentItems(connection,
+										keywordParam, geometryParam, registryLayers));
 								break;
 							case "ancientMaintenance":
-								registerResultArray = getAncientMonumentMaintenanceItems(
-										connection, keywordParam, geometryParam, registryLayers);
+								resultArrays.add(getAncientMonumentMaintenanceItems(
+										connection, keywordParam, geometryParam, registryLayers));
 								break;
 							case "buildingHeritage":
-								registerResultArray = getBuildingHeritageItems(connection,
-										keywordParam, geometryParam, registryLayers);
+								resultArrays.add(getBuildingHeritageItems(connection,
+										keywordParam, geometryParam, registryLayers));
 								break;
 							case "rky1993":
-								registerResultArray = getRKY1993Items(connection, keywordParam,
-										geometryParam, registryLayers);
+								resultArrays.add(getRKY1993Items(connection, keywordParam,
+										geometryParam, registryLayers));
 								break;
 							case "rky2000":
-								registerResultArray = getRKY2000Items(connection, keywordParam,
-										geometryParam, registryLayers);
+								resultArrays.add(getRKY2000Items(connection, keywordParam,
+										geometryParam, registryLayers));
+								break;
+							case "worldHeritage":
+								resultArrays.add(getWorldHeritageItems(connection, keywordParam,
+										geometryParam, registryLayers));
 								break;
 							}
-
-							for (int i = 0; i < registerResultArray.length(); i++) {
-								generalResultArray.put(registerResultArray.get(i));
-							}
-
 						}
 					} else {
-
-						JSONArray registerResultArray1 = getAncientMonumentItems(
-								connection, keywordParam, geometryParam, registryLayers);
-						JSONArray registerResultArray2 = getAncientMonumentMaintenanceItems(
-								connection, keywordParam, geometryParam, registryLayers);
-						JSONArray registerResultArray3 = getBuildingHeritageItems(
-								connection, keywordParam, geometryParam, registryLayers);
-						JSONArray registerResultArray4 = getRKY1993Items(connection,
-								keywordParam, geometryParam, registryLayers);
-						JSONArray registerResultArray5 = getRKY2000Items(connection,
-								keywordParam, geometryParam, registryLayers);
-
-						for (int i = 0; i < registerResultArray1.length(); i++) {
-							generalResultArray.put(registerResultArray1.get(i));
-						}
-
-						for (int i = 0; i < registerResultArray2.length(); i++) {
-							generalResultArray.put(registerResultArray2.get(i));
-						}
-
-						for (int i = 0; i < registerResultArray3.length(); i++) {
-							generalResultArray.put(registerResultArray3.get(i));
-						}
-
-						for (int i = 0; i < registerResultArray4.length(); i++) {
-							generalResultArray.put(registerResultArray4.get(i));
-						}
-
-						for (int i = 0; i < registerResultArray5.length(); i++) {
-							generalResultArray.put(registerResultArray5.get(i));
-						}
+						resultArrays.add(getAncientMonumentItems(
+								connection, keywordParam, geometryParam, registryLayers));
+						resultArrays.add(getAncientMonumentMaintenanceItems(
+								connection, keywordParam, geometryParam, registryLayers));
+						resultArrays.add(getBuildingHeritageItems(
+								connection, keywordParam, geometryParam, registryLayers));
+						resultArrays.add(getRKY1993Items(connection,
+								keywordParam, geometryParam, registryLayers));
+						resultArrays.add(getRKY2000Items(connection,
+								keywordParam, geometryParam, registryLayers));
+						resultArrays.add(getWorldHeritageItems(connection,
+								keywordParam, geometryParam, registryLayers));
+					}
+				}
+				
+				JSONArray resultArray = new JSONArray();
+				
+				for(JSONArray arr : resultArrays) {
+					for(int i = 0; i < arr.length(); ++i) {
+						resultArray.put(arr.get(i));
 					}
 				}
 
-				response = generalResultArray;
+				response = resultArray;
 			}
 		} catch (Exception e) {
 			throw new ActionException("Error during geting registry item", e);
@@ -593,6 +578,118 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					//item.put("desc", monument.getObjectName());
+
+					Point centroid = monument.calculateCentroid();
+					if (centroid != null) {
+						item.put("coordinateX", centroid.getX());
+						item.put("coordinateY", centroid.getY());
+					}
+					
+					item.put("nbaUrl", monument.generateNbaUrl());
+					JSONArray mapLayersArray = new JSONArray(); 
+					for (NbaRegistryLayer registryLayer : filteredLayers) {
+						JSONObject mapLayerObject = new JSONObject();
+						mapLayerObject.put("mapLayerID", registryLayer.getLayerId());
+						mapLayerObject.put("toHighlight", registryLayer.getToHighlight());
+						mapLayerObject.put("attribute", registryLayer.getItemIdAttribute());
+						
+						mapLayersArray.put(mapLayerObject);
+					}
+					item.put("mapLayers", mapLayersArray);
+					
+					Geometry envelope = monument.calculateEnvelope();
+					if (envelope != null) {
+						Envelope envelopeInternal = envelope.getEnvelopeInternal();
+						JSONArray bounds = new JSONArray();
+						bounds.put(envelopeInternal.getMinX());
+						bounds.put(envelopeInternal.getMinY());
+						bounds.put(envelopeInternal.getMaxX());
+						bounds.put(envelopeInternal.getMaxY());
+						item.put("bounds", bounds);
+					}
+					
+					resultArray.put(item);
+				} catch (JSONException e) {
+					return null;
+				}
+			}
+		}
+		return resultArray;
+	}
+	
+	private JSONArray getWorldHeritageItems(Connection con, String keyword,
+			Geometry geometry, List<NbaRegistryLayer> registryLayers) {
+
+		JSONArray resultArray = new JSONArray();
+
+		WorldHeritageItemService svc = new WorldHeritageItemService(con);
+
+		Iterable<WorldHeritageItem> areas = svc.findWorldHeritageItemAreas(keyword, geometry);
+		Iterable<WorldHeritageItem> points = svc.findWorldHeritageItemPoints(keyword, geometry);
+		
+		List<NbaRegistryLayer> filteredLayers = getRegistryLayers("worldHeritage", registryLayers);
+
+		if (areas != null) {
+			RegistryObjectIterator<WorldHeritageItem> iterator = (RegistryObjectIterator<WorldHeritageItem>) areas
+					.iterator();
+
+			while (iterator.hasNext()) {
+				try {
+					WorldHeritageItem monument = iterator.next();
+
+					JSONObject item = new JSONObject();
+					item.put("itemtype", monument.getClass().getSimpleName());
+					item.put("id", monument.getObjectId());
+					item.put("desc", monument.getObjectName());
+
+					Point centroid = monument.calculateCentroid();
+					if (centroid != null) {
+						item.put("coordinateX", centroid.getX());
+						item.put("coordinateY", centroid.getY());
+					}
+					
+					item.put("nbaUrl", monument.generateNbaUrl());
+					JSONArray mapLayersArray = new JSONArray(); 
+					for (NbaRegistryLayer registryLayer : filteredLayers) {
+						JSONObject mapLayerObject = new JSONObject();
+						mapLayerObject.put("mapLayerID", registryLayer.getLayerId());
+						mapLayerObject.put("toHighlight", registryLayer.getToHighlight());
+						mapLayerObject.put("attribute", registryLayer.getItemIdAttribute());
+						
+						mapLayersArray.put(mapLayerObject);
+					}
+					item.put("mapLayers", mapLayersArray);
+					
+					Geometry envelope = monument.calculateEnvelope();
+					if (envelope != null) {
+						Envelope envelopeInternal = envelope.getEnvelopeInternal();
+						JSONArray bounds = new JSONArray();
+						bounds.put(envelopeInternal.getMinX());
+						bounds.put(envelopeInternal.getMinY());
+						bounds.put(envelopeInternal.getMaxX());
+						bounds.put(envelopeInternal.getMaxY());
+						item.put("bounds", bounds);
+					}
+					
+					resultArray.put(item);
+				} catch (JSONException e) {
+					return null;
+				}
+			}
+		}
+		
+		if (points != null) {
+			RegistryObjectIterator<WorldHeritageItem> iterator = (RegistryObjectIterator<WorldHeritageItem>) points
+					.iterator();
+
+			while (iterator.hasNext()) {
+				try {
+					WorldHeritageItem monument = iterator.next();
+
+					JSONObject item = new JSONObject();
+					item.put("itemtype", monument.getClass().getSimpleName());
+					item.put("id", monument.getObjectId());
+					item.put("desc", monument.getObjectName());
 
 					Point centroid = monument.calculateCentroid();
 					if (centroid != null) {
