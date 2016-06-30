@@ -274,10 +274,10 @@ public abstract class OWSMapLayerJob extends AbstractJob<String> {
                 isThisTileNeeded = false;
             }
 
-            if (!this.sessionLayer.isTile(bounds)) {
-                log.debug("[fe] !layer.isTile - not sending PNG");
-                isThisTileNeeded = false;
-            }
+//            if (!this.sessionLayer.isTile(bounds)) {
+//                log.debug("[fe] !layer.isTile - not sending PNG");
+//                isThisTileNeeded = false;
+//            }
 
             if (isThisTileNeeded) {
                 Double[] bbox = bounds.toArray(new Double[4]);
