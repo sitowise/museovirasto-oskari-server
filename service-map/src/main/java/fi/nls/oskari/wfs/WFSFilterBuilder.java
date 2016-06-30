@@ -209,7 +209,11 @@ public class WFSFilterBuilder {
             if (ids != null && getCountOfIdFilters(filter_js) == 1) return ids;
 
             if (andConditions.size() > 0) {
-                all = appendFilter(all, ff.and(andConditions));
+                if (andConditions.size() == 1) {
+                    all = appendFilter(all, andConditions.get(0));
+                } else {
+                    all = appendFilter(all, ff.and(andConditions));
+                }
             }
             if (orConditions.size() > 0) {
                 all = appendFilter(all, ff.or(orConditions));
