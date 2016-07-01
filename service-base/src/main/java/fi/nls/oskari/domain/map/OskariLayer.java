@@ -67,6 +67,8 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
 
     private Date created = null;
     private Date updated = null;
+    
+    private Integer order_number = null;
 
     private Set<InspireTheme> inspireThemes = new HashSet<InspireTheme>();
     private Set<LayerGroup> groups = new HashSet<LayerGroup>();
@@ -423,5 +425,13 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
 
     public void setSrs_name(String srs_name) {
         this.srs_name = srs_name;
+    }
+
+    public Integer getOrder_number() {
+        return order_number;
+    }
+
+    public void setOrder_number(Integer layerOrderNumber) {
+        this.order_number = layerOrderNumber;
     }
 }

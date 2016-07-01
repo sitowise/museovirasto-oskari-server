@@ -167,6 +167,8 @@ public class OskariLayerServiceIbatisImpl implements OskariLayerService {
         result.setCreated((Date) data.get("created"));
         result.setUpdated((Date) data.get("updated"));
 
+        result.setOrder_number((Integer) data.get("order_number"));
+
         // populate groups/themes for top level layers
         if(result.getParentId() == -1) {
             // sublayers and internal baselayers don't have groupId

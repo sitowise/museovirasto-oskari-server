@@ -310,6 +310,19 @@ public class SaveLayerHandler extends ActionHandler {
         ml.setRealtime(ConversionHelper.getBoolean(params.getHttpParam("realtime"), ml.getRealtime()));
         ml.setRefreshRate(ConversionHelper.getInt(params.getHttpParam("refreshRate"), ml.getRefreshRate()));
 
+        String orderNumberParam = params.getHttpParam("layerOrderNumber");
+        if(orderNumberParam == null || orderNumberParam.equals("")) {
+            ml.setOrder_number(null);
+        } else {
+            Integer orderNumber = null;
+            try {
+                orderNumber = Integer.decode(orderNumberParam);
+            } catch (Exception ex) {
+                throw new ActionException(ERROR_INVALID_FIELD_VALUE, ex);
+            }
+            ml.setOrder_number(orderNumber);
+        }
+
         if(OskariLayer.TYPE_WMS.equals(ml.getType())) {
             return handleWMSSpecific(params, ml);
         }
