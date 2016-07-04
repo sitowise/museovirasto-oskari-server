@@ -69,6 +69,13 @@ public interface PermissionsService extends BaseService<Permissions> {
 	 * @return resource with permissions
 	 */
 	public Resource getResource(final String type, final String mapping);
+	
+	/**
+	 * Return resource matching type.
+	 * @param type
+	 * @return resource with permissions
+	 */
+	public List<Resource> findResourcesWithType(final String type);
 
     /**
      * Deletes resource and any permissions bound to it
