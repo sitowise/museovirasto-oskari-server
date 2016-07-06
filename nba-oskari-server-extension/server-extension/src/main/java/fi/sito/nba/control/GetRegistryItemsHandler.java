@@ -681,7 +681,16 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					JSONObject item = new JSONObject();
 					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
-					// item.put("desc", monument.getObjectName());
+					if (!monument.getPoints().isEmpty()) {
+						item.put("desc",
+								monument.getPoints().get(0).getObjectName());
+					} else if (!monument.getLines().isEmpty()) {
+						item.put("desc",
+								monument.getLines().get(0).getObjectName());
+					} else if (!monument.getAreas().isEmpty()) {
+						item.put("desc",
+								monument.getAreas().get(0).getObjectName());
+					}
 
 					Point centroid = monument.calculateCentroid();
 					if (centroid != null) {
