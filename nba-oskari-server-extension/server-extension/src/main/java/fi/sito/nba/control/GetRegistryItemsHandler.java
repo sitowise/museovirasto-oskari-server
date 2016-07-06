@@ -14,7 +14,9 @@ import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.geom.PrecisionModel;
 import com.vividsolutions.jts.io.WKTReader;
 
 import fi.mml.portti.service.db.permissions.PermissionsService;
@@ -66,11 +68,11 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		mapper.registerModule(new JsonOrgModule());
 	}
 
-	public void preProcess(ActionParameters params) throws ActionException {
-		// common method called for all request methods
-		LOG.info(params.getUser(), "accessing route", getName());
+	@Override
+	public void handlePost(ActionParameters params) throws ActionException {
+		handleGet(params);
 	}
-
+	
 	@Override
 	public void handleGet(ActionParameters params) throws ActionException {
 
@@ -192,7 +194,10 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				if (params.getHttpParam(PARAM_GEOMETRY) != null
 						&& !params.getHttpParam(PARAM_GEOMETRY).equals("")) {
 					String geometryStr = params.getHttpParam(PARAM_GEOMETRY);
-					geometryParam = (new WKTReader()).read(geometryStr);
+					GeometryFactory geomFactory = new GeometryFactory(
+							new PrecisionModel(10));
+					WKTReader reader = new WKTReader(geomFactory);
+					geometryParam = reader.read(geometryStr).buffer(0);
 				}
 
 				List<JSONArray> resultArrays = new ArrayList<JSONArray>();
@@ -676,7 +681,16 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					JSONObject item = new JSONObject();
 					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
-					// item.put("desc", monument.getObjectName());
+					if (!monument.getPoints().isEmpty()) {
+						item.put("desc",
+								monument.getPoints().get(0).getObjectName());
+					} else if (!monument.getLines().isEmpty()) {
+						item.put("desc",
+								monument.getLines().get(0).getObjectName());
+					} else if (!monument.getAreas().isEmpty()) {
+						item.put("desc",
+								monument.getAreas().get(0).getObjectName());
+					}
 
 					Point centroid = monument.calculateCentroid();
 					if (centroid != null) {
