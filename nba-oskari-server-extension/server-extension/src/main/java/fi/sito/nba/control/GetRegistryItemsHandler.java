@@ -14,7 +14,9 @@ import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.geom.PrecisionModel;
 import com.vividsolutions.jts.io.WKTReader;
 
 import fi.mml.portti.service.db.permissions.PermissionsService;
@@ -192,7 +194,10 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				if (params.getHttpParam(PARAM_GEOMETRY) != null
 						&& !params.getHttpParam(PARAM_GEOMETRY).equals("")) {
 					String geometryStr = params.getHttpParam(PARAM_GEOMETRY);
-					geometryParam = (new WKTReader()).read(geometryStr);
+					GeometryFactory geomFactory = new GeometryFactory(
+							new PrecisionModel(10));
+					WKTReader reader = new WKTReader(geomFactory);
+					geometryParam = reader.read(geometryStr).buffer(0);
 				}
 
 				List<JSONArray> resultArrays = new ArrayList<JSONArray>();
