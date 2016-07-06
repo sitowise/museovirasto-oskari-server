@@ -66,11 +66,11 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		mapper.registerModule(new JsonOrgModule());
 	}
 
-	public void preProcess(ActionParameters params) throws ActionException {
-		// common method called for all request methods
-		LOG.info(params.getUser(), "accessing route", getName());
+	@Override
+	public void handlePost(ActionParameters params) throws ActionException {
+		handleGet(params);
 	}
-
+	
 	@Override
 	public void handleGet(ActionParameters params) throws ActionException {
 
