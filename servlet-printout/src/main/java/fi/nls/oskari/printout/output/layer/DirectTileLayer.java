@@ -72,7 +72,13 @@ public abstract class DirectTileLayer extends DirectLayer {
             SimpleFeature f, BufferedImage imageBuf) {
 
         Integer width = (Integer) f.getProperty("width").getValue();
+        if(width == Integer.MIN_VALUE) {
+            width = imageBuf.getWidth();
+        }
         Integer height = (Integer) f.getProperty("height").getValue();
+        if(height == Integer.MIN_VALUE) {
+            height = imageBuf.getHeight();
+        }
         Envelope e = (Envelope) f.getProperty("env").getValue();
 
         double[] srcPts = new double[] { e.getMinX(), e.getMaxY(), e.getMaxX(),
@@ -87,8 +93,7 @@ public abstract class DirectTileLayer extends DirectLayer {
             int tw = Double.valueOf(envAdj.getWidth()).intValue();
             int th = Double.valueOf(envAdj.getHeight()).intValue();
 
-            boolean isScaleRequired = (width != Integer.MIN_VALUE && height != Integer.MIN_VALUE)
-                    && !(tw == width && th == height);
+            boolean isScaleRequired = !(tw == width && th == height);
 
             if (imageBuf.getColorModel() != null
                     && imageBuf.getColorModel().getNumComponents() != 4
