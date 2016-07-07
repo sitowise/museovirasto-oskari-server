@@ -437,6 +437,12 @@ public class PermissionsServiceIbatisImpl extends BaseIbatisService<Permissions>
         log.debug("Resource:", resource);
         return resource;
     }
+    
+    public List<Resource> findResourcesWithType(final String type) {
+        final List<Resource> resources = queryForList(getNameSpace() + ".findResourcesWithType", type);
+        log.debug("Resource:", resources);
+        return resources;
+    }
 
     public Resource getResource(final String type, final String mapping) {
         log.debug("Getting permissions for", type, " with mapping", mapping);

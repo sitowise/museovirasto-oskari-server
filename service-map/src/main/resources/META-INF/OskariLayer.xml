@@ -52,6 +52,8 @@
         <parameter property="created" jdbcType="DATETIME" javaType="java.util.Date" />
         <parameter property="updated" jdbcType="DATETIME" javaType="java.util.Date" />
 
+        <parameter property="order_number" />
+
         <!-- parameter property="id" jdbcType="INTEGER" javaType="java.lang.Integer" mode="OUT" / -->
     </parameterMap>
 
@@ -92,6 +94,8 @@
         <parameter property="srs_name" />
 
         <parameter property="updated" jdbcType="DATETIME" javaType="java.util.Date" />
+
+        <parameter property="order_number" />
 
         <parameter property="id" />
     </parameterMap>
@@ -138,7 +142,8 @@
         m.wkt as geom,
 
         l.created,
-        l.updated
+        l.updated,
+        l.order_number
 
         FROM
         oskari_maplayer l LEFT OUTER JOIN oskari_maplayer_metadata m
@@ -191,7 +196,8 @@
         m.wkt as geom,
 
         l.created,
-        l.updated
+        l.updated,
+        l.order_number
 
         FROM
         oskari_maplayer l LEFT OUTER JOIN oskari_maplayer_metadata m
@@ -244,7 +250,8 @@
         m.wkt as geom,
 
         l.created,
-        l.updated
+        l.updated,
+        l.order_number
 
         FROM
         oskari_maplayer l LEFT OUTER JOIN oskari_maplayer_metadata m
@@ -298,7 +305,8 @@
         m.wkt as geom,
 
         l.created,
-        l.updated
+        l.updated,
+        l.order_number
 
         FROM
         oskari_maplayer l LEFT OUTER JOIN oskari_maplayer_metadata m
@@ -352,7 +360,8 @@
         m.wkt as geom,
 
         l.created,
-        l.updated
+        l.updated,
+        l.order_number
 
         FROM
         oskari_maplayer l LEFT OUTER JOIN oskari_maplayer_metadata m
@@ -405,7 +414,8 @@
     m.wkt as geom,
 
     l.created,
-    l.updated
+    l.updated,
+    l.order_number
 
     FROM
     oskari_maplayer l LEFT OUTER JOIN oskari_maplayer_metadata m
@@ -460,8 +470,9 @@
             srs_name,
 
             created,
-            updated)
-        values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            updated,
+            order_number)
+        values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     </statement>
 
     <statement id="update" parameterMap="LayerUpdateParameter">
@@ -502,7 +513,8 @@
         version = ?,
         srs_name = ?,
 
-        updated=?
+        updated=?,
+        order_number = ?
         WHERE id = ?
     </statement>
 </sqlMap>

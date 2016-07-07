@@ -137,6 +137,19 @@
             r.resource_type = #type# AND
             r.resource_mapping = #mapping#;
     </select>
+    
+    <select id="findResourcesWithType"  resultMap="resource" parameterClass="String">
+        SELECT
+            p.id as perm_id, r.id as res_id,
+            r.resource_type as res_type, r.resource_mapping as res_mapping,
+            p.external_type as perm_ext_type, p.external_id as perm_ext_id, p.permission as permission
+        FROM
+            oskari_resource r
+        LEFT JOIN
+            oskari_permission p ON r.id=p.oskari_resource_id
+        WHERE
+            r.resource_type = #type#;
+    </select>
 
     <select id="findResourceById"  resultMap="resource" parameterClass="Long">
         SELECT
@@ -199,7 +212,6 @@
         and resource_mapping=?
         limit 1
     </select>
-
 
     <select id="findPermission" resultClass="int" parameterMap="permissionMap">
         select
