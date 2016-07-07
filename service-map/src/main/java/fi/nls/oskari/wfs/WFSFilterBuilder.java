@@ -216,7 +216,11 @@ public class WFSFilterBuilder {
                 }
             }
             if (orConditions.size() > 0) {
-                all = appendFilter(all, ff.or(orConditions));
+                if (orConditions.size() == 1) {
+                    all = appendFilter(all, orConditions.get(0));
+                } else {
+                    all = appendFilter(all, ff.or(orConditions));
+                }
             }
             for (Filter mynot : notConditions) {
                 all = appendFilter(all, ff.not(mynot));
