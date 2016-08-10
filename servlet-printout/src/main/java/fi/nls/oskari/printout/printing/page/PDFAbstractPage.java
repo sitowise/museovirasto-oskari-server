@@ -38,12 +38,23 @@ public class PDFAbstractPage {
 		this.opts = opts;
 		this.font = font;
 	}
-
+	
 	/*
-	 * shall move to use transforms some day
+	 * create text without centering
 	 */
 	protected void createTextAt(PDPageContentStream contentStream, String text,
 			float xcm, float ycm, float fontPtSize, int r, int g, int b)
+			throws IOException {
+		createTextAt(contentStream, text, xcm, ycm, fontPtSize, r, g, b, false);
+	}
+
+	/*
+	 * create text with centering according to the page's width
+	 * 
+	 * shall move to use transforms some day
+	 */
+	protected void createTextAt(PDPageContentStream contentStream, String text,
+			float xcm, float ycm, float fontPtSize, int r, int g, int b, boolean centerText)
 			throws IOException {
 
 		float f[] = { xcm, ycm };
@@ -55,6 +66,11 @@ public class PDFAbstractPage {
 		AffineTransform rowMatrix = new AffineTransform(page.getTransform());
 		rowMatrix.translate(xcm, ycm);
 		contentStream.setTextMatrix(rowMatrix);
+		
+		if (centerText == true) {
+			float titleWidth = font.getStringWidth(text) / 1000 * fontSize;
+			contentStream.moveTextPositionByAmount((page.getWidth() - titleWidth) / 2, 0);
+		}
 
 		contentStream.setNonStrokingColor(r, g, b);
 		contentStream.drawString(text);
