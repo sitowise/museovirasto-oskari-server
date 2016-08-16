@@ -353,9 +353,9 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
         if (opts.getPageTitle() != null) {
             String pageTitle = StringEscapeUtils.unescapeHtml4(Jsoup.clean(
                     opts.getPageTitle(), Whitelist.simpleText()));
-
-            createTextAt(contentStream, pageTitle, 9.0f, page.getHeight() - 1f,
-                    opts.getFontSize(), 0, 0, 0);
+            
+            createTextAt(contentStream, pageTitle, 0, page.getHeight() - 1f,
+                    opts.getFontSize(), 0, 0, 0, true);
 
         }
 
