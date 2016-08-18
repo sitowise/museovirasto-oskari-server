@@ -24,6 +24,9 @@ public class ResponseHelper {
                 params.getResponse().setCharacterEncoding("UTF-8");
                 params.getResponse().setContentType("application/json;charset=UTF-8");
             }
+            if(response instanceof String) {
+                params.getResponse().setCharacterEncoding("UTF-8");
+            }
             params.getResponse().getWriter().print(response);
         } catch (IOException e) {
             // TODO Auto-generated catch block
