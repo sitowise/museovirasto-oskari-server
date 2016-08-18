@@ -197,7 +197,14 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					GeometryFactory geomFactory = new GeometryFactory(
 							new PrecisionModel(10));
 					WKTReader reader = new WKTReader(geomFactory);
-					geometryParam = reader.read(geometryStr).buffer(0);
+					for(String wkt : geometryStr.split("\\|")) {
+						Geometry geom = reader.read(wkt).buffer(0);
+						if(geometryParam == null) {
+							geometryParam = geom;
+						} else {
+							geometryParam = geometryParam.union(geom);
+						}
+					}
 				}
 
 				List<JSONArray> resultArrays = new ArrayList<JSONArray>();
