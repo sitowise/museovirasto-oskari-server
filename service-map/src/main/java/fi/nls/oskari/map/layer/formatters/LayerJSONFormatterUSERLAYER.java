@@ -44,6 +44,7 @@ public class LayerJSONFormatterUSERLAYER extends LayerJSONFormatter {
         // user layer rendering url - override DB url if property is defined
         JSONHelper.putValue(layerJson, "url", getUserLayerTileUrl());
         JSONHelper.putValue(layerJson, "renderingElement", userlayerRenderingElement);
+        JSONHelper.putValue(layerJson, "bounds", ulayer.getBounds());
         return layerJson;
     }
 

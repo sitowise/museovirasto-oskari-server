@@ -92,6 +92,10 @@ public class UserLayerDataService {
             // --------------------
 
             int count = this.storeUserLayerData(gjsWorker.getGeoJson(), user, userLayer.getId());
+            
+            String bounds = userLayerService.getUserLayerBounds(userLayer.getId());
+            userLayer.setBounds(bounds);
+            
             log.info("stored ", count, " rows");
 
             if (count == 0) {

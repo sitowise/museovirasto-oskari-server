@@ -57,6 +57,13 @@
  
     </select>
     
+    
+    <select id="calculateUserLayerBounds" parameterClass="long" resultClass="java.lang.String">
+        SELECT ST_AsGeoJSON(ST_Extent(geometry))
+		FROM user_layer_data
+		WHERE user_layer_id = #userLayerId#
+    </select>
+    
 
     <statement id="deleteUserLayer" parameterClass="long">
         delete from
