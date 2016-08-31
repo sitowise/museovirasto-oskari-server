@@ -11,6 +11,7 @@ public class UserLayer extends UserDataLayer {
     private String layer_source;
     private String fields;
     private long style_id;
+    private String bounds;
 
     public long getId() {
         return id;
@@ -58,5 +59,13 @@ public class UserLayer extends UserDataLayer {
 
     public void setStyle_id(long style_id) {
         this.style_id = style_id;
+    }
+    
+    public String getBounds() {
+    	return bounds;
+    }
+    
+    public void setBounds(String bounds) {
+    	this.bounds = bounds;
     }
 }

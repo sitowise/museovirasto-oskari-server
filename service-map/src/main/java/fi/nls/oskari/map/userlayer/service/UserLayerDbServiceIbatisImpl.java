@@ -70,7 +70,11 @@ public class UserLayerDbServiceIbatisImpl extends
      * @return userLayer object
      */
     public UserLayer getUserLayerById(long id) {
-        return queryForObject(getNameSpace() + ".findUserLayer", id);
+        UserLayer userLayer = queryForObject(getNameSpace() + ".findUserLayer", id);
+        String bounds = getUserLayerBounds(id);
+        userLayer.setBounds(bounds);
+        
+        return userLayer;
     }
 
 
@@ -81,7 +85,18 @@ public class UserLayerDbServiceIbatisImpl extends
      * @return List of userLayer objects
      */
     public List<UserLayer> getUserLayerByUid(String uid) {
-        return queryForList(getNameSpace() + ".findUserLayerByUid", uid);
+    	List<UserLayer> userLayers = queryForList(getNameSpace() + ".findUserLayerByUid", uid);
+    	
+    	for (UserLayer uLayer : userLayers) {
+    		String bounds = getUserLayerBounds(uLayer.getId());
+            uLayer.setBounds(bounds);
+    	}
+    	
+        return userLayers;
+    }
+    
+    public String getUserLayerBounds(long id) {
+    	return queryForObject(getNameSpace() + ".calculateUserLayerBounds", id);
     }
 
     public void deleteUserLayerById(final long id) throws ServiceException {
