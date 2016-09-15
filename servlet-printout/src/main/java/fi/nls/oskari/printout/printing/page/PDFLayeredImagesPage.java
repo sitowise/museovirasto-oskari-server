@@ -415,17 +415,17 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
             float offset = offsetX > offsetY ? offsetX : offsetY;
             offset = offset / 72f * 2.54f;
 
-            createTextAt(contentStream, "P:", (page.getWidth() - width) / 2,
+            createTextAt(contentStream, "P:", 1.1f,
                     0.56f + opts.getFontSize() / 72f * 2.54f,
                     opts.getFontSize(), 0, 0, 0);
             createTextAt(contentStream, String.valueOf(y),
-                    (page.getWidth() - width) / 2 + offset,
+                    1.1f + offset,
                     0.56f + opts.getFontSize() / 72f * 2.54f,
                     opts.getFontSize(), 0, 0, 0);
-            createTextAt(contentStream, "I:", (page.getWidth() - width) / 2,
+            createTextAt(contentStream, "I:", 1.1f,
                     0.56f, opts.getFontSize(), 0, 0, 0);
             createTextAt(contentStream, String.valueOf(x),
-                    (page.getWidth() - width) / 2 + offset, 0.56f,
+                    1.1f + offset, 0.56f,
                     opts.getFontSize(), 0, 0, 0);
         }
         /* END overlay content */
