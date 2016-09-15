@@ -101,16 +101,19 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
             List<PDXObjectImage> ximages) throws IOException {
 
         int r = 0;
-        float f[] = { 1.0f, 1.5f };
+        float f[] = { page.getWidth(), page.getHeight() };
+        int width = page.getMapWidthTargetInPoints(opts);
+        int height = page.getMapHeightTargetInPoints(opts);
 
         if (opts.getPageMapRect() != null) {
             f[0] = opts.getPageMapRect()[0];
             f[1] = opts.getPageMapRect()[1];
+            page.getTransform().transform(f, 0, f, 0, 1);
+        } else { // center image
+            page.getTransform().transform(f, 0, f, 0, 1);
+            f[0] = (f[0] - width) / 2;
+            f[1] = (f[1] - height) / 2;
         }
-        int width = page.getMapWidthTargetInPoints(opts);
-        int height = page.getMapHeightTargetInPoints(opts);
-
-        page.getTransform().transform(f, 0, f, 0, 1);
 
         for (PDXObjectImage ximage : ximages) {
             r++;
