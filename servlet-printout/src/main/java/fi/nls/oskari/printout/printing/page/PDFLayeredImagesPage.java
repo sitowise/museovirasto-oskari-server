@@ -237,53 +237,18 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
         /* krhm... to be fixed with some algoriddim */
         /* time restricted coding... */
         long widthInMeters = Double.valueOf(env.getWidth()).longValue();
-        long scaleLenSelector100m = widthInMeters / 100;
-        long scaleLenSelector1Km = widthInMeters / 1000;
-        long scaleLenSelector5Km = widthInMeters / 5000;
-        long scaleLenSelector10Km = widthInMeters / 10000;
-        long scaleLenSelector50Km = widthInMeters / 50000;
-        long scaleLenSelector100Km = widthInMeters / 100000;
-        long scaleLenSelector500Km = widthInMeters / 500000;
-        long scaleLenSelector1000Km = widthInMeters / 1000000;
+        long scaleLength = widthInMeters / 4;
+        String scaleText = ""+scaleLength;
 
-        String scaleText = "";
-        long scaleLength = 0;
-        if (scaleLenSelector100m == 0) {
-            /* m */
-            scaleLength = 1;
-            scaleText = "1m";
-        } else if (scaleLenSelector1Km == 0) {
-            /* 10m */
-            scaleLength = 10;
-            scaleText = "10m";
-        } else if (scaleLenSelector5Km == 0) {
-            /* 10m */
-            scaleLength = 100;
-            scaleText = "100m";
-        } else if (scaleLenSelector10Km == 0) {
-            /* 100m */
-            scaleLength = 100;
-            scaleText = "100m";
-        } else if (scaleLenSelector50Km == 0) {
-            /* 10km */
-            scaleLength = 1000;
-            scaleText = "1km";
-        } else if (scaleLenSelector100Km == 0) {
-            /* 10km */
-            scaleLength = 10000;
-            scaleText = "10km";
-        } else if (scaleLenSelector500Km == 0) {
-            /* 100km */
-            scaleLength = 10000;
-            scaleText = "10km";
-        } else if (scaleLenSelector1000Km == 0) {
-            /* 100km */
-            scaleLength = 100000;
-            scaleText = "100km";
+        long firstDigit = Long.parseLong(scaleText.substring(0, 1));
+        long length = scaleText.length() - 1;
+
+        scaleLength = (long) (firstDigit * Math.pow(10, length));
+
+        if(scaleLength < 1000) {
+            scaleText = scaleLength + " m";
         } else {
-            /* 1000km */
-            scaleLength = 100000;
-            scaleText = "100km";
+            scaleText = scaleLength/1000 + " km";
         }
 
         double[] srcPts = new double[] { env.getMinX(), env.getMaxY(),
@@ -292,10 +257,10 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
         double[] dstPts = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
         transform.transform(srcPts, 0, dstPts, 0, 3);
 
-        createTextAt(contentStream, scaleText, 4.0f, 0.56f, opts.getFontSize(),
+        createTextAt(contentStream, scaleText, 6.0f, 26f / 72f * 2.54f, opts.getFontSize(),
                 0, 0, 0);
 
-        contentStream.addLine(6.0f / 2.54f * 72f, 16f, 6.0f / 2.54f * 72f, 32f);
+        contentStream.addLine(6.0f / 2.54f * 72f, 16f, 6.0f / 2.54f * 72f, 24f);
 
         contentStream.addLine(6.0f / 2.54f * 72f, 16f,
                 6.0f / 2.54f * 72f + Double.valueOf(dstPts[4]).floatValue(),
@@ -304,7 +269,7 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
         contentStream.addLine(6.0f / 2.54f * 72f + Double.valueOf(dstPts[4])
                 .floatValue(), 16f,
                 6.0f / 2.54f * 72f + Double.valueOf(dstPts[4]).floatValue(),
-                32f);
+                24f);
 
         contentStream.closeAndStroke();
 
