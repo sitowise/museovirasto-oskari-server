@@ -350,6 +350,20 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
         contentStream.beginMarkedContentSequence(COSName.OC, mc0);
 
         /* BEGIN overlay content */
+        
+        float mapImagePosition[] = { page.getWidth(), page.getHeight() };
+        int mapWidth = page.getMapWidthTargetInPoints(opts);
+        int mapHeight = page.getMapHeightTargetInPoints(opts);
+
+        if (opts.getPageMapRect() != null) {
+            mapImagePosition[0] = opts.getPageMapRect()[0];
+            mapImagePosition[1] = opts.getPageMapRect()[1];
+            page.getTransform().transform(mapImagePosition, 0, mapImagePosition, 0, 1);
+        } else { // center image
+            page.getTransform().transform(mapImagePosition, 0, mapImagePosition, 0, 1);
+            mapImagePosition[0] = (mapImagePosition[0] - mapWidth) / 2;
+            mapImagePosition[1] = (mapImagePosition[1] - mapHeight) / 2;
+        }
 
         /* title */
 
@@ -414,19 +428,29 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
                     * opts.getFontSize();
             float offset = offsetX > offsetY ? offsetX : offsetY;
             offset = offset / 72f * 2.54f;
-
-            createTextAt(contentStream, "P:", 1.1f,
+            
+            createTextAt(contentStream, "P:", mapImagePosition[0]/ 72f * 2.54f,
                     0.56f + opts.getFontSize() / 72f * 2.54f,
                     opts.getFontSize(), 0, 0, 0);
             createTextAt(contentStream, String.valueOf(y),
-                    1.1f + offset,
+                    mapImagePosition[0]/ 72f * 2.54f + offset,
                     0.56f + opts.getFontSize() / 72f * 2.54f,
                     opts.getFontSize(), 0, 0, 0);
-            createTextAt(contentStream, "I:", 1.1f,
+            createTextAt(contentStream, "I:", mapImagePosition[0]/ 72f * 2.54f,
                     0.56f, opts.getFontSize(), 0, 0, 0);
             createTextAt(contentStream, String.valueOf(x),
-                    1.1f + offset, 0.56f,
+                    mapImagePosition[0]/ 72f * 2.54f + offset, 0.56f,
                     opts.getFontSize(), 0, 0, 0);
+            
+            //create symbol to show location of coordinates
+            contentStream.setStrokingColor(0, 0, 0);
+            
+            float markerSize = 0.25f / 2.54f * 72f;
+            contentStream.addLine(mapImagePosition[0]-markerSize, mapImagePosition[1], mapImagePosition[0]+markerSize, mapImagePosition[1]);
+            contentStream.addLine(mapImagePosition[0], mapImagePosition[1]-markerSize, mapImagePosition[0], mapImagePosition[1]+markerSize);
+
+            contentStream.closeAndStroke();
+            
         }
         /* END overlay content */
 
