@@ -306,8 +306,8 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
             PDOptionalContentProperties ocprops, PDPropertyList props,
             Envelope env, Point centre) throws IOException, TransformException {
 
-        float logoWidth = 24;
-        float logoHeight = 24;
+        float logoWidth = 32;
+        float logoHeight = 32;
 
         PDXObjectImage xlogo = null;
 
@@ -387,8 +387,10 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
             contentStream.setNonStrokingColor(255, 255, 255);
             contentStream.setStrokingColor(255, 255, 255);
 
-            contentStream.drawXObject(xlogo, 1.0f / 2.54f * 72f, 16, logoWidth,
-                    logoHeight);
+            contentStream.drawXObject(xlogo,
+                    1.0f / 2.54f * 72f, (page.getHeight() - 1) / 2.54f * 72f
+                            - logoHeight + opts.getFontSize(), //align top of logo and date text
+                    logoWidth, logoHeight);
 
         }
         
