@@ -163,6 +163,27 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
 
         /* these MUST be created before optional overlay content */
         createMapLayersImages(targetDoc, ximages, images);
+        
+        // Also create logo here, otherwise it gets corrupted 
+        PDXObjectImage xlogo = null;
+        if (opts.isPageLogo()) {
+            /* MUST create before optiona content group is created */
+            /*
+             * - this is a googled fix to not being able to show images in
+             * overlays
+             */
+            InputStream inp = getClass().getResourceAsStream(
+                    opts.getPageLogoResource());
+            try {
+                BufferedImage imageBuf = ImageIO.read(inp);
+
+                imageBuf = doScaleWithFilters(imageBuf, imageBuf.getWidth()*4, imageBuf.getHeight()*4);
+
+                xlogo = new PDPixelMap(targetDoc, imageBuf);
+            } finally {
+                inp.close();
+            }
+        }
 
         PDPageContentStream contentStream = page.createContentStreamTo(
                 targetDoc, targetPage, opts.getPageTemplate() != null);
@@ -170,7 +191,7 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
         createMapLayersOverlay(targetDoc, targetPage, contentStream, ocprops,
                 props, ximages);
         createTextLayerOverlay(targetDoc, targetPage, contentStream, ocprops,
-                props, env, centre);
+                props, env, centre, xlogo);
 
         createContentOverlay(targetDoc, contentStream, ocprops, props,
                 opts.getContent(), pageCounter);
@@ -307,38 +328,7 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
     protected void createTextLayerOverlay(PDDocument targetDoc,
             PDPage targetPage, PDPageContentStream contentStream,
             PDOptionalContentProperties ocprops, PDPropertyList props,
-            Envelope env, Point centre) throws IOException, TransformException {
-
-        float logoWidth = 32;
-        float logoHeight = 32;
-
-        PDXObjectImage xlogo = null;
-
-        if (opts.isPageLogo()) {
-            /* MUST create before optiona content group is created */
-            /*
-             * - this is a googled fix to not being able to show images in
-             * overlays
-             */
-            InputStream inp = getClass().getResourceAsStream(
-                    opts.getPageLogoResource());
-            try {
-                BufferedImage imageBuf = ImageIO.read(inp);
-                /*
-                 * int w = imageBuf.getWidth(null); int h =
-                 * imageBuf.getHeight(null); BufferedImage bi = new
-                 * BufferedImage(w, h, BufferedImage.TYPE_4BYTE_ABGR);
-                 * Graphics2D g = (Graphics2D) bi.getGraphics();
-                 * g.drawImage(imageBuf, 0, 0, null); g.dispose();
-                 * 
-                 * bi = doScaleWithFilters(bi, (int) logoWidth * 4, (int)
-                 * logoHeight * 4);
-                 */
-                xlogo = new PDPixelMap(targetDoc, imageBuf);
-            } finally {
-                inp.close();
-            }
-        }
+            Envelope env, Point centre, PDXObjectImage xlogo) throws IOException, TransformException {
 
         PDOptionalContentGroup layerGroup = new PDOptionalContentGroup(
                 "overlay");
@@ -405,10 +395,8 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
             contentStream.setStrokingColor(255, 255, 255);
 
             contentStream.drawXObject(xlogo,
-                    1.0f / 2.54f * 72f, (page.getHeight() - 1) / 2.54f * 72f
-                            - logoHeight + opts.getFontSize(), //align top of logo and date text
-                    logoWidth, logoHeight);
-
+                    mapImagePosition[0], mapImagePosition[1] + mapHeight - xlogo.getHeight()/4,
+                    xlogo.getWidth()/4, xlogo.getHeight()/4);
         }
         
         /* coordinates */
