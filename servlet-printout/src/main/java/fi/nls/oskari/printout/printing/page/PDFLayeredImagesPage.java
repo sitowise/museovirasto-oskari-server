@@ -101,16 +101,19 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
             List<PDXObjectImage> ximages) throws IOException {
 
         int r = 0;
-        float f[] = { 1.0f, 1.5f };
+        float f[] = { page.getWidth(), page.getHeight() };
+        int width = page.getMapWidthTargetInPoints(opts);
+        int height = page.getMapHeightTargetInPoints(opts);
 
         if (opts.getPageMapRect() != null) {
             f[0] = opts.getPageMapRect()[0];
             f[1] = opts.getPageMapRect()[1];
+            page.getTransform().transform(f, 0, f, 0, 1);
+        } else { // center image
+            page.getTransform().transform(f, 0, f, 0, 1);
+            f[0] = (f[0] - width) / 2;
+            f[1] = (f[1] - height) / 2;
         }
-        int width = page.getMapWidthTargetInPoints(opts);
-        int height = page.getMapHeightTargetInPoints(opts);
-
-        page.getTransform().transform(f, 0, f, 0, 1);
 
         for (PDXObjectImage ximage : ximages) {
             r++;
@@ -160,6 +163,27 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
 
         /* these MUST be created before optional overlay content */
         createMapLayersImages(targetDoc, ximages, images);
+        
+        // Also create logo here, otherwise it gets corrupted 
+        PDXObjectImage xlogo = null;
+        if (opts.isPageLogo()) {
+            /* MUST create before optiona content group is created */
+            /*
+             * - this is a googled fix to not being able to show images in
+             * overlays
+             */
+            InputStream inp = getClass().getResourceAsStream(
+                    opts.getPageLogoResource());
+            try {
+                BufferedImage imageBuf = ImageIO.read(inp);
+
+                imageBuf = doScaleWithFilters(imageBuf, imageBuf.getWidth()*4, imageBuf.getHeight()*4);
+
+                xlogo = new PDPixelMap(targetDoc, imageBuf);
+            } finally {
+                inp.close();
+            }
+        }
 
         PDPageContentStream contentStream = page.createContentStreamTo(
                 targetDoc, targetPage, opts.getPageTemplate() != null);
@@ -167,7 +191,7 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
         createMapLayersOverlay(targetDoc, targetPage, contentStream, ocprops,
                 props, ximages);
         createTextLayerOverlay(targetDoc, targetPage, contentStream, ocprops,
-                props, env, centre);
+                props, env, centre, xlogo);
 
         createContentOverlay(targetDoc, contentStream, ocprops, props,
                 opts.getContent(), pageCounter);
@@ -213,53 +237,18 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
         /* krhm... to be fixed with some algoriddim */
         /* time restricted coding... */
         long widthInMeters = Double.valueOf(env.getWidth()).longValue();
-        long scaleLenSelector100m = widthInMeters / 100;
-        long scaleLenSelector1Km = widthInMeters / 1000;
-        long scaleLenSelector5Km = widthInMeters / 5000;
-        long scaleLenSelector10Km = widthInMeters / 10000;
-        long scaleLenSelector50Km = widthInMeters / 50000;
-        long scaleLenSelector100Km = widthInMeters / 100000;
-        long scaleLenSelector500Km = widthInMeters / 500000;
-        long scaleLenSelector1000Km = widthInMeters / 1000000;
+        long scaleLength = widthInMeters / 4;
+        String scaleText = ""+scaleLength;
 
-        String scaleText = "";
-        long scaleLength = 0;
-        if (scaleLenSelector100m == 0) {
-            /* m */
-            scaleLength = 1;
-            scaleText = "1m";
-        } else if (scaleLenSelector1Km == 0) {
-            /* 10m */
-            scaleLength = 10;
-            scaleText = "10m";
-        } else if (scaleLenSelector5Km == 0) {
-            /* 10m */
-            scaleLength = 100;
-            scaleText = "100m";
-        } else if (scaleLenSelector10Km == 0) {
-            /* 100m */
-            scaleLength = 100;
-            scaleText = "100m";
-        } else if (scaleLenSelector50Km == 0) {
-            /* 10km */
-            scaleLength = 1000;
-            scaleText = "1km";
-        } else if (scaleLenSelector100Km == 0) {
-            /* 10km */
-            scaleLength = 10000;
-            scaleText = "10km";
-        } else if (scaleLenSelector500Km == 0) {
-            /* 100km */
-            scaleLength = 10000;
-            scaleText = "10km";
-        } else if (scaleLenSelector1000Km == 0) {
-            /* 100km */
-            scaleLength = 100000;
-            scaleText = "100km";
+        long firstDigit = Long.parseLong(scaleText.substring(0, 1));
+        long length = scaleText.length() - 1;
+
+        scaleLength = (long) (firstDigit * Math.pow(10, length));
+
+        if(scaleLength < 1000) {
+            scaleText = scaleLength + " m";
         } else {
-            /* 1000km */
-            scaleLength = 100000;
-            scaleText = "100km";
+            scaleText = scaleLength/1000 + " km";
         }
 
         double[] srcPts = new double[] { env.getMinX(), env.getMaxY(),
@@ -268,10 +257,10 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
         double[] dstPts = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
         transform.transform(srcPts, 0, dstPts, 0, 3);
 
-        createTextAt(contentStream, scaleText, 4.0f, 0.56f, opts.getFontSize(),
+        createTextAt(contentStream, scaleText, 6.0f, 26f / 72f * 2.54f, opts.getFontSize(),
                 0, 0, 0);
 
-        contentStream.addLine(6.0f / 2.54f * 72f, 16f, 6.0f / 2.54f * 72f, 32f);
+        contentStream.addLine(6.0f / 2.54f * 72f, 16f, 6.0f / 2.54f * 72f, 24f);
 
         contentStream.addLine(6.0f / 2.54f * 72f, 16f,
                 6.0f / 2.54f * 72f + Double.valueOf(dstPts[4]).floatValue(),
@@ -280,7 +269,7 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
         contentStream.addLine(6.0f / 2.54f * 72f + Double.valueOf(dstPts[4])
                 .floatValue(), 16f,
                 6.0f / 2.54f * 72f + Double.valueOf(dstPts[4]).floatValue(),
-                32f);
+                24f);
 
         contentStream.closeAndStroke();
 
@@ -304,38 +293,7 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
     protected void createTextLayerOverlay(PDDocument targetDoc,
             PDPage targetPage, PDPageContentStream contentStream,
             PDOptionalContentProperties ocprops, PDPropertyList props,
-            Envelope env, Point centre) throws IOException, TransformException {
-
-        float logoWidth = 24;
-        float logoHeight = 24;
-
-        PDXObjectImage xlogo = null;
-
-        if (opts.isPageLogo()) {
-            /* MUST create before optiona content group is created */
-            /*
-             * - this is a googled fix to not being able to show images in
-             * overlays
-             */
-            InputStream inp = getClass().getResourceAsStream(
-                    opts.getPageLogoResource());
-            try {
-                BufferedImage imageBuf = ImageIO.read(inp);
-                /*
-                 * int w = imageBuf.getWidth(null); int h =
-                 * imageBuf.getHeight(null); BufferedImage bi = new
-                 * BufferedImage(w, h, BufferedImage.TYPE_4BYTE_ABGR);
-                 * Graphics2D g = (Graphics2D) bi.getGraphics();
-                 * g.drawImage(imageBuf, 0, 0, null); g.dispose();
-                 * 
-                 * bi = doScaleWithFilters(bi, (int) logoWidth * 4, (int)
-                 * logoHeight * 4);
-                 */
-                xlogo = new PDPixelMap(targetDoc, imageBuf);
-            } finally {
-                inp.close();
-            }
-        }
+            Envelope env, Point centre, PDXObjectImage xlogo) throws IOException, TransformException {
 
         PDOptionalContentGroup layerGroup = new PDOptionalContentGroup(
                 "overlay");
@@ -347,6 +305,20 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
         contentStream.beginMarkedContentSequence(COSName.OC, mc0);
 
         /* BEGIN overlay content */
+        
+        float mapImagePosition[] = { page.getWidth(), page.getHeight() };
+        int mapWidth = page.getMapWidthTargetInPoints(opts);
+        int mapHeight = page.getMapHeightTargetInPoints(opts);
+
+        if (opts.getPageMapRect() != null) {
+            mapImagePosition[0] = opts.getPageMapRect()[0];
+            mapImagePosition[1] = opts.getPageMapRect()[1];
+            page.getTransform().transform(mapImagePosition, 0, mapImagePosition, 0, 1);
+        } else { // center image
+            page.getTransform().transform(mapImagePosition, 0, mapImagePosition, 0, 1);
+            mapImagePosition[0] = (mapImagePosition[0] - mapWidth) / 2;
+            mapImagePosition[1] = (mapImagePosition[1] - mapHeight) / 2;
+        }
 
         /* title */
 
@@ -387,9 +359,9 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
             contentStream.setNonStrokingColor(255, 255, 255);
             contentStream.setStrokingColor(255, 255, 255);
 
-            contentStream.drawXObject(xlogo, 1.0f / 2.54f * 72f, 16, logoWidth,
-                    logoHeight);
-
+            contentStream.drawXObject(xlogo,
+                    mapImagePosition[0], mapImagePosition[1] + mapHeight - xlogo.getHeight()/4,
+                    xlogo.getWidth()/4, xlogo.getHeight()/4);
         }
         
         /* coordinates */
@@ -409,19 +381,29 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
                     * opts.getFontSize();
             float offset = offsetX > offsetY ? offsetX : offsetY;
             offset = offset / 72f * 2.54f;
-
-            createTextAt(contentStream, "P:", (page.getWidth() - width) / 2,
+            
+            createTextAt(contentStream, "P:", mapImagePosition[0]/ 72f * 2.54f,
                     0.56f + opts.getFontSize() / 72f * 2.54f,
                     opts.getFontSize(), 0, 0, 0);
             createTextAt(contentStream, String.valueOf(y),
-                    (page.getWidth() - width) / 2 + offset,
+                    mapImagePosition[0]/ 72f * 2.54f + offset,
                     0.56f + opts.getFontSize() / 72f * 2.54f,
                     opts.getFontSize(), 0, 0, 0);
-            createTextAt(contentStream, "I:", (page.getWidth() - width) / 2,
+            createTextAt(contentStream, "I:", mapImagePosition[0]/ 72f * 2.54f,
                     0.56f, opts.getFontSize(), 0, 0, 0);
             createTextAt(contentStream, String.valueOf(x),
-                    (page.getWidth() - width) / 2 + offset, 0.56f,
+                    mapImagePosition[0]/ 72f * 2.54f + offset, 0.56f,
                     opts.getFontSize(), 0, 0, 0);
+            
+            //create symbol to show location of coordinates
+            contentStream.setStrokingColor(0, 0, 0);
+            
+            float markerSize = 0.25f / 2.54f * 72f;
+            contentStream.addLine(mapImagePosition[0]-markerSize, mapImagePosition[1], mapImagePosition[0]+markerSize, mapImagePosition[1]);
+            contentStream.addLine(mapImagePosition[0], mapImagePosition[1]-markerSize, mapImagePosition[0], mapImagePosition[1]+markerSize);
+
+            contentStream.closeAndStroke();
+            
         }
         /* END overlay content */
 
