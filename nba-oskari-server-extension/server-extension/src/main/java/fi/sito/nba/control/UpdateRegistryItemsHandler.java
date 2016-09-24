@@ -39,10 +39,14 @@ import fi.sito.nba.registry.models.BuildingHeritageItemArea;
 import fi.sito.nba.registry.models.BuildingHeritageItemPoint;
 import fi.sito.nba.registry.models.RKY2000;
 import fi.sito.nba.registry.models.RKY2000Geometry;
+import fi.sito.nba.registry.models.ProjectItem;
+import fi.sito.nba.registry.models.ProjectItemPoint;
+import fi.sito.nba.registry.models.ProjectItemArea;
 import fi.sito.nba.registry.services.AncientMonumentMaintenanceItemService;
 import fi.sito.nba.registry.services.AncientMonumentService;
 import fi.sito.nba.registry.services.BuildingHeritageItemService;
 import fi.sito.nba.registry.services.RKY2000Service;
+import fi.sito.nba.registry.services.ProjectItemService;
 
 @OskariActionRoute("UpdateRegistryItems")
 public class UpdateRegistryItemsHandler extends RestActionHandler {
@@ -153,6 +157,18 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 					JSONObject rk2EditInfo = new JSONObject(editInfoJson);
 
 					response = updateRKY2000(rk2Monument, rk2Service, rk2EditInfo,
+							params.getUser());
+
+					break;
+				case "project":
+					ProjectItemService pService = new ProjectItemService(
+							connection);
+					ProjectItem projectItem = mapper.readValue(itemJson,
+							ProjectItem.class);
+
+					JSONObject pEditInfo = new JSONObject(editInfoJson);
+
+					response = updateProject(projectItem, pService, pEditInfo,
 							params.getUser());
 
 					break;
@@ -532,6 +548,94 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			Geometry geometry, RKY2000Service service) {
 		for (RKY2000 item : service.findRKY2000(null, geometry)) {
 			for (RKY2000Geometry area : item.getAreas()) {
+				if (area.getGeometry().intersects(geometry)) {
+					if (item.getId() != itemId || area.getId() != areaId) {
+						LOG.warn("new area", itemId, ":", areaId,
+								"intersects existing", item.getId(), ":",
+								area.getId());
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	
+	private JSONObject updateProject(ProjectItem projectItem,
+			ProjectItemService service, JSONObject editInfo, User user)
+			throws SQLException, JSONException, InvalidArgumentException {
+
+		JSONObject ret = new JSONObject();
+		ret.put("updated", false);
+
+		List<Integer> editedPointIds = JSONHelper
+				.getArrayAsList(editInfo.getJSONArray("points"));
+		List<Integer> editedAreaIds = JSONHelper
+				.getArrayAsList(editInfo.getJSONArray("areas"));
+
+		ProjectItem original = service
+				.getProjectItemById(projectItem.getId());
+
+		Map<Integer, ProjectItemPoint> originalPoints = new HashMap<Integer, ProjectItemPoint>();
+		for (ProjectItemPoint pointItem : original.getPoints()) {
+			originalPoints.put(pointItem.getId(), pointItem);
+		}
+		
+		for (ProjectItemPoint point : projectItem.getPoints()) {
+			ProjectItemPoint originalPoint = originalPoints.get(point.getId());
+			if (originalPoint == null) {
+				service.addProjectItemPoint(projectItem.getId(),
+						user.getScreenname(), point.getDescription(),
+						point.getGeometry());
+				ret.put("updated", true);
+				ret.put("points", ret.optInt("points", 0) + 1);
+			} else if (editedPointIds.contains(point.getId())) {
+				service.updateProjectItemPoint(projectItem.getId(),
+						user.getScreenname(), point.getDescription(),
+						point.getGeometry());
+
+				ret.put("updated", true);
+				ret.put("points", ret.optInt("points", 0) + 1);
+			}
+		}
+		
+		Map<Integer, ProjectItemArea> originalAreas = new HashMap<Integer, ProjectItemArea>();
+		for (ProjectItemArea areaItem : original.getAreas()) {
+			originalAreas.put(areaItem.getId(), areaItem);
+		}
+
+		for (ProjectItemArea area : projectItem.getAreas()) {
+			if (intersectsExistingArea(projectItem.getId(), area.getId(),
+					area.getGeometry(), service)) {
+				ret.put("updated", false);
+				ret.put("error", "areaIntersects");
+				return ret;
+			}
+			ProjectItemArea originalArea = originalAreas.get(area.getId());
+			if (originalArea == null) {
+				service.addProjectItemArea(projectItem.getId(),
+						user.getScreenname(), area.getDescription(),
+						area.getType(), area.getGeometry());
+				ret.put("updated", true);
+				ret.put("areas", ret.optInt("areas", 0) + 1);
+			} else if (editedAreaIds.contains(area.getId())) {
+				service.updateProjectItemArea(projectItem.getId(),
+						user.getScreenname(), area.getDescription(),
+						area.getType(), area.getGeometry());
+
+				ret.put("updated", true);
+				ret.put("areas", ret.optInt("areas", 0) + 1);
+			}
+		}
+
+		return ret;
+	}
+	
+	private boolean intersectsExistingArea(int itemId, int areaId,
+			Geometry geometry, ProjectItemService service) {
+		for (ProjectItem item : service.findProjectItems(null,
+				geometry)) {
+			for (ProjectItemArea area : item.getAreas()) {
 				if (area.getGeometry().intersects(geometry)) {
 					if (item.getId() != itemId || area.getId() != areaId) {
 						LOG.warn("new area", itemId, ":", areaId,
