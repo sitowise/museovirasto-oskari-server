@@ -900,6 +900,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					resultItem.put("itemtype", item.getClass().getSimpleName());
 					resultItem.put("id", item.getObjectId());
 					resultItem.put("desc", item.getObjectName());
+					resultItem.put("municipality", item.getMunicipalityName());
 
 					Point centroid = item.calculateCentroid();
 					if (centroid != null) {
