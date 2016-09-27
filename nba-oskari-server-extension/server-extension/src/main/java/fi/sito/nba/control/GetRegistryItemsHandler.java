@@ -702,6 +702,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("desc",
 								monument.getAreas().get(0).getObjectName());
 					}
+					item.put("municipality", monument.getMunicipalityName());
 
 					Point centroid = monument.calculateCentroid();
 					if (centroid != null) {
