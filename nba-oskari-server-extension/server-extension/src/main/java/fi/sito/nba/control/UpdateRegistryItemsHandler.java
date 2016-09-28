@@ -590,7 +590,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				ret.put("updated", true);
 				ret.put("points", ret.optInt("points", 0) + 1);
 			} else if (editedPointIds.contains(point.getId())) {
-				service.updateProjectItemPoint(projectItem.getId(),
+				service.updateProjectItemPoint(point.getId(),
 						user.getScreenname(), point.getDescription(),
 						point.getGeometry());
 
@@ -619,7 +619,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
 			} else if (editedAreaIds.contains(area.getId())) {
-				service.updateProjectItemArea(projectItem.getId(),
+				service.updateProjectItemArea(area.getId(),
 						user.getScreenname(), area.getDescription(),
 						area.getType(), area.getGeometry());
 
