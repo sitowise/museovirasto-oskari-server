@@ -40,12 +40,14 @@ import fi.sito.nba.registry.models.IRegistryObject;
 import fi.sito.nba.registry.models.RKY1993;
 import fi.sito.nba.registry.models.RKY2000;
 import fi.sito.nba.registry.models.WorldHeritageItem;
+import fi.sito.nba.registry.models.ProjectItem;
 import fi.sito.nba.registry.services.AncientMonumentMaintenanceItemService;
 import fi.sito.nba.registry.services.AncientMonumentService;
 import fi.sito.nba.registry.services.BuildingHeritageItemService;
 import fi.sito.nba.registry.services.RKY1993Service;
 import fi.sito.nba.registry.services.RKY2000Service;
 import fi.sito.nba.registry.services.WorldHeritageItemService;
+import fi.sito.nba.registry.services.ProjectItemService;
 import fi.sito.nba.service.NbaRegistryLayerService;
 import fi.sito.nba.service.NbaRegistryLayerServiceInterface;
 
@@ -169,6 +171,11 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						itemObj = getItemObject(registryItem, filteredLayerList,
 								params.getUser());
 						break;
+					case "project":
+						service = new ProjectItemService(connection);
+						registryItem = ((ProjectItemService) service).getProjectItemById(itemId);
+						itemObj = getItemObject(registryItem, filteredLayerList, params.getUser());
+						break;
 					}
 					results.put(itemObj);
 				}
@@ -249,6 +256,9 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 										connection, keywordParam, geometryParam,
 										registryLayers));
 								break;
+							case "project":
+								resultArrays.add(getProjectItems(connection, keywordParam, geometryParam, registryLayers));
+								break;
 							}
 						}
 					} else {
@@ -264,6 +274,8 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						resultArrays.add(getRKY2000Items(connection,
 								keywordParam, geometryParam, registryLayers));
 						resultArrays.add(getWorldHeritageItems(connection,
+								keywordParam, geometryParam, registryLayers));
+						resultArrays.add(getProjectItems(connection,
 								keywordParam, geometryParam, registryLayers));
 					}
 				}
@@ -367,7 +379,9 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					|| (registry.equals("RKY1993") && key.equals("points"))
 					|| (registry.equals("RKY2000") && key.equals("areas"))
 					|| (registry.equals("RKY2000") && key.equals("lines"))
-					|| (registry.equals("RKY2000") && key.equals("points"))) {
+					|| (registry.equals("RKY2000") && key.equals("points"))
+					|| (registry.equals("ProjectItem") && key.equals("areas"))
+					|| (registry.equals("ProjectItem") && key.equals("points"))) {
 				JSONArray arr = new JSONArray();
 				for (int i = 0; i < item.getJSONArray(key).length(); ++i) {
 					arr.put(filterAttributes(
@@ -861,6 +875,74 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					}
 
 					resultArray.put(item);
+				} catch (JSONException e) {
+					return null;
+				}
+			}
+		}
+		return resultArray;
+	}
+	
+	private JSONArray getProjectItems(Connection con, String keyword,
+			Geometry geometry, List<NbaRegistryLayer> registryLayers) {
+
+		JSONArray resultArray = new JSONArray();
+
+		ProjectItemService svc = new ProjectItemService(con);
+
+		Iterable<ProjectItem> items = svc.findProjectItems(keyword, geometry);
+
+		if (items != null) {
+
+			List<NbaRegistryLayer> filteredLayers = getRegistryLayers("project",
+					registryLayers);
+
+			RegistryObjectIterator<ProjectItem> iterator = (RegistryObjectIterator<ProjectItem>) items.iterator();
+
+			while (iterator.hasNext()) {
+				try {
+					ProjectItem item = iterator.next();
+
+					JSONObject resultItem = new JSONObject();
+					resultItem.put("itemtype", item.getClass().getSimpleName());
+					resultItem.put("id", item.getObjectId());
+					resultItem.put("desc", item.getObjectName());
+					resultItem.put("municipality", item.getMunicipalityName());
+
+					Point centroid = item.calculateCentroid();
+					if (centroid != null) {
+						resultItem.put("coordinateX", centroid.getX());
+						resultItem.put("coordinateY", centroid.getY());
+					}
+
+					resultItem.put("nbaUrl", item.generateNbaUrl());
+					JSONArray mapLayersArray = new JSONArray();
+					for (NbaRegistryLayer registryLayer : filteredLayers) {
+						JSONObject mapLayerObject = new JSONObject();
+						mapLayerObject.put("mapLayerID",
+								registryLayer.getLayerId());
+						mapLayerObject.put("toHighlight",
+								registryLayer.getToHighlight());
+						mapLayerObject.put("attribute",
+								registryLayer.getItemIdAttribute());
+
+						mapLayersArray.put(mapLayerObject);
+					}
+					resultItem.put("mapLayers", mapLayersArray);
+
+					Geometry envelope = item.calculateEnvelope();
+					if (envelope != null) {
+						Envelope envelopeInternal = envelope
+								.getEnvelopeInternal();
+						JSONArray bounds = new JSONArray();
+						bounds.put(envelopeInternal.getMinX());
+						bounds.put(envelopeInternal.getMinY());
+						bounds.put(envelopeInternal.getMaxX());
+						bounds.put(envelopeInternal.getMaxY());
+						resultItem.put("bounds", bounds);
+					}
+
+					resultArray.put(resultItem);
 				} catch (JSONException e) {
 					return null;
 				}
