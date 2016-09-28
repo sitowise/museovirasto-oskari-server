@@ -379,7 +379,9 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					|| (registry.equals("RKY1993") && key.equals("points"))
 					|| (registry.equals("RKY2000") && key.equals("areas"))
 					|| (registry.equals("RKY2000") && key.equals("lines"))
-					|| (registry.equals("RKY2000") && key.equals("points"))) {
+					|| (registry.equals("RKY2000") && key.equals("points"))
+					|| (registry.equals("ProjectItem") && key.equals("areas"))
+					|| (registry.equals("ProjectItem") && key.equals("points"))) {
 				JSONArray arr = new JSONArray();
 				for (int i = 0; i < item.getJSONArray(key).length(); ++i) {
 					arr.put(filterAttributes(
