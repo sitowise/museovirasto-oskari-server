@@ -414,6 +414,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
+					item.put("municipality", monument.getMunicipalityName());
 
 					Point centroid = monument.calculateCentroid();
 
@@ -483,6 +484,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
+					item.put("municipality", monument.getMunicipalityName());
 
 					Point centroid = monument.calculateCentroid();
 
@@ -552,6 +554,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
+					item.put("municipality", monument.getMunicipalityName());
 
 					Point centroid = monument.calculateCentroid();
 
@@ -620,6 +623,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
+					item.put("municipality", monument.getMunicipalityName());
 
 					Point centroid = monument.calculateCentroid();
 
@@ -698,6 +702,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("desc",
 								monument.getAreas().get(0).getObjectName());
 					}
+					item.put("municipality", monument.getMunicipalityName());
 
 					Point centroid = monument.calculateCentroid();
 					if (centroid != null) {
