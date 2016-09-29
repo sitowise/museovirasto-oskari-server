@@ -339,8 +339,8 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
 
             String dateStr = sdf.format(dte);
 
-            createTextAt(contentStream, dateStr, page.getWidth() - 4f,
-                    page.getHeight() - 1f, opts.getFontSize(), 0, 0, 0);
+            createTextAt(contentStream, dateStr, page.getWidth() - 4f, 0.56f + opts.getFontSize() / 72f * 2.54f,
+                    opts.getFontSize(), 0, 0, 0);
 
         }
 
