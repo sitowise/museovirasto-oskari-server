@@ -325,9 +325,37 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
         if (opts.getPageTitle() != null) {
             String pageTitle = StringEscapeUtils.unescapeHtml4(Jsoup.clean(
                     opts.getPageTitle(), Whitelist.simpleText()));
-            
-            createTextAt(contentStream, pageTitle, 0, page.getHeight() - 1f,
-                    opts.getFontSize(), 0, 0, 0, true);
+
+            float titleWidth = font.getStringWidth(pageTitle) / 1000 * opts.getFontSize();
+            float maxWidth = page.getMapWidthTargetInPoints(opts);
+            if (titleWidth < maxWidth) {
+                createTextAt(contentStream, pageTitle, mapImagePosition[0] / 72f * 2.54f, page.getHeight() - 1f,
+                        opts.getFontSize(), 0, 0, 0);
+            } else {
+                List<String> lines = new ArrayList<String>();
+                String[] words = pageTitle.split(" ");
+                String line = "";
+
+                for (String word : words) {
+                    String newLine = line + word;
+                    float lineWidth = font.getStringWidth(newLine) / 1000 * opts.getFontSize();
+                    if (lineWidth <= maxWidth || line.isEmpty()) {
+                        line = newLine + " ";
+                    } else {
+                        lines.add(line);
+                        line = word + " ";
+                    }
+                }
+
+                if (!line.isEmpty()) {
+                    lines.add(line);
+                }
+
+                for (int i = 0; i < 2 && i < lines.size(); ++i) {
+                    createTextAt(contentStream, lines.get(i), mapImagePosition[0] / 72f * 2.54f,
+                            page.getHeight() - 1f - i * opts.getFontSize() / 72f * 2.54f, opts.getFontSize(), 0, 0, 0);
+                }
+            }
 
         }
 
@@ -339,8 +367,8 @@ public class PDFLayeredImagesPage extends PDFAbstractPage implements PDFPage {
 
             String dateStr = sdf.format(dte);
 
-            createTextAt(contentStream, dateStr, page.getWidth() - 4f,
-                    page.getHeight() - 1f, opts.getFontSize(), 0, 0, 0);
+            createTextAt(contentStream, dateStr, page.getWidth() - 4f, 0.56f + opts.getFontSize() / 72f * 2.54f,
+                    opts.getFontSize(), 0, 0, 0);
 
         }
 
