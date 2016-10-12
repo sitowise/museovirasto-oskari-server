@@ -525,8 +525,7 @@ public class GetPreviewHandler extends ActionHandler {
             for (int ii = 0; ii < tilesjs.length(); ii++) {
                 JSONObject tileroot = tilesjs.getJSONObject(ii);
                 Iterator<?> keys = tileroot.keys();
-                // There is only one key
-                if (keys.hasNext()) {
+                while (keys.hasNext()) {
                     String layer_id = (String) keys.next();
                     if (layer.optString(KEY_LAYER_ID).equals(layer_id))
                         layer.put(KEY_TILES, tileroot.getJSONArray(layer_id));
