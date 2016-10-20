@@ -2,6 +2,7 @@ package fi.sito.nba.view;
 
 import java.util.List;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -30,6 +31,7 @@ public class NBARegistersModifier extends BundleHandler {
 			return false;
 		}
 
+		//Add registry layers
 		List<NbaRegistryLayer> layers = service.findRegistryLayers();
 		JSONObject registries = new JSONObject();
 
@@ -43,9 +45,23 @@ public class NBARegistersModifier extends BundleHandler {
 			}
 			config.put("registryLayers", registries);
 		} catch (JSONException e) {
-			log.error("Unable to set registry layer ids to mapwfs config", e);
+			log.error("Unable to set registry layer ids to nba-registers config", e);
 		}
 
+		//Add roles with rights to edit registry items
+		try {
+			JSONArray editorRoles = new JSONArray();
+			editorRoles.put("Admin");
+			editorRoles.put("P‰‰k‰ytt‰j‰");
+			editorRoles.put("Yll‰pit‰j‰");
+			editorRoles.put("Viraston muokkaaja");
+			editorRoles.put("Ulk. viranomaismuokkaaja");
+			editorRoles.put("Ulk. muu muokkaaja");
+			config.put("editorRoles", editorRoles);
+		} catch (JSONException e) {
+			log.error("Unable to set editor roles to nba-registers config", e);
+		}
+		
 		return false;
 	}
 
