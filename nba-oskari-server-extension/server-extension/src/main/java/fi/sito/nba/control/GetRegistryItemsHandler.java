@@ -69,6 +69,8 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 	static {
 		mapper.registerModule(new JsonOrgModule());
 	}
+	
+	private boolean isGuestUser;
 
 	@Override
 	public void handlePost(ActionParameters params) throws ActionException {
@@ -99,6 +101,8 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			String itemIdParam = "";
 			String registryNameParam = "";
 			JSONArray results = new JSONArray();
+			
+			isGuestUser = params.getUser().isGuest();
 
 			if (params.getHttpParam(PARAM_ITEM_ID) != null
 					&& !params.getHttpParam(PARAM_ITEM_ID).equals("")
@@ -322,7 +326,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				item.put("coordinateY", centroid.getY());
 			}
 
-			item.put("nbaUrl", registryObject.generateNbaUrl());
+			item.put("nbaUrl", registryObject.generateNbaUrl(isGuestUser));
 			item.put("itemtype", registryObject.getClass().getSimpleName());
 
 			JSONArray mapLayersArray = new JSONArray();
@@ -437,7 +441,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -507,7 +511,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -577,7 +581,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -646,7 +650,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -724,7 +728,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -794,7 +798,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -847,7 +851,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -915,7 +919,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						resultItem.put("coordinateY", centroid.getY());
 					}
 
-					resultItem.put("nbaUrl", item.generateNbaUrl());
+					resultItem.put("nbaUrl", item.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
