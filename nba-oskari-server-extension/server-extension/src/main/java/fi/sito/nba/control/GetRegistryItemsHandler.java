@@ -41,6 +41,8 @@ import fi.sito.nba.registry.models.RKY1993;
 import fi.sito.nba.registry.models.RKY2000;
 import fi.sito.nba.registry.models.WorldHeritageItem;
 import fi.sito.nba.registry.models.ProjectItem;
+import fi.sito.nba.registry.models.HistoricalMunicipality;
+import fi.sito.nba.registry.models.KYSItem;
 import fi.sito.nba.registry.services.AncientMonumentMaintenanceItemService;
 import fi.sito.nba.registry.services.AncientMonumentService;
 import fi.sito.nba.registry.services.BuildingHeritageItemService;
@@ -48,6 +50,7 @@ import fi.sito.nba.registry.services.RKY1993Service;
 import fi.sito.nba.registry.services.RKY2000Service;
 import fi.sito.nba.registry.services.WorldHeritageItemService;
 import fi.sito.nba.registry.services.ProjectItemService;
+import fi.sito.nba.registry.services.ResourceService;
 import fi.sito.nba.service.NbaRegistryLayerService;
 import fi.sito.nba.service.NbaRegistryLayerServiceInterface;
 
@@ -176,6 +179,15 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						registryItem = ((ProjectItemService) service).getProjectItemById(itemId);
 						itemObj = getItemObject(registryItem, filteredLayerList, params.getUser());
 						break;
+					case "resource":
+						service = new ResourceService(connection);
+						//try to find registry item by different methods
+						registryItem = ((ResourceService) service).getHistoricalMunicipalityById(itemId);
+						if (registryItem == null) {
+							registryItem = ((ResourceService) service).getKYSItemById(itemId);
+						}
+						itemObj = getItemObject(registryItem, filteredLayerList, params.getUser());
+						break;
 					}
 					results.put(itemObj);
 				}
@@ -259,6 +271,9 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 							case "project":
 								resultArrays.add(getProjectItems(connection, keywordParam, geometryParam, registryLayers));
 								break;
+							case "resource":
+								resultArrays.add(getResourceItems(connection, keywordParam, geometryParam, registryLayers, params.getUser()));
+								break;
 							}
 						}
 					} else {
@@ -277,6 +292,8 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								keywordParam, geometryParam, registryLayers));
 						resultArrays.add(getProjectItems(connection,
 								keywordParam, geometryParam, registryLayers));
+						resultArrays.add(getResourceItems(connection,
+								keywordParam, geometryParam, registryLayers, params.getUser()));
 					}
 				}
 
@@ -948,6 +965,43 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				}
 			}
 		}
+		return resultArray;
+	}
+	
+	private JSONArray getResourceItems(Connection con, String keyword,
+			Geometry geometry, List<NbaRegistryLayer> registryLayers, User user) {
+
+		JSONArray resultArray = new JSONArray();
+
+		ResourceService svc = new ResourceService(con);
+
+		Iterable<HistoricalMunicipality> historicalMunicipalities = svc.findHistoricalMunicipality(keyword, geometry);
+		Iterable<KYSItem> kysItems = svc.findKYSItem(keyword, geometry);
+
+		List<NbaRegistryLayer> filteredLayers = getRegistryLayers("resource", registryLayers);
+
+		if (historicalMunicipalities != null) {
+			RegistryObjectIterator<HistoricalMunicipality> iterator = (RegistryObjectIterator<HistoricalMunicipality>) historicalMunicipalities.iterator();
+
+			while (iterator.hasNext()) {
+				HistoricalMunicipality hm = iterator.next();
+				JSONObject item = getItemObject(hm, filteredLayers, user);
+				//item.put("desc", hm.getObjectName());//TODO 1) Missing getObjectName() method; 2) Not sure if it shouldn't be in getItemObject method  
+				resultArray.put(item);
+			}
+		}
+		
+		if (kysItems != null) {
+			RegistryObjectIterator<KYSItem> iterator = (RegistryObjectIterator<KYSItem>) kysItems.iterator();
+
+			while (iterator.hasNext()) {
+				KYSItem kys = iterator.next();
+				JSONObject item = getItemObject(kys, filteredLayers, user);
+				//item.put("desc", kys.getObjectName());//TODO 1) Missing getObjectName() method; 2) Not sure if it shouldn't be in getItemObject method  
+				resultArray.put(item);
+			}
+		}
+		
 		return resultArray;
 	}
 
