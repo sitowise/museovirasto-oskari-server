@@ -43,6 +43,7 @@ import fi.sito.nba.registry.models.WorldHeritageItem;
 import fi.sito.nba.registry.models.ProjectItem;
 import fi.sito.nba.registry.models.HistoricalMunicipality;
 import fi.sito.nba.registry.models.KYSItem;
+import fi.sito.nba.registry.models.ProvincialMuseum;
 import fi.sito.nba.registry.services.AncientMonumentMaintenanceItemService;
 import fi.sito.nba.registry.services.AncientMonumentService;
 import fi.sito.nba.registry.services.BuildingHeritageItemService;
@@ -185,6 +186,9 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						registryItem = ((ResourceService) service).getHistoricalMunicipalityById(itemId);
 						if (registryItem == null) {
 							registryItem = ((ResourceService) service).getKYSItemById(itemId);
+							if (registryItem == null) {
+								registryItem = ((ResourceService) service).getProvincialMuseumById(itemId);
+							}
 						}
 						itemObj = getItemObject(registryItem, filteredLayerList, params.getUser());
 						break;
@@ -977,6 +981,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 		Iterable<HistoricalMunicipality> historicalMunicipalities = svc.findHistoricalMunicipality(keyword, geometry);
 		Iterable<KYSItem> kysItems = svc.findKYSItem(keyword, geometry);
+		Iterable<ProvincialMuseum> provincialMuseums = svc.findProvincialMuseum(keyword, geometry);
 
 		List<NbaRegistryLayer> filteredLayers = getRegistryLayers("resource", registryLayers);
 
@@ -998,6 +1003,17 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				KYSItem kys = iterator.next();
 				JSONObject item = getItemObject(kys, filteredLayers, user);
 				//item.put("desc", kys.getObjectName());//TODO 1) Missing getObjectName() method; 2) Not sure if it shouldn't be in getItemObject method  
+				resultArray.put(item);
+			}
+		}
+		
+		if (provincialMuseums != null) {
+			RegistryObjectIterator<ProvincialMuseum> iterator = (RegistryObjectIterator<ProvincialMuseum>) provincialMuseums.iterator();
+
+			while (iterator.hasNext()) {
+				ProvincialMuseum museum = iterator.next();
+				JSONObject item = getItemObject(museum, filteredLayers, user);
+				//item.put("desc", museum.getObjectName());//TODO 1) Missing getObjectName() method; 2) Not sure if it shouldn't be in getItemObject method  
 				resultArray.put(item);
 			}
 		}
