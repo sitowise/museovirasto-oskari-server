@@ -47,20 +47,6 @@ public class NBARegistersModifier extends BundleHandler {
 		} catch (JSONException e) {
 			log.error("Unable to set registry layer ids to nba-registers config", e);
 		}
-
-		//Add roles with rights to edit registry items
-		try {
-			JSONArray editorRoles = new JSONArray();
-			editorRoles.put("Admin");
-			editorRoles.put("P‰‰k‰ytt‰j‰");
-			editorRoles.put("Yll‰pit‰j‰");
-			editorRoles.put("Viraston muokkaaja");
-			editorRoles.put("Ulk. viranomaismuokkaaja");
-			editorRoles.put("Ulk. muu muokkaaja");
-			config.put("editorRoles", editorRoles);
-		} catch (JSONException e) {
-			log.error("Unable to set editor roles to nba-registers config", e);
-		}
 		
 		return false;
 	}
