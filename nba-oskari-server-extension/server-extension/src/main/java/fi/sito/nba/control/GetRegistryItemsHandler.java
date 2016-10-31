@@ -44,6 +44,8 @@ import fi.sito.nba.registry.models.ProjectItem;
 import fi.sito.nba.registry.models.HistoricalMunicipality;
 import fi.sito.nba.registry.models.KYSItem;
 import fi.sito.nba.registry.models.ProvincialMuseum;
+import fi.sito.nba.registry.models.Municipality250;
+import fi.sito.nba.registry.models.Region;
 import fi.sito.nba.registry.services.AncientMonumentMaintenanceItemService;
 import fi.sito.nba.registry.services.AncientMonumentService;
 import fi.sito.nba.registry.services.BuildingHeritageItemService;
@@ -188,6 +190,12 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 							registryItem = ((ResourceService) service).getKYSItemById(itemId);
 							if (registryItem == null) {
 								registryItem = ((ResourceService) service).getProvincialMuseumById(itemId);
+								if (registryItem == null) {
+									registryItem = ((ResourceService) service).getMunicipality250ById(itemId);
+									if (registryItem == null) {
+										registryItem = ((ResourceService) service).getRegionById(itemId);
+									}
+								}
 							}
 						}
 						itemObj = getItemObject(registryItem, filteredLayerList, params.getUser());
@@ -982,6 +990,8 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		Iterable<HistoricalMunicipality> historicalMunicipalities = svc.findHistoricalMunicipality(keyword, geometry);
 		Iterable<KYSItem> kysItems = svc.findKYSItem(keyword, geometry);
 		Iterable<ProvincialMuseum> provincialMuseums = svc.findProvincialMuseum(keyword, geometry);
+		Iterable<Municipality250> municipalities250 = svc.findMunicipality250(keyword, geometry);
+		Iterable<Region> regions = svc.findRegion(keyword, geometry);
 
 		List<NbaRegistryLayer> filteredLayers = getRegistryLayers("resource", registryLayers);
 
@@ -991,7 +1001,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			while (iterator.hasNext()) {
 				HistoricalMunicipality hm = iterator.next();
 				JSONObject item = getItemObject(hm, filteredLayers, user);
-				//item.put("desc", hm.getObjectName());//TODO 1) Missing getObjectName() method; 2) Not sure if it shouldn't be in getItemObject method  
+				item.put("desc", hm.getObjectName());
 				resultArray.put(item);
 			}
 		}
@@ -1002,7 +1012,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			while (iterator.hasNext()) {
 				KYSItem kys = iterator.next();
 				JSONObject item = getItemObject(kys, filteredLayers, user);
-				//item.put("desc", kys.getObjectName());//TODO 1) Missing getObjectName() method; 2) Not sure if it shouldn't be in getItemObject method  
+				item.put("desc", kys.getObjectName());
 				resultArray.put(item);
 			}
 		}
@@ -1013,7 +1023,29 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			while (iterator.hasNext()) {
 				ProvincialMuseum museum = iterator.next();
 				JSONObject item = getItemObject(museum, filteredLayers, user);
-				//item.put("desc", museum.getObjectName());//TODO 1) Missing getObjectName() method; 2) Not sure if it shouldn't be in getItemObject method  
+				item.put("desc", museum.getObjectName()); 
+				resultArray.put(item);
+			}
+		}
+		
+		if (municipalities250 != null) {
+			RegistryObjectIterator<Municipality250> iterator = (RegistryObjectIterator<Municipality250>) municipalities250.iterator();
+
+			while (iterator.hasNext()) {
+				Municipality250 municipality250 = iterator.next();
+				JSONObject item = getItemObject(municipality250, filteredLayers, user);
+				item.put("desc", municipality250.getObjectName()); 
+				resultArray.put(item);
+			}
+		}
+		
+		if (regions != null) {
+			RegistryObjectIterator<Region> iterator = (RegistryObjectIterator<Region>) regions.iterator();
+
+			while (iterator.hasNext()) {
+				Region region = iterator.next();
+				JSONObject item = getItemObject(region, filteredLayers, user);
+				item.put("desc", region.getObjectName());
 				resultArray.put(item);
 			}
 		}
