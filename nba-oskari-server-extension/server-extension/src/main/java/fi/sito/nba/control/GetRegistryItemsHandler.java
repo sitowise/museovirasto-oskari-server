@@ -76,11 +76,13 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		mapper.registerModule(new JsonOrgModule());
 	}
 
+	private boolean isGuestUser;
+
 	@Override
 	public void handlePost(ActionParameters params) throws ActionException {
 		handleGet(params);
 	}
-	
+
 	@Override
 	public void handleGet(ActionParameters params) throws ActionException {
 
@@ -105,6 +107,8 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			String itemIdParam = "";
 			String registryNameParam = "";
 			JSONArray results = new JSONArray();
+
+			isGuestUser = params.getUser().isGuest();
 
 			if (params.getHttpParam(PARAM_ITEM_ID) != null
 					&& !params.getHttpParam(PARAM_ITEM_ID).equals("")
@@ -134,37 +138,37 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						service = new AncientMonumentService(connection);
 						registryItem = ((AncientMonumentService) service)
 								.getAncientMonumentById(itemId);
-						itemObj = getItemObject(registryItem, filteredLayerList,
-								params.getUser());
+						itemObj = getItemObject(registryItem,
+								filteredLayerList, params.getUser());
 						break;
 					case "ancientMaintenance":
 						service = new AncientMonumentMaintenanceItemService(
 								connection);
 						registryItem = ((AncientMonumentMaintenanceItemService) service)
 								.getAncientMonumentMaintenanceItemById(itemId);
-						itemObj = getItemObject(registryItem, filteredLayerList,
-								params.getUser());
+						itemObj = getItemObject(registryItem,
+								filteredLayerList, params.getUser());
 						break;
 					case "buildingHeritage":
 						service = new BuildingHeritageItemService(connection);
 						registryItem = ((BuildingHeritageItemService) service)
 								.getBuildingHeritageItemById(itemId);
-						itemObj = getItemObject(registryItem, filteredLayerList,
-								params.getUser());
+						itemObj = getItemObject(registryItem,
+								filteredLayerList, params.getUser());
 						break;
 					case "rky1993":
 						service = new RKY1993Service(connection);
 						registryItem = ((RKY1993Service) service)
 								.getRKY1993ById(itemId);
-						itemObj = getItemObject(registryItem, filteredLayerList,
-								params.getUser());
+						itemObj = getItemObject(registryItem,
+								filteredLayerList, params.getUser());
 						break;
 					case "rky2000":
 						service = new RKY2000Service(connection);
 						registryItem = ((RKY2000Service) service)
 								.getRKY2000ById(itemId);
-						itemObj = getItemObject(registryItem, filteredLayerList,
-								params.getUser());
+						itemObj = getItemObject(registryItem,
+								filteredLayerList, params.getUser());
 						break;
 					case "worldHeritage":
 						service = new WorldHeritageItemService(connection);
@@ -174,31 +178,39 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 							registryItem = ((WorldHeritageItemService) service)
 									.getWorldHeritageItemPointById(itemId);
 						}
-						itemObj = getItemObject(registryItem, filteredLayerList,
-								params.getUser());
+						itemObj = getItemObject(registryItem,
+								filteredLayerList, params.getUser());
 						break;
 					case "project":
 						service = new ProjectItemService(connection);
-						registryItem = ((ProjectItemService) service).getProjectItemById(itemId);
-						itemObj = getItemObject(registryItem, filteredLayerList, params.getUser());
+						registryItem = ((ProjectItemService) service)
+								.getProjectItemById(itemId);
+						itemObj = getItemObject(registryItem,
+								filteredLayerList, params.getUser());
 						break;
 					case "resource":
 						service = new ResourceService(connection);
-						//try to find registry item by different methods
-						registryItem = ((ResourceService) service).getHistoricalMunicipalityById(itemId);
+						// try to find registry item by different methods
+						registryItem = ((ResourceService) service)
+								.getHistoricalMunicipalityById(itemId);
 						if (registryItem == null) {
-							registryItem = ((ResourceService) service).getKYSItemById(itemId);
+							registryItem = ((ResourceService) service)
+									.getKYSItemById(itemId);
 							if (registryItem == null) {
-								registryItem = ((ResourceService) service).getProvincialMuseumById(itemId);
+								registryItem = ((ResourceService) service)
+										.getProvincialMuseumById(itemId);
 								if (registryItem == null) {
-									registryItem = ((ResourceService) service).getMunicipality250ById(itemId);
+									registryItem = ((ResourceService) service)
+											.getMunicipality250ById(itemId);
 									if (registryItem == null) {
-										registryItem = ((ResourceService) service).getRegionById(itemId);
+										registryItem = ((ResourceService) service)
+												.getRegionById(itemId);
 									}
 								}
 							}
 						}
-						itemObj = getItemObject(registryItem, filteredLayerList, params.getUser());
+						itemObj = getItemObject(registryItem,
+								filteredLayerList, params.getUser());
 						break;
 					}
 					results.put(itemObj);
@@ -228,9 +240,9 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					GeometryFactory geomFactory = new GeometryFactory(
 							new PrecisionModel(10));
 					WKTReader reader = new WKTReader(geomFactory);
-					for(String wkt : geometryStr.split("\\|")) {
+					for (String wkt : geometryStr.split("\\|")) {
 						Geometry geom = reader.read(wkt).buffer(0);
-						if(geometryParam == null) {
+						if (geometryParam == null) {
 							geometryParam = geom;
 						} else {
 							geometryParam = geometryParam.union(geom);
@@ -251,8 +263,8 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 							switch (registry) {
 							case "ancientMonument":
 								resultArrays.add(getAncientMonumentItems(
-										connection, keywordParam, geometryParam,
-										registryLayers));
+										connection, keywordParam,
+										geometryParam, registryLayers));
 								break;
 							case "ancientMaintenance":
 								resultArrays
@@ -262,8 +274,8 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								break;
 							case "buildingHeritage":
 								resultArrays.add(getBuildingHeritageItems(
-										connection, keywordParam, geometryParam,
-										registryLayers));
+										connection, keywordParam,
+										geometryParam, registryLayers));
 								break;
 							case "rky1993":
 								resultArrays.add(getRKY1993Items(connection,
@@ -277,14 +289,18 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								break;
 							case "worldHeritage":
 								resultArrays.add(getWorldHeritageItems(
-										connection, keywordParam, geometryParam,
-										registryLayers));
+										connection, keywordParam,
+										geometryParam, registryLayers));
 								break;
 							case "project":
-								resultArrays.add(getProjectItems(connection, keywordParam, geometryParam, registryLayers));
+								resultArrays.add(getProjectItems(connection,
+										keywordParam, geometryParam,
+										registryLayers));
 								break;
 							case "resource":
-								resultArrays.add(getResourceItems(connection, keywordParam, geometryParam, registryLayers, params.getUser()));
+								resultArrays.add(getResourceItems(connection,
+										keywordParam, geometryParam,
+										registryLayers, params.getUser()));
 								break;
 							}
 						}
@@ -305,7 +321,8 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						resultArrays.add(getProjectItems(connection,
 								keywordParam, geometryParam, registryLayers));
 						resultArrays.add(getResourceItems(connection,
-								keywordParam, geometryParam, registryLayers, params.getUser()));
+								keywordParam, geometryParam, registryLayers,
+								params.getUser()));
 					}
 				}
 
@@ -351,7 +368,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				item.put("coordinateY", centroid.getY());
 			}
 
-			item.put("nbaUrl", registryObject.generateNbaUrl());
+			item.put("nbaUrl", registryObject.generateNbaUrl(isGuestUser));
 			item.put("itemtype", registryObject.getClass().getSimpleName());
 
 			JSONArray mapLayersArray = new JSONArray();
@@ -395,14 +412,14 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		while (keys.hasNext()) {
 			String key = keys.next();
 			if ((registry.equals("AncientMonument") && key.equals("areas"))
-					|| (registry.equals("AncientMonument")
-							&& key.equals("subItems"))
-					|| (registry.equals("AncientMonumentMaintenanceItem")
-							&& key.equals("subAreas"))
-					|| (registry.equals("BuildingHeritageItem")
-							&& key.equals("points"))
-					|| (registry.equals("BuildingHeritageItem")
-							&& key.equals("areas"))
+					|| (registry.equals("AncientMonument") && key
+							.equals("subItems"))
+					|| (registry.equals("AncientMonumentMaintenanceItem") && key
+							.equals("subAreas"))
+					|| (registry.equals("BuildingHeritageItem") && key
+							.equals("points"))
+					|| (registry.equals("BuildingHeritageItem") && key
+							.equals("areas"))
 					|| (registry.equals("RKY1993") && key.equals("areas"))
 					|| (registry.equals("RKY1993") && key.equals("lines"))
 					|| (registry.equals("RKY1993") && key.equals("points"))
@@ -413,9 +430,8 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					|| (registry.equals("ProjectItem") && key.equals("points"))) {
 				JSONArray arr = new JSONArray();
 				for (int i = 0; i < item.getJSONArray(key).length(); ++i) {
-					arr.put(filterAttributes(
-							item.getJSONArray(key).getJSONObject(i),
-							registry + "_" + key, user));
+					arr.put(filterAttributes(item.getJSONArray(key)
+							.getJSONObject(i), registry + "_" + key, user));
 				}
 				ret.put(key, arr);
 			} else {
@@ -466,7 +482,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -536,7 +552,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -606,7 +622,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -653,8 +669,8 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				.findRKY1993(keyword, geometry);
 		if (monuments != null) {
 
-			List<NbaRegistryLayer> filteredLayers = getRegistryLayers("rky1993",
-					registryLayers);
+			List<NbaRegistryLayer> filteredLayers = getRegistryLayers(
+					"rky1993", registryLayers);
 
 			RegistryObjectIterator<RKY1993> iterator = (RegistryObjectIterator<RKY1993>) monuments
 					.iterator();
@@ -675,7 +691,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -722,8 +738,8 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 		if (monuments != null) {
 
-			List<NbaRegistryLayer> filteredLayers = getRegistryLayers("rky2000",
-					registryLayers);
+			List<NbaRegistryLayer> filteredLayers = getRegistryLayers(
+					"rky2000", registryLayers);
 
 			RegistryObjectIterator<RKY2000> iterator = (RegistryObjectIterator<RKY2000>) monuments
 					.iterator();
@@ -736,14 +752,14 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					if (!monument.getPoints().isEmpty()) {
-						item.put("desc",
-								monument.getPoints().get(0).getObjectName());
+						item.put("desc", monument.getPoints().get(0)
+								.getObjectName());
 					} else if (!monument.getLines().isEmpty()) {
-						item.put("desc",
-								monument.getLines().get(0).getObjectName());
+						item.put("desc", monument.getLines().get(0)
+								.getObjectName());
 					} else if (!monument.getAreas().isEmpty()) {
-						item.put("desc",
-								monument.getAreas().get(0).getObjectName());
+						item.put("desc", monument.getAreas().get(0)
+								.getObjectName());
 					}
 					item.put("municipality", monument.getMunicipalityName());
 
@@ -753,7 +769,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -796,10 +812,10 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 		WorldHeritageItemService svc = new WorldHeritageItemService(con);
 
-		Iterable<WorldHeritageItem> areas = svc
-				.findWorldHeritageItemAreas(keyword, geometry);
-		Iterable<WorldHeritageItem> points = svc
-				.findWorldHeritageItemPoints(keyword, geometry);
+		Iterable<WorldHeritageItem> areas = svc.findWorldHeritageItemAreas(
+				keyword, geometry);
+		Iterable<WorldHeritageItem> points = svc.findWorldHeritageItemPoints(
+				keyword, geometry);
 
 		List<NbaRegistryLayer> filteredLayers = getRegistryLayers(
 				"worldHeritage", registryLayers);
@@ -823,7 +839,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -876,7 +892,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl());
+					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -911,7 +927,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		}
 		return resultArray;
 	}
-	
+
 	private JSONArray getProjectItems(Connection con, String keyword,
 			Geometry geometry, List<NbaRegistryLayer> registryLayers) {
 
@@ -923,10 +939,11 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 		if (items != null) {
 
-			List<NbaRegistryLayer> filteredLayers = getRegistryLayers("project",
-					registryLayers);
+			List<NbaRegistryLayer> filteredLayers = getRegistryLayers(
+					"project", registryLayers);
 
-			RegistryObjectIterator<ProjectItem> iterator = (RegistryObjectIterator<ProjectItem>) items.iterator();
+			RegistryObjectIterator<ProjectItem> iterator = (RegistryObjectIterator<ProjectItem>) items
+					.iterator();
 
 			while (iterator.hasNext()) {
 				try {
@@ -944,7 +961,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						resultItem.put("coordinateY", centroid.getY());
 					}
 
-					resultItem.put("nbaUrl", item.generateNbaUrl());
+					resultItem.put("nbaUrl", item.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -979,77 +996,94 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		}
 		return resultArray;
 	}
-	
+
 	private JSONArray getResourceItems(Connection con, String keyword,
 			Geometry geometry, List<NbaRegistryLayer> registryLayers, User user) {
 
 		JSONArray resultArray = new JSONArray();
 
-		ResourceService svc = new ResourceService(con);
+		try {
+			ResourceService svc = new ResourceService(con);
 
-		Iterable<HistoricalMunicipality> historicalMunicipalities = svc.findHistoricalMunicipality(keyword, geometry);
-		Iterable<KYSItem> kysItems = svc.findKYSItem(keyword, geometry);
-		Iterable<ProvincialMuseum> provincialMuseums = svc.findProvincialMuseum(keyword, geometry);
-		Iterable<Municipality250> municipalities250 = svc.findMunicipality250(keyword, geometry);
-		Iterable<Region> regions = svc.findRegion(keyword, geometry);
+			Iterable<HistoricalMunicipality> historicalMunicipalities = svc
+					.findHistoricalMunicipality(keyword, geometry);
+			Iterable<KYSItem> kysItems = svc.findKYSItem(keyword, geometry);
+			Iterable<ProvincialMuseum> provincialMuseums = svc
+					.findProvincialMuseum(keyword, geometry);
+			Iterable<Municipality250> municipalities250 = svc
+					.findMunicipality250(keyword, geometry);
+			Iterable<Region> regions = svc.findRegion(keyword, geometry);
 
-		List<NbaRegistryLayer> filteredLayers = getRegistryLayers("resource", registryLayers);
+			List<NbaRegistryLayer> filteredLayers = getRegistryLayers(
+					"resource", registryLayers);
 
-		if (historicalMunicipalities != null) {
-			RegistryObjectIterator<HistoricalMunicipality> iterator = (RegistryObjectIterator<HistoricalMunicipality>) historicalMunicipalities.iterator();
+			if (historicalMunicipalities != null) {
+				RegistryObjectIterator<HistoricalMunicipality> iterator = (RegistryObjectIterator<HistoricalMunicipality>) historicalMunicipalities
+						.iterator();
 
-			while (iterator.hasNext()) {
-				HistoricalMunicipality hm = iterator.next();
-				JSONObject item = getItemObject(hm, filteredLayers, user);
-				item.put("desc", hm.getObjectName());
-				resultArray.put(item);
+				while (iterator.hasNext()) {
+					HistoricalMunicipality hm = iterator.next();
+					JSONObject item = getItemObject(hm, filteredLayers, user);
+					item.put("desc", hm.getObjectName());
+					resultArray.put(item);
+				}
 			}
-		}
-		
-		if (kysItems != null) {
-			RegistryObjectIterator<KYSItem> iterator = (RegistryObjectIterator<KYSItem>) kysItems.iterator();
 
-			while (iterator.hasNext()) {
-				KYSItem kys = iterator.next();
-				JSONObject item = getItemObject(kys, filteredLayers, user);
-				item.put("desc", kys.getObjectName());
-				resultArray.put(item);
-			}
-		}
-		
-		if (provincialMuseums != null) {
-			RegistryObjectIterator<ProvincialMuseum> iterator = (RegistryObjectIterator<ProvincialMuseum>) provincialMuseums.iterator();
+			if (kysItems != null) {
+				RegistryObjectIterator<KYSItem> iterator = (RegistryObjectIterator<KYSItem>) kysItems
+						.iterator();
 
-			while (iterator.hasNext()) {
-				ProvincialMuseum museum = iterator.next();
-				JSONObject item = getItemObject(museum, filteredLayers, user);
-				item.put("desc", museum.getObjectName()); 
-				resultArray.put(item);
+				while (iterator.hasNext()) {
+					KYSItem kys = iterator.next();
+					JSONObject item = getItemObject(kys, filteredLayers, user);
+					item.put("desc", kys.getObjectName());
+					resultArray.put(item);
+				}
 			}
-		}
-		
-		if (municipalities250 != null) {
-			RegistryObjectIterator<Municipality250> iterator = (RegistryObjectIterator<Municipality250>) municipalities250.iterator();
 
-			while (iterator.hasNext()) {
-				Municipality250 municipality250 = iterator.next();
-				JSONObject item = getItemObject(municipality250, filteredLayers, user);
-				item.put("desc", municipality250.getObjectName()); 
-				resultArray.put(item);
-			}
-		}
-		
-		if (regions != null) {
-			RegistryObjectIterator<Region> iterator = (RegistryObjectIterator<Region>) regions.iterator();
+			if (provincialMuseums != null) {
+				RegistryObjectIterator<ProvincialMuseum> iterator = (RegistryObjectIterator<ProvincialMuseum>) provincialMuseums
+						.iterator();
 
-			while (iterator.hasNext()) {
-				Region region = iterator.next();
-				JSONObject item = getItemObject(region, filteredLayers, user);
-				item.put("desc", region.getObjectName());
-				resultArray.put(item);
+				while (iterator.hasNext()) {
+					ProvincialMuseum museum = iterator.next();
+					JSONObject item = getItemObject(museum, filteredLayers,
+							user);
+					item.put("desc", museum.getObjectName());
+					resultArray.put(item);
+				}
 			}
+
+			if (municipalities250 != null) {
+				RegistryObjectIterator<Municipality250> iterator = (RegistryObjectIterator<Municipality250>) municipalities250
+						.iterator();
+
+				while (iterator.hasNext()) {
+					Municipality250 municipality250 = iterator.next();
+					JSONObject item = getItemObject(municipality250,
+							filteredLayers, user);
+					item.put("desc", municipality250.getObjectName());
+					resultArray.put(item);
+				}
+			}
+
+			if (regions != null) {
+				RegistryObjectIterator<Region> iterator = (RegistryObjectIterator<Region>) regions
+						.iterator();
+
+				while (iterator.hasNext()) {
+					Region region = iterator.next();
+					JSONObject item = getItemObject(region, filteredLayers,
+							user);
+					item.put("desc", region.getObjectName());
+					resultArray.put(item);
+				}
+			}
+
+		} catch (JSONException e) {
+			LOG.error(e, "Error writing JSON");
 		}
-		
+
 		return resultArray;
 	}
 
