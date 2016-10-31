@@ -10,6 +10,7 @@ import fi.nls.oskari.annotation.OskariViewModifier;
 import fi.nls.oskari.control.view.modifier.bundle.BundleHandler;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
+import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.view.modifier.ModifierException;
 import fi.nls.oskari.view.modifier.ModifierParams;
 import fi.sito.nba.model.NbaRegistryLayer;
@@ -23,15 +24,14 @@ public class NBARegistersModifier extends BundleHandler {
 	private NbaRegistryLayerService service = new NbaRegistryLayerService();
 
 	@Override
-	public boolean modifyBundle(ModifierParams params)
-			throws ModifierException {
+	public boolean modifyBundle(ModifierParams params) throws ModifierException {
 		final JSONObject config = getBundleConfig(params.getConfig());
 
 		if (config == null) {
 			return false;
 		}
 
-		//Add registry layers
+		// Add registry layers
 		List<NbaRegistryLayer> layers = service.findRegistryLayers();
 		JSONObject registries = new JSONObject();
 
@@ -45,9 +45,23 @@ public class NBARegistersModifier extends BundleHandler {
 			}
 			config.put("registryLayers", registries);
 		} catch (JSONException e) {
-			log.error("Unable to set registry layer ids to nba-registers config", e);
+			log.error(
+					"Unable to set registry layer ids to nba-registers config",
+					e);
 		}
-		
+
+		// Add roles with rights to edit registry items
+		try {
+			String[] rolesForEditor = PropertyUtil.getCommaSeparatedList("nba.registers.editroles");
+			JSONArray editorRoles = new JSONArray();
+			for (String role: rolesForEditor) {
+				editorRoles.put(role);
+			}
+			config.put("editorRoles", editorRoles);
+		} catch (JSONException e) {
+			log.error("Unable to set editor roles to nba-registers config", e);
+		}
+
 		return false;
 	}
 

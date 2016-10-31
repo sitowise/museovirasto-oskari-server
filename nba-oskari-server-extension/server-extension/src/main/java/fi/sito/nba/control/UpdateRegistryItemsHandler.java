@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -53,9 +54,6 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 	private static final String PARAM_REGISTER_NAME = "registerName";
 	private static final String PARAM_ITEM = "item";
 	private static final String PARAM_EDITED = "edited";
-	private static final String[] ALLOWED_ROLES = new String[] { "Admin",
-			"Pääkäyttäjä", "Ylläpitäjä", "Viraston muokkaaja",
-			"Ulk. viranomaismuokkaaja", "Ulk. muu muokkaaja" };
 
 	private static final Logger LOG = LogFactory
 			.getLogger(GetRegistryItemsHandler.class);
@@ -73,7 +71,10 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		User user = params.getUser();
 		LOG.info(user, "accessing route", getName());
 		params.requireLoggedInUser();
-		if (!user.hasAnyRoleIn(ALLOWED_ROLES)) {
+		
+		String[] rolesForEditor = PropertyUtil.getCommaSeparatedList("nba.registers.editroles");
+		
+		if (!user.hasAnyRoleIn(rolesForEditor)) {
 			throw new ActionDeniedException("Not allowed");
 		}
 	}
