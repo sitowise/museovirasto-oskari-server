@@ -104,9 +104,13 @@ public class CachingSchemaLocator implements XSDSchemaLocator {
 			if (url.toLowerCase().startsWith("https")) {
 				BufferedInputStream response = HttpHelper.getRequestStream(url, "application/xml", username, password);
 				foundSchema = XMLHelper.InputStreamToXSDSchema(response);
-			} else {			
+			} else if (url.toLowerCase().startsWith("http")) {
+				BufferedInputStream response = HttpHelper.getRequestStream(url, "application/xml", null, null);
+				foundSchema = XMLHelper.InputStreamToXSDSchema(response);
+			} else {
 				foundSchema = Schemas.parse(url);
 			}
+			
 		} catch (Exception e) {
             final Long lastError = errorTracker.get(url);
             long now = System.currentTimeMillis();
