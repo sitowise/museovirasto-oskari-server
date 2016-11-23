@@ -317,7 +317,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				.getSubAreas()) {
 			if (editedSubItemIds.contains(subArea.getId())) {
 				ret.put("areaIntersects", intersectsExistingArea(monument.getId(), subArea.getId(),
-						monument.getAreaGeometry(), service));
+						subArea.getGeometry(), service));
 				service.updateAncientMonumentMaintenanceItemSubArea(
 						subArea.getId(), user.getScreenname(),
 						subArea.getGeometry());
