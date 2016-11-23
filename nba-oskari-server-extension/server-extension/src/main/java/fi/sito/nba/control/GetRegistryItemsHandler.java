@@ -140,6 +140,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								.getAncientMonumentById(itemId);
 						itemObj = getItemObject(registryItem,
 								filteredLayerList, params.getUser());
+						itemObj.put("editable", true);
 						break;
 					case "ancientMaintenance":
 						service = new AncientMonumentMaintenanceItemService(
@@ -148,6 +149,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								.getAncientMonumentMaintenanceItemById(itemId);
 						itemObj = getItemObject(registryItem,
 								filteredLayerList, params.getUser());
+						itemObj.put("editable", true);
 						break;
 					case "buildingHeritage":
 						service = new BuildingHeritageItemService(connection);
@@ -155,6 +157,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								.getBuildingHeritageItemById(itemId);
 						itemObj = getItemObject(registryItem,
 								filteredLayerList, params.getUser());
+						itemObj.put("editable", true);
 						break;
 					case "rky1993":
 						service = new RKY1993Service(connection);
@@ -162,6 +165,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								.getRKY1993ById(itemId);
 						itemObj = getItemObject(registryItem,
 								filteredLayerList, params.getUser());
+						itemObj.put("editable", false);
 						break;
 					case "rky2000":
 						service = new RKY2000Service(connection);
@@ -169,6 +173,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								.getRKY2000ById(itemId);
 						itemObj = getItemObject(registryItem,
 								filteredLayerList, params.getUser());
+						itemObj.put("editable", true);
 						break;
 					case "worldHeritage":
 						service = new WorldHeritageItemService(connection);
@@ -180,6 +185,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						}
 						itemObj = getItemObject(registryItem,
 								filteredLayerList, params.getUser());
+						itemObj.put("editable", false);
 						break;
 					case "project":
 						service = new ProjectItemService(connection);
@@ -187,6 +193,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								.getProjectItemById(itemId);
 						itemObj = getItemObject(registryItem,
 								filteredLayerList, params.getUser());
+						itemObj.put("editable", true);
 						break;
 					case "resource":
 						service = new ResourceService(connection);
@@ -211,6 +218,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						}
 						itemObj = getItemObject(registryItem,
 								filteredLayerList, params.getUser());
+						itemObj.put("editable", false);
 						break;
 					}
 					results.put(itemObj);
@@ -474,6 +482,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					item.put("municipality", monument.getMunicipalityName());
+					item.put("editable", true);
 
 					Point centroid = monument.calculateCentroid();
 
@@ -544,6 +553,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					item.put("municipality", monument.getMunicipalityName());
+					item.put("editable", true);
 
 					Point centroid = monument.calculateCentroid();
 
@@ -614,6 +624,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					item.put("municipality", monument.getMunicipalityName());
+					item.put("editable", true);
 
 					Point centroid = monument.calculateCentroid();
 
@@ -683,6 +694,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					item.put("municipality", monument.getMunicipalityName());
+					item.put("editable", false);
 
 					Point centroid = monument.calculateCentroid();
 
@@ -749,6 +761,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					RKY2000 monument = iterator.next();
 
 					JSONObject item = new JSONObject();
+					item.put("editable", true);
 					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					if (!monument.getPoints().isEmpty()) {
@@ -832,6 +845,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
+					item.put("editable", false);
 
 					Point centroid = monument.calculateCentroid();
 					if (centroid != null) {
@@ -885,6 +899,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("itemtype", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
+					item.put("editable", false);
 
 					Point centroid = monument.calculateCentroid();
 					if (centroid != null) {
@@ -954,6 +969,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					resultItem.put("id", item.getObjectId());
 					resultItem.put("desc", item.getObjectName());
 					resultItem.put("municipality", item.getMunicipalityName());
+					resultItem.put("editable", true);
 
 					Point centroid = item.calculateCentroid();
 					if (centroid != null) {
@@ -1025,6 +1041,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					HistoricalMunicipality hm = iterator.next();
 					JSONObject item = getItemObject(hm, filteredLayers, user);
 					item.put("desc", hm.getObjectName());
+					item.put("editable", false);
 					resultArray.put(item);
 				}
 			}
@@ -1037,6 +1054,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					KYSItem kys = iterator.next();
 					JSONObject item = getItemObject(kys, filteredLayers, user);
 					item.put("desc", kys.getObjectName());
+					item.put("editable", false);
 					resultArray.put(item);
 				}
 			}
@@ -1050,6 +1068,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					JSONObject item = getItemObject(museum, filteredLayers,
 							user);
 					item.put("desc", museum.getObjectName());
+					item.put("editable", false);
 					resultArray.put(item);
 				}
 			}
@@ -1063,6 +1082,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					JSONObject item = getItemObject(municipality250,
 							filteredLayers, user);
 					item.put("desc", municipality250.getObjectName());
+					item.put("editable", false);
 					resultArray.put(item);
 				}
 			}
@@ -1076,6 +1096,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					JSONObject item = getItemObject(region, filteredLayers,
 							user);
 					item.put("desc", region.getObjectName());
+					item.put("editable", false);
 					resultArray.put(item);
 				}
 			}
