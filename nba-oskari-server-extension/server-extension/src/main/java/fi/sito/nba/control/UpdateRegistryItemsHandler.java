@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -234,12 +233,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		for (AncientMonumentArea area : monument.getAreas()) {
 			AncientMonumentArea originalArea = originalAreas.get(area.getId());
 			if (originalArea == null) {
-				if (intersectsExistingArea(monument.getId(), area.getId(),
-						area.getGeometry(), service)) {
-					ret.put("updated", false);
-					ret.put("error", "areaIntersects");
-					return ret;
-				}
+				ret.put("areaIntersects",
+						intersectsExistingArea(monument.getId(), area.getId(), area.getGeometry(), service));
 				service.addAncientMonumentArea(monument.getId(),
 						user.getScreenname(), area.getDescription(),
 						area.getSurveyingAccuracy(), area.getSurveyingType(),
@@ -247,12 +242,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
 			} else if (editedAreaIds.contains(area.getId())) {
-				if (intersectsExistingArea(monument.getId(), area.getId(),
-						area.getGeometry(), service)) {
-					ret.put("updated", false);
-					ret.put("error", "areaIntersects");
-					return ret;
-				}
+				ret.put("areaIntersects",
+						intersectsExistingArea(monument.getId(), area.getId(), area.getGeometry(), service));
 				service.updateAncientMonumentArea(area.getId(),
 						user.getScreenname(), area.getDescription(),
 						area.getSurveyingAccuracy(), area.getSurveyingType(),
@@ -308,12 +299,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			}
 			
 			if (monument.getAreaGeometry() != null) {
-				if (intersectsExistingArea(monument.getId(), null,
-						monument.getAreaGeometry(), service)) {
-					ret.put("updated", false);
-					ret.put("error", "areaIntersects");
-					return ret;
-				}
+				ret.put("areaIntersects",
+						intersectsExistingArea(monument.getId(), null, monument.getAreaGeometry(), service));
 				service.updateAncientMonumentMaintenanceItemArea(
 						monument.getId(), user.getScreenname(),
 						monument.getAreaGeometry());
@@ -329,12 +316,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		for (AncientMonumentMaintenanceItemSubArea subArea : monument
 				.getSubAreas()) {
 			if (editedSubItemIds.contains(subArea.getId())) {
-				if (intersectsExistingArea(monument.getId(), subArea.getId(),
-						monument.getAreaGeometry(), service)) {
-					ret.put("updated", false);
-					ret.put("error", "subAreaIntersects");
-					return ret;
-				}
+				ret.put("areaIntersects", intersectsExistingArea(monument.getId(), subArea.getId(),
+						monument.getAreaGeometry(), service));
 				service.updateAncientMonumentMaintenanceItemSubArea(
 						subArea.getId(), user.getScreenname(),
 						subArea.getGeometry());
@@ -408,12 +391,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			BuildingHeritageItemArea originalArea = originalAreas
 					.get(area.getId());
 			if (originalArea == null) {
-				if (intersectsExistingArea(monument.getId(), area.getId(),
-						area.getGeometry(), service)) {
-					ret.put("updated", false);
-					ret.put("error", "areaIntersects");
-					return ret;
-				}
+				ret.put("areaIntersects",
+						intersectsExistingArea(monument.getId(), area.getId(), area.getGeometry(), service));
 				service.addBuildingHeritageItemArea(monument.getId(),
 						user.getScreenname(), area.getObjectName(), area.getDescription(),
 						area.getSurveyingAccuracy(), area.getSurveyingType(),
@@ -422,12 +401,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
 			} else if (editedAreaIds.contains(area.getId())) {
-				if (intersectsExistingArea(monument.getId(), area.getId(),
-						area.getGeometry(), service)) {
-					ret.put("updated", false);
-					ret.put("error", "areaIntersects");
-					return ret;
-				}
+				ret.put("areaIntersects",
+						intersectsExistingArea(monument.getId(), area.getId(), area.getGeometry(), service));
 				service.updateBuildingHeritageItemArea(area.getId(),
 						user.getScreenname(), area.getObjectName(), area.getDescription(),
 						area.getSurveyingAccuracy(), area.getSurveyingType(),
@@ -509,12 +484,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		for (RKY2000Geometry area : monument.getAreas()) {
 			RKY2000Geometry originalArea = originalAreas.get(area.getId());
 			if (originalArea == null) {
-				if (intersectsExistingArea(monument.getId(), area.getId(),
-						area.getGeometry(), service)) {
-					ret.put("updated", false);
-					ret.put("error", "areaIntersects");
-					return ret;
-				}
+				ret.put("areaIntersects",
+						intersectsExistingArea(monument.getId(), area.getId(), area.getGeometry(), service));
 				service.addRKY2000Area(monument.getId(),
 						user.getScreenname(), area.getObjectName(), area.getDescription(),
 						area.getSurveyingAccuracy(), area.getSurveyingType(),
@@ -522,12 +493,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
 			} else if (editedAreaIds.contains(area.getId())) {
-				if (intersectsExistingArea(monument.getId(), area.getId(),
-						area.getGeometry(), service)) {
-					ret.put("updated", false);
-					ret.put("error", "areaIntersects");
-					return ret;
-				}
+				ret.put("areaIntersects",
+						intersectsExistingArea(monument.getId(), area.getId(), area.getGeometry(), service));
 				service.updateRKY2000Area(area.getId(),
 						user.getScreenname(), area.getObjectName(), area.getDescription(),
 						area.getSurveyingAccuracy(), area.getSurveyingType(),
@@ -629,24 +596,16 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		for (ProjectItemArea area : projectItem.getAreas()) {
 			ProjectItemArea originalArea = originalAreas.get(area.getId());
 			if (originalArea == null) {
-				if (intersectsExistingArea(projectItem.getId(), area.getId(),
-						area.getGeometry(), service)) {
-					ret.put("updated", false);
-					ret.put("error", "areaIntersects");
-					return ret;
-				}
+				ret.put("areaIntersects",
+						intersectsExistingArea(projectItem.getId(), area.getId(), area.getGeometry(), service));
 				service.addProjectItemArea(projectItem.getId(),
 						user.getScreenname(), area.getDescription(),
 						area.getType(), area.getGeometry());
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
 			} else if (editedAreaIds.contains(area.getId())) {
-				if (intersectsExistingArea(projectItem.getId(), area.getId(),
-						area.getGeometry(), service)) {
-					ret.put("updated", false);
-					ret.put("error", "areaIntersects");
-					return ret;
-				}
+				ret.put("areaIntersects",
+						intersectsExistingArea(projectItem.getId(), area.getId(), area.getGeometry(), service));
 				service.updateProjectItemArea(area.getId(),
 						user.getScreenname(), area.getDescription(),
 						area.getType(), area.getGeometry());
