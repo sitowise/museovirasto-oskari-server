@@ -379,9 +379,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		for (BuildingHeritageItemPoint point : monument.getPoints()) {
 			if (editedPointIds.contains(point.getId())) {
 				service.updateBuildingHeritageItemPoint(point.getId(), user.getScreenname(), 
-						point.getObjectName(),  point.getDescription(), point.getSurveyingAccuracy(), 
-						point.getSurveyingType(), point.getConservationGroup(), point.getConservationStatus(),
-						point.getGeometry());
+						point.getDescription(), point.getSurveyingAccuracy(),
+						point.getSurveyingType(), point.getGeometry());
 				ret.put("updated", true);
 				ret.put("subItems", ret.optInt("subItems", 0) + 1);
 			}
@@ -394,9 +393,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				ret.put("areaIntersects",
 						intersectsExistingArea(monument.getId(), area.getId(), area.getGeometry(), service));
 				service.addBuildingHeritageItemArea(monument.getId(),
-						user.getScreenname(), area.getObjectName(), area.getDescription(),
+						user.getScreenname(), area.getDescription(),
 						area.getSurveyingAccuracy(), area.getSurveyingType(),
-						area.getConservationGroup(), area.getConservationStatus(),
 						area.getGeometry());
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
@@ -404,9 +402,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				ret.put("areaIntersects",
 						intersectsExistingArea(monument.getId(), area.getId(), area.getGeometry(), service));
 				service.updateBuildingHeritageItemArea(area.getId(),
-						user.getScreenname(), area.getObjectName(), area.getDescription(),
+						user.getScreenname(), area.getDescription(),
 						area.getSurveyingAccuracy(), area.getSurveyingType(),
-						area.getConservationGroup(), area.getConservationStatus(),
 						area.getGeometry());
 
 				ret.put("updated", true);
