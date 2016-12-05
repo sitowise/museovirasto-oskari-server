@@ -221,6 +221,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						itemObj.put("editable", false);
 						break;
 					}
+					itemObj.put("registryIdentifier", registryNameParam);
 					results.put(itemObj);
 				}
 
@@ -377,7 +378,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			}
 
 			item.put("nbaUrl", registryObject.generateNbaUrl(isGuestUser));
-			item.put("itemtype", registryObject.getClass().getSimpleName());
+			item.put("itemClassName", registryObject.getClass().getSimpleName());
 
 			JSONArray mapLayersArray = new JSONArray();
 			for (NbaRegistryLayer registryLayer : registryLayers) {
@@ -459,6 +460,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			String keyword, Geometry geometry,
 			List<NbaRegistryLayer> registryLayers) {
 
+		String registryIdentifier = "ancientMaintenance";
 		JSONArray resultArray = new JSONArray();
 
 		AncientMonumentMaintenanceItemService svc = new AncientMonumentMaintenanceItemService(
@@ -470,7 +472,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		if (monuments != null) {
 
 			List<NbaRegistryLayer> filteredLayers = getRegistryLayers(
-					"ancientMaintenance", registryLayers);
+					registryIdentifier, registryLayers);
 
 			RegistryObjectIterator<AncientMonumentMaintenanceItem> iterator = (RegistryObjectIterator<AncientMonumentMaintenanceItem>) monuments
 					.iterator();
@@ -478,11 +480,12 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				try {
 					AncientMonumentMaintenanceItem monument = iterator.next();
 					JSONObject item = new JSONObject();
-					item.put("itemtype", monument.getClass().getSimpleName());
+					item.put("itemClassName", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					item.put("municipality", monument.getMunicipalityName());
 					item.put("editable", true);
+					item.put("registryIdentifier", registryIdentifier);
 
 					Point centroid = monument.calculateCentroid();
 
@@ -530,6 +533,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 	private JSONArray getAncientMonumentItems(Connection con, String keyword,
 			Geometry geometry, List<NbaRegistryLayer> registryLayers) {
 
+		String registryIdentifier = "ancientMonument";
 		JSONArray resultArray = new JSONArray();
 
 		AncientMonumentService svc = new AncientMonumentService(con);
@@ -539,7 +543,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		if (monuments != null) {
 
 			List<NbaRegistryLayer> filteredLayers = getRegistryLayers(
-					"ancientMonument", registryLayers);
+					registryIdentifier, registryLayers);
 
 			RegistryObjectIterator<AncientMonument> iterator = (RegistryObjectIterator<AncientMonument>) monuments
 					.iterator();
@@ -549,11 +553,12 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 							.next();
 
 					JSONObject item = new JSONObject();
-					item.put("itemtype", monument.getClass().getSimpleName());
+					item.put("itemClassName", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					item.put("municipality", monument.getMunicipalityName());
 					item.put("editable", true);
+					item.put("registryIdentifier", registryIdentifier);
 
 					Point centroid = monument.calculateCentroid();
 
@@ -601,6 +606,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 	private JSONArray getBuildingHeritageItems(Connection con, String keyword,
 			Geometry geometry, List<NbaRegistryLayer> registryLayers) {
 
+		String registryIdentifier = "buildingHeritage";
 		JSONArray resultArray = new JSONArray();
 
 		BuildingHeritageItemService svc = new BuildingHeritageItemService(con);
@@ -610,7 +616,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		if (monuments != null) {
 
 			List<NbaRegistryLayer> filteredLayers = getRegistryLayers(
-					"buildingHeritage", registryLayers);
+					registryIdentifier, registryLayers);
 
 			RegistryObjectIterator<BuildingHeritageItem> iterator = (RegistryObjectIterator<BuildingHeritageItem>) monuments
 					.iterator();
@@ -620,11 +626,12 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 							.next();
 
 					JSONObject item = new JSONObject();
-					item.put("itemtype", monument.getClass().getSimpleName());
+					item.put("itemClassName", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					item.put("municipality", monument.getMunicipalityName());
 					item.put("editable", true);
+					item.put("registryIdentifier", registryIdentifier);
 
 					Point centroid = monument.calculateCentroid();
 
@@ -672,6 +679,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 	private JSONArray getRKY1993Items(Connection con, String keyword,
 			Geometry geometry, List<NbaRegistryLayer> registryLayers) {
 
+		String registryIdentifier = "rky1993";
 		JSONArray resultArray = new JSONArray();
 
 		RKY1993Service svc = new RKY1993Service(con);
@@ -681,7 +689,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		if (monuments != null) {
 
 			List<NbaRegistryLayer> filteredLayers = getRegistryLayers(
-					"rky1993", registryLayers);
+					registryIdentifier, registryLayers);
 
 			RegistryObjectIterator<RKY1993> iterator = (RegistryObjectIterator<RKY1993>) monuments
 					.iterator();
@@ -690,11 +698,12 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					RKY1993 monument = (RKY1993) iterator.next();
 
 					JSONObject item = new JSONObject();
-					item.put("itemtype", monument.getClass().getSimpleName());
+					item.put("itemClassName", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					item.put("municipality", monument.getMunicipalityName());
 					item.put("editable", false);
+					item.put("registryIdentifier", registryIdentifier);
 
 					Point centroid = monument.calculateCentroid();
 
@@ -742,6 +751,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 	private JSONArray getRKY2000Items(Connection con, String keyword,
 			Geometry geometry, List<NbaRegistryLayer> registryLayers) {
 
+		String registryIdentifier = "rky2000";
 		JSONArray resultArray = new JSONArray();
 
 		RKY2000Service svc = new RKY2000Service(con);
@@ -751,7 +761,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		if (monuments != null) {
 
 			List<NbaRegistryLayer> filteredLayers = getRegistryLayers(
-					"rky2000", registryLayers);
+					registryIdentifier, registryLayers);
 
 			RegistryObjectIterator<RKY2000> iterator = (RegistryObjectIterator<RKY2000>) monuments
 					.iterator();
@@ -762,7 +772,8 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 					JSONObject item = new JSONObject();
 					item.put("editable", true);
-					item.put("itemtype", monument.getClass().getSimpleName());
+					item.put("registryIdentifier", registryIdentifier);
+					item.put("itemClassName", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					if (!monument.getPoints().isEmpty()) {
 						item.put("desc", monument.getPoints().get(0)
@@ -821,6 +832,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 	private JSONArray getWorldHeritageItems(Connection con, String keyword,
 			Geometry geometry, List<NbaRegistryLayer> registryLayers) {
 
+		String registryIdentifier = "worldHeritage";
 		JSONArray resultArray = new JSONArray();
 
 		WorldHeritageItemService svc = new WorldHeritageItemService(con);
@@ -831,7 +843,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				keyword, geometry);
 
 		List<NbaRegistryLayer> filteredLayers = getRegistryLayers(
-				"worldHeritage", registryLayers);
+				registryIdentifier, registryLayers);
 
 		if (areas != null) {
 			RegistryObjectIterator<WorldHeritageItem> iterator = (RegistryObjectIterator<WorldHeritageItem>) areas
@@ -842,10 +854,11 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					WorldHeritageItem monument = iterator.next();
 
 					JSONObject item = new JSONObject();
-					item.put("itemtype", monument.getClass().getSimpleName());
+					item.put("itemClassName", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					item.put("editable", false);
+					item.put("registryIdentifier", registryIdentifier);
 
 					Point centroid = monument.calculateCentroid();
 					if (centroid != null) {
@@ -896,10 +909,11 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					WorldHeritageItem monument = iterator.next();
 
 					JSONObject item = new JSONObject();
-					item.put("itemtype", monument.getClass().getSimpleName());
+					item.put("itemClassName", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
 					item.put("editable", false);
+					item.put("registryIdentifier", registryIdentifier);
 
 					Point centroid = monument.calculateCentroid();
 					if (centroid != null) {
@@ -946,6 +960,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 	private JSONArray getProjectItems(Connection con, String keyword,
 			Geometry geometry, List<NbaRegistryLayer> registryLayers) {
 
+		String registryIdentifier = "project";
 		JSONArray resultArray = new JSONArray();
 
 		ProjectItemService svc = new ProjectItemService(con);
@@ -955,7 +970,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		if (items != null) {
 
 			List<NbaRegistryLayer> filteredLayers = getRegistryLayers(
-					"project", registryLayers);
+					registryIdentifier, registryLayers);
 
 			RegistryObjectIterator<ProjectItem> iterator = (RegistryObjectIterator<ProjectItem>) items
 					.iterator();
@@ -965,11 +980,12 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					ProjectItem item = iterator.next();
 
 					JSONObject resultItem = new JSONObject();
-					resultItem.put("itemtype", item.getClass().getSimpleName());
+					resultItem.put("itemClassName", item.getClass().getSimpleName());
 					resultItem.put("id", item.getObjectId());
 					resultItem.put("desc", item.getObjectName());
 					resultItem.put("municipality", item.getMunicipalityName());
 					resultItem.put("editable", true);
+					resultItem.put("registryIdentifier", registryIdentifier);
 
 					Point centroid = item.calculateCentroid();
 					if (centroid != null) {
@@ -1016,6 +1032,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 	private JSONArray getResourceItems(Connection con, String keyword,
 			Geometry geometry, List<NbaRegistryLayer> registryLayers, User user) {
 
+		String registryIdentifier = "resource";
 		JSONArray resultArray = new JSONArray();
 
 		try {
@@ -1031,7 +1048,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			Iterable<Region> regions = svc.findRegion(keyword, geometry);
 
 			List<NbaRegistryLayer> filteredLayers = getRegistryLayers(
-					"resource", registryLayers);
+					registryIdentifier, registryLayers);
 
 			if (historicalMunicipalities != null) {
 				RegistryObjectIterator<HistoricalMunicipality> iterator = (RegistryObjectIterator<HistoricalMunicipality>) historicalMunicipalities
@@ -1042,6 +1059,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					JSONObject item = getItemObject(hm, filteredLayers, user);
 					item.put("desc", hm.getObjectName());
 					item.put("editable", false);
+					item.put("registryIdentifier", registryIdentifier);
 					resultArray.put(item);
 				}
 			}
@@ -1055,6 +1073,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					JSONObject item = getItemObject(kys, filteredLayers, user);
 					item.put("desc", kys.getObjectName());
 					item.put("editable", false);
+					item.put("registryIdentifier", registryIdentifier);
 					resultArray.put(item);
 				}
 			}
@@ -1069,6 +1088,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 							user);
 					item.put("desc", museum.getObjectName());
 					item.put("editable", false);
+					item.put("registryIdentifier", registryIdentifier);
 					resultArray.put(item);
 				}
 			}
@@ -1083,6 +1103,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 							filteredLayers, user);
 					item.put("desc", municipality250.getObjectName());
 					item.put("editable", false);
+					item.put("registryIdentifier", registryIdentifier);
 					resultArray.put(item);
 				}
 			}
@@ -1097,6 +1118,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 							user);
 					item.put("desc", region.getObjectName());
 					item.put("editable", false);
+					item.put("registryIdentifier", registryIdentifier);
 					resultArray.put(item);
 				}
 			}

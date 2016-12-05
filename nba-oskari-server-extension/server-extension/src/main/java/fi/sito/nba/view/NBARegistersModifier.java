@@ -2,6 +2,8 @@ package fi.sito.nba.view;
 
 import java.util.List;
 
+import fi.sito.nba.model.NbaRegistry;
+import fi.sito.nba.service.NbaRegistryService;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,7 +23,8 @@ public class NBARegistersModifier extends BundleHandler {
 
 	private static final Logger log = LogFactory
 			.getLogger(NBARegistersModifier.class);
-	private NbaRegistryLayerService service = new NbaRegistryLayerService();
+	private NbaRegistryLayerService registryLayerService = new NbaRegistryLayerService();
+	private NbaRegistryService registryService = new NbaRegistryService();
 
 	@Override
 	public boolean modifyBundle(ModifierParams params) throws ModifierException {
@@ -31,19 +34,32 @@ public class NBARegistersModifier extends BundleHandler {
 			return false;
 		}
 
+		// Add registries and their locales
+		List<NbaRegistry> registries = registryService.findRegistries();
+		JSONObject registriesJson = new JSONObject();
+
+		try {
+			for (NbaRegistry reg : registries) {
+				registriesJson.put(reg.getName(), new JSONObject(reg.getLocale()));
+			}
+			config.put("registries", registriesJson);
+		} catch (JSONException e) {
+			log.error("Unable to set registries to nba-registers config", e);
+		}
+
 		// Add registry layers
-		List<NbaRegistryLayer> layers = service.findRegistryLayers();
-		JSONObject registries = new JSONObject();
+		List<NbaRegistryLayer> layers = registryLayerService.findRegistryLayers();
+		JSONObject registryLayersJson = new JSONObject();
 
 		try {
 			for (NbaRegistryLayer lyr : layers) {
-				JSONObject registry = new JSONObject();
-				registry.put("name", lyr.getRegistryName());
-				registry.put("idAttribute", lyr.getItemIdAttribute());
-				registry.put("itemType", lyr.getItemType());
-				registries.put(Integer.toString(lyr.getLayerId()), registry);
+				JSONObject registryLayerJson = new JSONObject();
+				registryLayerJson.put("name", lyr.getRegistryName());
+				registryLayerJson.put("idAttribute", lyr.getItemIdAttribute());
+				registryLayerJson.put("itemType", lyr.getItemType());
+				registryLayersJson.put(Integer.toString(lyr.getLayerId()), registryLayerJson);
 			}
-			config.put("registryLayers", registries);
+			config.put("registryLayers", registryLayersJson);
 		} catch (JSONException e) {
 			log.error(
 					"Unable to set registry layer ids to nba-registers config",
