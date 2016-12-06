@@ -1,0 +1,1 @@
+ALTER TABLE nba_registry_layers ADD COLUMN gfi_attributes text
