@@ -8,6 +8,7 @@ public class NbaRegistryLayer {
 	private Boolean toHighlight;
 	private String itemIdAttribute;
 	private String itemType;
+	private String gfiAttributes;
 	
 	public int getRegistryId() {
 		return registryId;
@@ -51,4 +52,6 @@ public class NbaRegistryLayer {
 	public void setItemType(String itemType) {
 		this.itemType = itemType;
 	}
+	public String getGfiAttributes() {return gfiAttributes;}
+	public  void setGfiAttributes(String gfiAttributes) { this.gfiAttributes = gfiAttributes; }
 }
