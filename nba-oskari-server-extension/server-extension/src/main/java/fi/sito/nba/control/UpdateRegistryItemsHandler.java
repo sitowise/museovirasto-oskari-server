@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -17,6 +18,7 @@ import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
 import com.vividsolutions.jts.geom.Geometry;
 
 import fi.nls.oskari.annotation.OskariActionRoute;
+import fi.nls.oskari.cache.JedisManager;
 import fi.nls.oskari.control.ActionDeniedException;
 import fi.nls.oskari.control.ActionException;
 import fi.nls.oskari.control.ActionParameters;
@@ -27,6 +29,7 @@ import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.util.JSONHelper;
 import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.util.ResponseHelper;
+import fi.sito.nba.model.NbaRegistryLayer;
 import fi.sito.nba.registry.infrastructure.InvalidArgumentException;
 import fi.sito.nba.registry.infrastructure.NotImplementedException;
 import fi.sito.nba.registry.models.AncientMonument;
@@ -37,23 +40,35 @@ import fi.sito.nba.registry.models.AncientMonumentSubItem;
 import fi.sito.nba.registry.models.BuildingHeritageItem;
 import fi.sito.nba.registry.models.BuildingHeritageItemArea;
 import fi.sito.nba.registry.models.BuildingHeritageItemPoint;
+import fi.sito.nba.registry.models.ProjectItem;
+import fi.sito.nba.registry.models.ProjectItemArea;
+import fi.sito.nba.registry.models.ProjectItemPoint;
 import fi.sito.nba.registry.models.RKY2000;
 import fi.sito.nba.registry.models.RKY2000Geometry;
-import fi.sito.nba.registry.models.ProjectItem;
-import fi.sito.nba.registry.models.ProjectItemPoint;
-import fi.sito.nba.registry.models.ProjectItemArea;
 import fi.sito.nba.registry.services.AncientMonumentMaintenanceItemService;
 import fi.sito.nba.registry.services.AncientMonumentService;
 import fi.sito.nba.registry.services.BuildingHeritageItemService;
-import fi.sito.nba.registry.services.RKY2000Service;
 import fi.sito.nba.registry.services.ProjectItemService;
+import fi.sito.nba.registry.services.RKY2000Service;
+import fi.sito.nba.service.NbaRegistryLayerService;
+import fi.sito.nba.service.NbaRegistryLayerServiceInterface;
 
 @OskariActionRoute("UpdateRegistryItems")
 public class UpdateRegistryItemsHandler extends RestActionHandler {
 	private static final String PARAM_REGISTER_NAME = "registerName";
 	private static final String PARAM_ITEM = "item";
 	private static final String PARAM_EDITED = "edited";
-
+	
+	private static final String REGISTRY_ANCIENTMAINTENANCE = "ancientMaintenance";
+	private static final String REGISTRY_ANCIENTMONUMENT = "ancientMonument";
+	private static final String REGISTRY_BUILDINGHERITAGE = "buildingHeritage";
+	private static final String REGISTRY_RKY2000 = "rky2000";
+	private static final String REGISTRY_PROJECT = "project";
+	
+	public final static String KEY = "WFSImage_";
+	
+	private static NbaRegistryLayerServiceInterface registryLayerService = new NbaRegistryLayerService();
+	
 	private static final Logger LOG = LogFactory
 			.getLogger(GetRegistryItemsHandler.class);
 
@@ -254,6 +269,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			}
 		}
 
+		clearTiles(REGISTRY_ANCIENTMONUMENT);
+		
 		return ret;
 	}
 
@@ -326,6 +343,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			}
 		}
 
+		clearTiles(REGISTRY_ANCIENTMAINTENANCE);
+		
 		return ret;
 	}
 
@@ -411,6 +430,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			}
 		}
 
+		clearTiles(REGISTRY_BUILDINGHERITAGE);
+		
 		return ret;
 	}
 
@@ -526,6 +547,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				ret.put("lines", ret.optInt("lines", 0) + 1);
 			}
 		}
+		
+		clearTiles(REGISTRY_RKY2000);
 
 		return ret;
 	}
@@ -611,6 +634,8 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				ret.put("areas", ret.optInt("areas", 0) + 1);
 			}
 		}
+		
+		clearTiles(REGISTRY_PROJECT);
 
 		return ret;
 	}
@@ -631,6 +656,20 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			}
 		}
 		return false;
+	}
+
+	private void clearTiles(String registryName) {
+		List<NbaRegistryLayer> registryLayers = registryLayerService.findRegistryLayers();
+
+		for (NbaRegistryLayer nbaRegistryLayer : registryLayers) {
+			if (nbaRegistryLayer.getRegistryName().equals(registryName)) {
+				Set<String> keys = JedisManager.keys(KEY + nbaRegistryLayer.getLayerId());
+
+				for (String key : keys) {
+					JedisManager.del(key);
+				}
+			}
+		}
 	}
 
 }
