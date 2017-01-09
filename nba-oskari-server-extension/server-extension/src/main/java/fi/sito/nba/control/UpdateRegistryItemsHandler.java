@@ -15,7 +15,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
 import com.microsoft.sqlserver.jdbc.SQLServerDataSource;
-import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 
 import fi.nls.oskari.annotation.OskariActionRoute;
@@ -270,7 +269,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			}
 		}
 
-		clearTiles(REGISTRY_ANCIENTMONUMENT, monument.calculateEnvelope());
+		clearTiles(REGISTRY_ANCIENTMONUMENT);
 		
 		return ret;
 	}
@@ -344,7 +343,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			}
 		}
 
-		clearTiles(REGISTRY_ANCIENTMAINTENANCE, monument.calculateEnvelope());
+		clearTiles(REGISTRY_ANCIENTMAINTENANCE);
 		
 		return ret;
 	}
@@ -431,7 +430,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			}
 		}
 
-		clearTiles(REGISTRY_BUILDINGHERITAGE, monument.calculateEnvelope());
+		clearTiles(REGISTRY_BUILDINGHERITAGE);
 		
 		return ret;
 	}
@@ -549,7 +548,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			}
 		}
 		
-		clearTiles(REGISTRY_RKY2000, monument.calculateEnvelope());
+		clearTiles(REGISTRY_RKY2000);
 
 		return ret;
 	}
@@ -636,7 +635,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			}
 		}
 		
-		clearTiles(REGISTRY_PROJECT, projectItem.calculateEnvelope());
+		clearTiles(REGISTRY_PROJECT);
 
 		return ret;
 	}
@@ -659,7 +658,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		return false;
 	}
 
-	private void clearTiles(String registryName, Geometry itemEnvelope) {
+	private void clearTiles(String registryName) {
 		List<NbaRegistryLayer> registryLayers = registryLayerService.findRegistryLayers();
 
 		for (NbaRegistryLayer nbaRegistryLayer : registryLayers) {
@@ -667,19 +666,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				Set<String> keys = JedisManager.keys(KEY + nbaRegistryLayer.getLayerId());
 
 				for (String key : keys) {
-					//key format:
-					//"WFSImage_87_Ei tunnuksia_EPSG:3067_239104.0-6784128.0-239168.0-6784192.0_12"
-					//"WFSImage_87_Ei tunnuksia_EPSG:3067_239040.0-6784064.0-239104.0-6784128.0_12_temp"
-					String[] parts = key.split("_");
-					if (parts.length == 6 || parts.length == 7) {
-						String[] bbox = parts[4].split("-");
-						Envelope env = new Envelope(Double.parseDouble(bbox[0]), Double.parseDouble(bbox[1]),
-								Double.parseDouble(bbox[2]), Double.parseDouble(bbox[3]));
-
-						if (env.intersects(itemEnvelope.getEnvelopeInternal())) {
-							JedisManager.del(key);
-						}
-					}
+					JedisManager.del(key);
 				}
 			}
 		}
