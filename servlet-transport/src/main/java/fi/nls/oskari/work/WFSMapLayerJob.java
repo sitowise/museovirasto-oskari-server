@@ -12,6 +12,7 @@ import fi.nls.oskari.wfs.pojo.WFSLayerStore;
 import fi.nls.oskari.wfs.util.HttpHelper;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -238,9 +239,6 @@ public class WFSMapLayerJob extends OWSMapLayerJob {
     protected void featuresHandler() {
         log.debug("features handler - layer:", this.layer.getLayerId());
 
-        // create filter of screen area
-        Filter screenBBOXFilter = WFSFilter.initBBOXFilter(this.session.getLocation(), this.layer);
-
         // send feature info
         FeatureIterator<SimpleFeature> featuresIter =  this.features.features();
 
@@ -255,7 +253,9 @@ public class WFSMapLayerJob extends OWSMapLayerJob {
             log.debug("Processing properties of feature:", fid);
 
             // if is not in shown area -> skip
-            if(!screenBBOXFilter.evaluate(feature)) {
+            ReferencedEnvelope envelope = this.session.getLocation().getEnvelope();
+            envelope = this.session.getLocation().getTransformEnvelope(envelope, this.layer.getSRSName(), true);
+            if(!envelope.intersects(((Geometry)feature.getDefaultGeometry()).getEnvelopeInternal())) {
                 log.debug("Feature not on screen, skipping", fid);
                 continue;
             }
