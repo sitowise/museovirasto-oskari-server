@@ -59,6 +59,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 	private static final String PARAM_REGISTER_NAME = "registerName";
 	private static final String PARAM_ITEM = "item";
 	private static final String PARAM_EDITED = "edited";
+	private static final String PARAM_DELETED = "deleted";
 	
 	private static final String REGISTRY_ANCIENTMAINTENANCE = "ancientMaintenance";
 	private static final String REGISTRY_ANCIENTMONUMENT = "ancientMonument";
@@ -113,18 +114,29 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			String registryNameParam = "";
 			String itemJson = "";
 			String editInfoJson = "";
+			String deleteInfoJson = "";
 
 			//TODO Is checking of whole structure of the registry item needed? Always only one subitem is edited.
-			if (params.getHttpParam(PARAM_REGISTER_NAME) != null
-					&& !params.getHttpParam(PARAM_REGISTER_NAME).equals("")
-					&& params.getHttpParam(PARAM_ITEM) != null
-					&& !params.getHttpParam(PARAM_ITEM).equals("")
-					&& params.getHttpParam(PARAM_EDITED) != null
-					&& !params.getHttpParam(PARAM_EDITED).equals("")) {
+			if (params.getHttpParam(PARAM_REGISTER_NAME) != null && !params.getHttpParam(PARAM_REGISTER_NAME).equals("")
+					&& params.getHttpParam(PARAM_ITEM) != null && !params.getHttpParam(PARAM_ITEM).equals("")
+					&& ((params.getHttpParam(PARAM_EDITED) != null && !params.getHttpParam(PARAM_EDITED).equals(""))
+						|| (params.getHttpParam(PARAM_DELETED) != null && !params.getHttpParam(PARAM_DELETED).equals(""))
+					))
+			{
 
 				registryNameParam = params.getHttpParam(PARAM_REGISTER_NAME);
 				itemJson = params.getHttpParam(PARAM_ITEM);
 				editInfoJson = params.getHttpParam(PARAM_EDITED);
+				deleteInfoJson = params.getHttpParam(PARAM_DELETED);
+
+				JSONObject editInfo = new JSONObject(editInfoJson);
+
+				JSONObject deleteInfo;
+				if (deleteInfoJson != null && !deleteInfoJson.equals("")) {
+					deleteInfo = new JSONObject(deleteInfoJson);
+				} else {
+					deleteInfo = new JSONObject();
+				}
 
 				switch (registryNameParam) {
 				case "ancientMonument":
@@ -133,9 +145,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 					AncientMonument monument = mapper.readValue(itemJson,
 							AncientMonument.class);
 
-					JSONObject editInfo = new JSONObject(editInfoJson);
-
-					response = updateAncientMonument(monument, service, editInfo,
+					response = updateAncientMonument(monument, service, editInfo, deleteInfo,
 							params.getUser());
 
 					break;
@@ -145,9 +155,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 					AncientMonumentMaintenanceItem ammMonument = mapper.readValue(itemJson,
 							AncientMonumentMaintenanceItem.class);
 
-					JSONObject ammeditInfo = new JSONObject(editInfoJson);
-
-					response = updateMaintenance(ammMonument, ammService, ammeditInfo,
+					response = updateMaintenance(ammMonument, ammService, editInfo, deleteInfo,
 							params.getUser());
 
 					break;
@@ -157,9 +165,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 					BuildingHeritageItem bhMonument = mapper.readValue(itemJson,
 							BuildingHeritageItem.class);
 
-					JSONObject bhEditInfo = new JSONObject(editInfoJson);
-
-					response = updateBuildingHeritage(bhMonument, bhService, bhEditInfo,
+					response = updateBuildingHeritage(bhMonument, bhService, editInfo, deleteInfo,
 							params.getUser());
 
 					break;
@@ -171,9 +177,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 					RKY2000 rk2Monument = mapper.readValue(itemJson,
 							RKY2000.class);
 
-					JSONObject rk2EditInfo = new JSONObject(editInfoJson);
-
-					response = updateRKY2000(rk2Monument, rk2Service, rk2EditInfo,
+					response = updateRKY2000(rk2Monument, rk2Service, editInfo, deleteInfo,
 							params.getUser());
 
 					break;
@@ -183,9 +187,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 					ProjectItem projectItem = mapper.readValue(itemJson,
 							ProjectItem.class);
 
-					JSONObject pEditInfo = new JSONObject(editInfoJson);
-
-					response = updateProject(projectItem, pService, pEditInfo,
+					response = updateProject(projectItem, pService, editInfo, deleteInfo,
 							params.getUser());
 
 					break;
@@ -204,11 +206,12 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 	}
 	
 	private JSONObject updateAncientMonument(AncientMonument monument,
-			AncientMonumentService service, JSONObject editInfo, User user)
+			AncientMonumentService service, JSONObject editInfo, JSONObject deleteInfo, User user)
 			throws SQLException, JSONException, InvalidArgumentException {
 
 		JSONObject ret = new JSONObject();
 		ret.put("updated", false);
+		ret.put("deleted", false);
 
 		boolean mainItemEdited = JSONHelper.getBooleanFromJSON(editInfo,
 				"edited", false);
@@ -217,6 +220,14 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				.getArrayAsList(editInfo.getJSONArray("subItems"));
 		List<Integer> editedAreaIds = JSONHelper
 				.getArrayAsList(editInfo.getJSONArray("areas"));
+
+		boolean mainItemDeleted = JSONHelper.getBooleanFromJSON(deleteInfo,
+				"pointDeleted", false);
+
+		List<Integer> deletedSubItemIds = JSONHelper
+				.getArrayAsList(deleteInfo.getJSONArray("subItems"));
+		List<Integer> deletedAreaIds = JSONHelper
+				.getArrayAsList(deleteInfo.getJSONArray("areas"));
 
 		AncientMonument original = service
 				.getAncientMonumentById(monument.getId());
@@ -235,6 +246,12 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			ret.put("mainItems", 1);
 		}
 
+		if (mainItemDeleted) {
+			service.deleteAncientMonument(monument.getId(), user.getScreenname());
+			ret.put("deleted", true);
+			ret.put("mainItemsDeleted", 1);
+		}
+
 		for (AncientMonumentSubItem subItem : monument.getSubItems()) {
 			if (editedSubItemIds.contains(subItem.getId())) {
 				service.updateAncientMonumentSubItem(subItem.getId(),
@@ -243,6 +260,11 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 						subItem.getSurveyingType(), subItem.getGeometry());
 				ret.put("updated", true);
 				ret.put("subItems", ret.optInt("subItems", 0) + 1);
+
+			} else if (deletedSubItemIds.contains(subItem.getId())) {
+				service.deleteAncientMonumentSubItem(subItem.getId(), user.getScreenname());
+				ret.put("deleted", true);
+				ret.put("subItemsDeleted", ret.optInt("subItemsDeleted", 0) + 1);
 			}
 		}
 
@@ -267,6 +289,11 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
+
+			} else if (deletedAreaIds.contains(area.getId())) {
+				service.deleteAncientMonumentArea(area.getId(), user.getScreenname());
+				ret.put("deleted", true);
+				ret.put("areasDeleted", ret.optInt("areasDeleted", 0) + 1);
 			}
 		}
 
@@ -297,14 +324,20 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 	private JSONObject updateMaintenance(
 			AncientMonumentMaintenanceItem monument,
 			AncientMonumentMaintenanceItemService service, JSONObject editInfo,
-			User user)
+			JSONObject deleteInfo, User user)
 			throws SQLException, JSONException, InvalidArgumentException {
 
 		JSONObject ret = new JSONObject();
 		ret.put("updated", false);
+		ret.put("deleted", false);
 
 		boolean mainItemEdited = JSONHelper.getBooleanFromJSON(editInfo,
 				"edited", false);
+
+		boolean mainPointDeleted = JSONHelper.getBooleanFromJSON(deleteInfo,
+				"pointDeleted", false);
+		boolean mainAreaDeleted = JSONHelper.getBooleanFromJSON(deleteInfo,
+				"areaDeleted", false);
 
 		if (mainItemEdited) {
 			//TODO A point is saved if exists, even if only area is edited. The same situation is with area.
@@ -328,8 +361,29 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			ret.put("mainItems", 1);
 		}
 
+		if (mainPointDeleted) {
+			if (monument.getPointGeometry() != null) {
+				service.deleteAncientMonumentMaintenanceItemPoint(monument.getId(), user.getScreenname());
+			}
+
+			ret.put("deleted", true);
+			ret.put("mainItemsDeleted", 1);
+		}
+
+		if (mainAreaDeleted) {
+			if (monument.getAreaGeometry() != null) {
+				service.deleteAncientMonumentMaintenanceItemArea(monument.getId(), user.getScreenname());
+			}
+
+			ret.put("deleted", true);
+			ret.put("mainItemsDeleted", 1);
+		}
+
 		List<Integer> editedSubItemIds = JSONHelper
 				.getArrayAsList(editInfo.getJSONArray("subAreas"));
+
+		List<Integer> deletedSubItemIds = JSONHelper
+				.getArrayAsList(deleteInfo.getJSONArray("subAreas"));
 
 		for (AncientMonumentMaintenanceItemSubArea subArea : monument
 				.getSubAreas()) {
@@ -341,6 +395,10 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 						subArea.getGeometry());
 				ret.put("updated", true);
 				ret.put("subItems", ret.optInt("subItems", 0) + 1);
+			} else if (deletedSubItemIds.contains(subArea.getId())) {
+				service.deleteAncientMonumentMaintenanceItemSubArea(monument.getId(), user.getScreenname());
+				ret.put("deleted", true);
+				ret.put("subItemsDeleted", ret.optInt("subItemsDeleted", 0) + 1);
 			}
 		}
 
@@ -377,16 +435,22 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 	}
 
 	private JSONObject updateBuildingHeritage(BuildingHeritageItem monument,
-			BuildingHeritageItemService service, JSONObject editInfo, User user)
+			BuildingHeritageItemService service, JSONObject editInfo, JSONObject deleteInfo, User user)
 			throws SQLException, JSONException, InvalidArgumentException {
 
 		JSONObject ret = new JSONObject();
 		ret.put("updated", false);
+		ret.put("deleted", false);
 
 		List<Integer> editedPointIds = JSONHelper
 				.getArrayAsList(editInfo.getJSONArray("points"));
 		List<Integer> editedAreaIds = JSONHelper
 				.getArrayAsList(editInfo.getJSONArray("areas"));
+
+		List<Integer> deletedPointIds = JSONHelper
+				.getArrayAsList(deleteInfo.getJSONArray("points"));
+		List<Integer> deletedAreaIds = JSONHelper
+				.getArrayAsList(deleteInfo.getJSONArray("areas"));
 
 		BuildingHeritageItem original = service
 				.getBuildingHeritageItemById(monument.getId());
@@ -402,7 +466,12 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 						point.getDescription(), point.getSurveyingAccuracy(),
 						point.getSurveyingType(), point.getGeometry());
 				ret.put("updated", true);
-				ret.put("subItems", ret.optInt("subItems", 0) + 1);
+				ret.put("points", ret.optInt("points", 0) + 1);
+
+			} else if (deletedPointIds.contains(point.getId())) {
+				service.deleteBuildingHeritageItemPoint(point.getId(), user.getScreenname());
+				ret.put("deleted", true);
+				ret.put("pointsDeleted", ret.optInt("pointsDeleted", 0) + 1);
 			}
 		}
 
@@ -428,6 +497,11 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
+
+			} else if (deletedAreaIds.contains(area.getId())) {
+				service.deleteBuildingHeritageItemArea(area.getId(), user.getScreenname());
+				ret.put("deleted", true);
+				ret.put("areasDeleted", ret.optInt("areasDeleted", 0) + 1);
 			}
 		}
 
@@ -455,11 +529,12 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 	}
 
 	private JSONObject updateRKY2000(RKY2000 monument, RKY2000Service service,
-			JSONObject editInfo, User user)
+			JSONObject editInfo, JSONObject deleteInfo, User user)
 			throws SQLException, JSONException, InvalidArgumentException {
 
 		JSONObject ret = new JSONObject();
 		ret.put("updated", false);
+		ret.put("deleted", false);
 
 		List<Integer> editedPointIds = JSONHelper
 				.getArrayAsList(editInfo.getJSONArray("points"));
@@ -467,6 +542,13 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				.getArrayAsList(editInfo.getJSONArray("areas"));
 		List<Integer> editedLineIds = JSONHelper
 				.getArrayAsList(editInfo.getJSONArray("lines"));
+
+		List<Integer> deletedPointIds = JSONHelper
+				.getArrayAsList(deleteInfo.getJSONArray("points"));
+		List<Integer> deletedAreaIds = JSONHelper
+				.getArrayAsList(deleteInfo.getJSONArray("areas"));
+		List<Integer> deletedLineIds = JSONHelper
+				.getArrayAsList(deleteInfo.getJSONArray("lines"));
 
 		RKY2000 original = service.getRKY2000ById(monument.getId());
 
@@ -492,6 +574,11 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 				ret.put("updated", true);
 				ret.put("points", ret.optInt("points", 0) + 1);
+
+			} else if (deletedPointIds.contains(point.getId())) {
+				service.deleteRKY2000Point(point.getId(), user.getScreenname());
+				ret.put("deleted", true);
+				ret.put("pointsDeleted", ret.optInt("pointsDeleted", 0) + 1);
 			}
 		}
 		
@@ -521,6 +608,11 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
+
+			} else if (deletedAreaIds.contains(area.getId())) {
+				service.deleteRKY2000Area(area.getId(), user.getScreenname());
+				ret.put("deleted", true);
+				ret.put("areasDeleted", ret.optInt("areasDeleted", 0) + 1);
 			}
 		}
 		
@@ -546,6 +638,11 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 				ret.put("updated", true);
 				ret.put("lines", ret.optInt("lines", 0) + 1);
+
+			} else if (deletedLineIds.contains(line.getId())) {
+				service.deleteRKY2000Line(line.getId(), user.getScreenname());
+				ret.put("deleted", true);
+				ret.put("linesDeleted", ret.optInt("linesDeleted", 0) + 1);
 			}
 		}
 		
@@ -572,16 +669,22 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 	}
 	
 	private JSONObject updateProject(ProjectItem projectItem,
-			ProjectItemService service, JSONObject editInfo, User user)
+			ProjectItemService service, JSONObject editInfo, JSONObject deleteInfo, User user)
 			throws SQLException, JSONException, InvalidArgumentException {
 
 		JSONObject ret = new JSONObject();
 		ret.put("updated", false);
+		ret.put("deleted", false);
 
 		List<Integer> editedPointIds = JSONHelper
 				.getArrayAsList(editInfo.getJSONArray("points"));
 		List<Integer> editedAreaIds = JSONHelper
 				.getArrayAsList(editInfo.getJSONArray("areas"));
+
+		List<Integer> deletedPointIds = JSONHelper
+				.getArrayAsList(deleteInfo.getJSONArray("points"));
+		List<Integer> deletedAreaIds = JSONHelper
+				.getArrayAsList(deleteInfo.getJSONArray("areas"));
 
 		ProjectItem original = service
 				.getProjectItemById(projectItem.getId());
@@ -606,6 +709,11 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 				ret.put("updated", true);
 				ret.put("points", ret.optInt("points", 0) + 1);
+
+			} else if (deletedPointIds.contains(point.getId())) {
+				service.deleteProjectItemPoint(point.getId(), user.getScreenname());
+				ret.put("deleted", true);
+				ret.put("pointsDeleted", ret.optInt("pointsDeleted", 0) + 1);
 			}
 		}
 		
@@ -633,6 +741,11 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
+
+			} else if (deletedAreaIds.contains(area.getId())) {
+				service.deleteProjectItemArea(area.getId(), user.getScreenname());
+				ret.put("deleted", true);
+				ret.put("areasDeleted", ret.optInt("areasDeleted", 0) + 1);
 			}
 		}
 		
