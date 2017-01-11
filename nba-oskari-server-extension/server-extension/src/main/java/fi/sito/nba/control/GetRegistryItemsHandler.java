@@ -857,6 +857,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("itemClassName", monument.getClass().getSimpleName());
 					item.put("id", monument.getObjectId());
 					item.put("desc", monument.getObjectName());
+					item.put("municipality", monument.getMunicipalityName());
 					item.put("editable", false);
 					item.put("registryIdentifier", registryIdentifier);
 
