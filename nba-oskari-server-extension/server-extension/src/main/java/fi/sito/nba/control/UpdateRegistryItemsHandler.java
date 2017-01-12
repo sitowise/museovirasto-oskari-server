@@ -86,8 +86,17 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		User user = params.getUser();
 		LOG.info(user, "accessing route", getName());
 		params.requireLoggedInUser();
-		
-		String[] rolesForEditor = PropertyUtil.getCommaSeparatedList("nba.registers.editroles");
+
+		String[] rolesForEditor = null;
+
+		//first find configuration for specific registry; if not found get general config
+		String registryNameParam = params.getHttpParam(PARAM_REGISTER_NAME);
+		if (registryNameParam != null) {
+			rolesForEditor = PropertyUtil.getCommaSeparatedList("nba.registers.editroles." + registryNameParam);
+		}
+		if (rolesForEditor == null || rolesForEditor.length == 0) {
+			rolesForEditor = PropertyUtil.getCommaSeparatedList("nba.registers.editroles");
+		}
 		
 		if (!user.hasAnyRoleIn(rolesForEditor)) {
 			throw new ActionDeniedException("Not allowed");

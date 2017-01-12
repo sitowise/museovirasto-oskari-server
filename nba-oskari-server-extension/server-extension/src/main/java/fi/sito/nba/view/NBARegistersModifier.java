@@ -72,12 +72,30 @@ public class NBARegistersModifier extends BundleHandler {
 
 		// Add roles with rights to edit registry items
 		try {
+			JSONObject editorRolesJson = new JSONObject();
+			JSONArray generalRolesJson = new JSONArray();
+
 			String[] rolesForEditor = PropertyUtil.getCommaSeparatedList("nba.registers.editroles");
-			JSONArray editorRoles = new JSONArray();
 			for (String role: rolesForEditor) {
-				editorRoles.put(role);
+				generalRolesJson.put(role);
 			}
-			config.put("editorRoles", editorRoles);
+			editorRolesJson.put("general", generalRolesJson);
+
+			//find configurations for specific registries
+			List<String> propertyNames = PropertyUtil.getPropertyNamesStartingWith("nba.registers.editroles.");
+			for (String propertyName: propertyNames) {
+				rolesForEditor = PropertyUtil.getCommaSeparatedList(propertyName);
+
+				JSONArray registryRolesJson = new JSONArray();
+				for (String role: rolesForEditor) {
+					registryRolesJson.put(role);
+				}
+
+				String registryName = propertyName.substring(propertyName.lastIndexOf(".") + 1);
+				editorRolesJson.put(registryName, registryRolesJson);
+			}
+
+			config.put("editorRoles", editorRolesJson);
 		} catch (JSONException e) {
 			log.error("Unable to set editor roles to nba-registers config", e);
 		}
