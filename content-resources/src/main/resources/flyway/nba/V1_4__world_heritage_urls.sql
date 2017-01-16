@@ -1,0 +1,1 @@
+update nba_registry_layers set gfi_attributes = '["objectName", "areaSelectionSource", "objectType", "nbaUrl", "createDate", "modifyDate", "author"]' where registry_id = 6;
