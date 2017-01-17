@@ -163,7 +163,6 @@ public class WFSMapLayerJob extends OWSMapLayerJob {
                     return false;
                 }
                 this.service.addResults(session.getClient(), ResultProcessor.CHANNEL_FEATURE, output);
-                return false;
             }
 
             if(this.features.size() == layer.getMaxFeatures()) {
