@@ -570,15 +570,15 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
-						JSONObject mapLayerObject = new JSONObject();
-						mapLayerObject.put("mapLayerID",
-								registryLayer.getLayerId());
-						mapLayerObject.put("toHighlight",
-								registryLayer.getToHighlight());
-						mapLayerObject.put("attribute",
-								registryLayer.getItemIdAttribute());
+						if (monument.getClassification() != null
+								&& monument.getClassification().equals(registryLayer.getClassification())) {
+							JSONObject mapLayerObject = new JSONObject();
+							mapLayerObject.put("mapLayerID", registryLayer.getLayerId());
+							mapLayerObject.put("toHighlight", registryLayer.getToHighlight());
+							mapLayerObject.put("attribute", registryLayer.getItemIdAttribute());
 
-						mapLayersArray.put(mapLayerObject);
+							mapLayersArray.put(mapLayerObject);
+						}
 					}
 					item.put("mapLayers", mapLayersArray);
 
