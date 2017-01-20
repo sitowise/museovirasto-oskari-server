@@ -382,14 +382,19 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 			JSONArray mapLayersArray = new JSONArray();
 			for (NbaRegistryLayer registryLayer : registryLayers) {
-				JSONObject mapLayerObject = new JSONObject();
-				mapLayerObject.put("mapLayerID", registryLayer.getLayerId());
-				mapLayerObject.put("toHighlight",
-						registryLayer.getToHighlight());
-				mapLayerObject.put("attribute",
-						registryLayer.getItemIdAttribute());
+				if (!(registryObject instanceof AncientMonument)
+						|| (((AncientMonument) registryObject).getClassification() != null
+								&& ((AncientMonument) registryObject).getClassification()
+										.equals(registryLayer.getClassification()))) {
+					JSONObject mapLayerObject = new JSONObject();
+					mapLayerObject.put("mapLayerID", registryLayer.getLayerId());
+					mapLayerObject.put("toHighlight",
+							registryLayer.getToHighlight());
+					mapLayerObject.put("attribute",
+							registryLayer.getItemIdAttribute());
 
-				mapLayersArray.put(mapLayerObject);
+					mapLayersArray.put(mapLayerObject);
+				}
 			}
 			item.put("mapLayers", mapLayersArray);
 
