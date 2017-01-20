@@ -9,6 +9,7 @@ public class NbaRegistryLayer {
 	private String itemIdAttribute;
 	private String itemType;
 	private String gfiAttributes;
+	private String classification;
 	
 	public int getRegistryId() {
 		return registryId;
@@ -54,4 +55,10 @@ public class NbaRegistryLayer {
 	}
 	public String getGfiAttributes() {return gfiAttributes;}
 	public  void setGfiAttributes(String gfiAttributes) { this.gfiAttributes = gfiAttributes; }
+	public String getClassification() {
+		return classification;
+	}
+	public void setClassification(String classification) {
+		this.classification = classification;
+	}
 }

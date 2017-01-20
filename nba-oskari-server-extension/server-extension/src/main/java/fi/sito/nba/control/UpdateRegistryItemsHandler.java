@@ -305,7 +305,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			}
 		}
 
-		clearTiles(REGISTRY_ANCIENTMONUMENT);
+		clearTiles(REGISTRY_ANCIENTMONUMENT, monument.getClassification());
 		
 		return ret;
 	}
@@ -780,11 +780,12 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		return false;
 	}
 
-	private void clearTiles(String registryName) {
+	private void clearTiles(String registryName, String classification) {
 		List<NbaRegistryLayer> registryLayers = registryLayerService.findRegistryLayers();
 
 		for (NbaRegistryLayer nbaRegistryLayer : registryLayers) {
-			if (nbaRegistryLayer.getRegistryName().equals(registryName)) {
+			if (nbaRegistryLayer.getRegistryName().equals(registryName)
+					&& (classification == null || classification.equals(nbaRegistryLayer.getClassification()))) {
 				Set<String> keys = JedisManager.keys(KEY + nbaRegistryLayer.getLayerId());
 
 				for (String key : keys) {
@@ -792,6 +793,10 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				}
 			}
 		}
+	}
+
+	private void clearTiles(String registryName) {
+		clearTiles(registryName, null);
 	}
 
 }
