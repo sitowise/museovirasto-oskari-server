@@ -55,3 +55,7 @@ in (
     portti_wfs_layers_styles.wfs_layer_id in (111,112)
 );
 
+update portti_wfs_layer_style set sld_style = 
+replace(portti_wfs_layer_style.sld_style, '</TextSymbolizer>', '<VendorOption name="maxDisplacement">30</VendorOption><VendorOption name="autoWrap">70</VendorOption><VendorOption name="goodnessOfFit">0.1</VendorOption></TextSymbolizer>')
+where
+sld_style like '%TextSymbolizer%';
