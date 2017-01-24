@@ -393,7 +393,7 @@ public class MapProducer {
     protected String buildLayerCookie(LayerDefinition layerDefinition,
             String url) {
 
-        if (!isLocalUrl(layerDefinition.getWmsurl())) {
+        if (!isLocalUrl(layerDefinition.getWmsurl()) && !layerDefinition.getLayerType().equals("userlayer")) {
             return null;
         }
 
