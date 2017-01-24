@@ -590,6 +590,18 @@ public class MapProducer {
              * 
              * url = layerUrl + wmtsKvpPart;
              */
+        } else if (layerType.equals("userlayer")) {
+            url = layerUrl + layersParam
+                    + "&SERVICE=WMS"
+                    + "&VERSION="
+                    + "1.1.1"
+                    + "&REQUEST=GetMap" + "&WIDTH=" + tw + "&HEIGHT=" + th
+                    + "&FORMAT=image/png"
+                    + "&STYLES="
+                    + "&LAYERS=oskari%3Auser_layer_data_style" + "&SRS="
+                    + URLEncoder.encode(epsgCode, "UTF-8")
+                    + "&TRANSPARENT=TRUE" + "&BBOX=" + e.getMinX() + ","
+                    + e.getMinY() + "," + e.getMaxX() + "," + e.getMaxY();
         }
 
         return url;
