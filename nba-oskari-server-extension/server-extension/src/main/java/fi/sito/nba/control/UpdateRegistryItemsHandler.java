@@ -489,18 +489,16 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 			if (originalArea == null) {
 				ret.put("areaIntersects",
 						intersectsExistingArea(monument.getId(), area.getId(), area.getGeometry(), service));
-				service.addBuildingHeritageItemArea(monument.getId(),
-						user.getScreenname(), area.getDescription(),
-						area.getSurveyingAccuracy(), area.getSurveyingType(),
+				service.addBuildingHeritageItemArea(monument.getId(), user.getScreenname(), area.getDescription(),
+						area.getSurveyingAccuracy(), area.getSurveyingType(), area.getConservationId(),
 						area.getGeometry());
 				ret.put("updated", true);
 				ret.put("areas", ret.optInt("areas", 0) + 1);
 			} else if (editedAreaIds.contains(area.getId())) {
 				ret.put("areaIntersects",
 						intersectsExistingArea(monument.getId(), area.getId(), area.getGeometry(), service));
-				service.updateBuildingHeritageItemArea(area.getId(),
-						user.getScreenname(), area.getDescription(),
-						area.getSurveyingAccuracy(), area.getSurveyingType(),
+				service.updateBuildingHeritageItemArea(area.getId(), user.getScreenname(), area.getDescription(),
+						area.getSurveyingAccuracy(), area.getSurveyingType(), area.getConservationId(),
 						area.getGeometry());
 
 				ret.put("updated", true);
