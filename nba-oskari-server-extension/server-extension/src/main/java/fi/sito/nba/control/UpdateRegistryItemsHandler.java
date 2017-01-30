@@ -404,7 +404,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				ret.put("updated", true);
 				ret.put("subItems", ret.optInt("subItems", 0) + 1);
 			} else if (deletedSubItemIds.contains(subArea.getId())) {
-				service.deleteAncientMonumentMaintenanceItemSubArea(monument.getId(), user.getScreenname());
+				service.deleteAncientMonumentMaintenanceItemSubArea(subArea.getId(), user.getScreenname());
 				ret.put("deleted", true);
 				ret.put("subItemsDeleted", ret.optInt("subItemsDeleted", 0) + 1);
 			}
