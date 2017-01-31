@@ -6,7 +6,8 @@ public class NbaRegistryLayer {
 	private int layerId;
 	private Boolean toOpen;
 	private Boolean toHighlight;
-	private String itemIdAttribute;
+	private String mainItemIdAttr;
+	private String subItemIdAttr;
 	private String itemType;
 	private String gfiAttributes;
 	private String classification;
@@ -41,12 +42,6 @@ public class NbaRegistryLayer {
 	public void setToHighlight(Boolean toHighlight) {
 		this.toHighlight = toHighlight;
 	}
-	public String getItemIdAttribute() {
-		return itemIdAttribute;
-	}
-	public void setItemIdAttribute(String itemIdAttribute) {
-		this.itemIdAttribute = itemIdAttribute;
-	}
 	public String getItemType() {
 		return itemType;
 	}
@@ -61,4 +56,8 @@ public class NbaRegistryLayer {
 	public void setClassification(String classification) {
 		this.classification = classification;
 	}
+	public String getMainItemIdAttr() {return mainItemIdAttr;}
+	public void setMainItemIdAttr(String mainItemIdAttr) {this.mainItemIdAttr = mainItemIdAttr;}
+	public String getSubItemIdAttr() {return subItemIdAttr;}
+	public void setSubItemIdAttr(String subItemIdAttr) {this.subItemIdAttr = subItemIdAttr;}
 }

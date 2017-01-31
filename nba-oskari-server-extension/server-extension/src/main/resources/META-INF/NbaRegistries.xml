@@ -24,7 +24,8 @@
         <result property="layerId" column="layer_id" />
         <result property="toOpen" column="to_open" />
         <result property="toHighlight" column="to_highlight" />
-        <result property="itemIdAttribute" column="item_id_attribute" />
+        <result property="mainItemIdAttr" column="main_item_id_attr" />
+        <result property="subItemIdAttr" column="sub_item_id_attr" />
         <result property="itemType" column="item_type" />
         <result property="gfiAttributes" column="gfi_attributes" />
         <result property="classification" column="classification" />
@@ -43,7 +44,7 @@
     
     <statement id="findRegistryLayers" resultMap="NbaRegistryLayerResult">
 		SELECT registry_id, nba_registries.name AS registry_name, layer_id, to_open, to_highlight,
-            item_id_attribute, item_type, gfi_attributes, classification
+            main_item_id_attr, sub_item_id_attr, item_type, gfi_attributes, classification
   		FROM nba_registry_layers
   		INNER JOIN nba_registries ON nba_registries.id = nba_registry_layers.registry_id 
     </statement>
