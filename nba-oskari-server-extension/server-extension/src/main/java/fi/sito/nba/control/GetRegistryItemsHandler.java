@@ -392,6 +392,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 							registryLayer.getToHighlight());
 					mapLayerObject.put("attribute",
 							registryLayer.getMainItemIdAttr());
+					mapLayerObject.put("itemType", registryLayer.getItemType());
 
 					mapLayersArray.put(mapLayerObject);
 				}
@@ -509,6 +510,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								registryLayer.getToHighlight());
 						mapLayerObject.put("attribute",
 								registryLayer.getMainItemIdAttr());
+						mapLayerObject.put("itemType", registryLayer.getItemType());
 
 						mapLayersArray.put(mapLayerObject);
 					}
@@ -581,6 +583,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 							mapLayerObject.put("mapLayerID", registryLayer.getLayerId());
 							mapLayerObject.put("toHighlight", registryLayer.getToHighlight());
 							mapLayerObject.put("attribute", registryLayer.getMainItemIdAttr());
+							mapLayerObject.put("itemType", registryLayer.getItemType());
 
 							mapLayersArray.put(mapLayerObject);
 						}
@@ -655,6 +658,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								registryLayer.getToHighlight());
 						mapLayerObject.put("attribute",
 								registryLayer.getMainItemIdAttr());
+						mapLayerObject.put("itemType", registryLayer.getItemType());
 
 						mapLayersArray.put(mapLayerObject);
 					}
@@ -727,6 +731,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								registryLayer.getToHighlight());
 						mapLayerObject.put("attribute",
 								registryLayer.getMainItemIdAttr());
+						mapLayerObject.put("itemType", registryLayer.getItemType());
 
 						mapLayersArray.put(mapLayerObject);
 					}
@@ -808,6 +813,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								registryLayer.getToHighlight());
 						mapLayerObject.put("attribute",
 								registryLayer.getMainItemIdAttr());
+						mapLayerObject.put("itemType", registryLayer.getItemType());
 
 						mapLayersArray.put(mapLayerObject);
 					}
@@ -882,6 +888,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								registryLayer.getToHighlight());
 						mapLayerObject.put("attribute",
 								registryLayer.getMainItemIdAttr());
+						mapLayerObject.put("itemType", registryLayer.getItemType());
 
 						mapLayersArray.put(mapLayerObject);
 					}
@@ -937,6 +944,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								registryLayer.getToHighlight());
 						mapLayerObject.put("attribute",
 								registryLayer.getMainItemIdAttr());
+						mapLayerObject.put("itemType", registryLayer.getItemType());
 
 						mapLayersArray.put(mapLayerObject);
 					}
@@ -1009,6 +1017,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								registryLayer.getToHighlight());
 						mapLayerObject.put("attribute",
 								registryLayer.getMainItemIdAttr());
+						mapLayerObject.put("itemType", registryLayer.getItemType());
 
 						mapLayersArray.put(mapLayerObject);
 					}
