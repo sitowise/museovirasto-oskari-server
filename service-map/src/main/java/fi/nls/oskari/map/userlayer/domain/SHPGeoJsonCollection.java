@@ -20,7 +20,14 @@ import org.opengis.feature.type.FeatureType;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 
 public class SHPGeoJsonCollection extends GeoJsonCollection implements GeoJsonWorker {
 
@@ -41,6 +48,24 @@ public class SHPGeoJsonCollection extends GeoJsonCollection implements GeoJsonWo
         try {
 
             dataStore = new ShapefileDataStore(file.toURI().toURL());
+
+            File cpg = new File(file.toString().replaceFirst("\\.shp$", ".cpg"));
+            if(cpg.exists() && !cpg.isDirectory()) {
+                BufferedReader reader = null;
+                try {
+                    reader = new BufferedReader(new FileReader(cpg));
+                    String charset = reader.readLine();
+                    dataStore.setCharset(Charset.forName(charset));
+                } catch (IOException | IllegalArgumentException e) {
+                    //use default charset
+                    log.warn(e, "Failed to read CPG file, using default charset");
+                } finally {
+                    if(reader != null) {
+                        reader.close();
+                    }
+                }
+            }
+
             String typeName = dataStore.getTypeNames()[0];
 
             FeatureSource source = dataStore.getFeatureSource(typeName);
