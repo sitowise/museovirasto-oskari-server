@@ -695,19 +695,15 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 		ProjectItem original = service
 				.getProjectItemById(projectItem.getId());
 
-		Map<Integer, ProjectItemPoint> originalPoints = new HashMap<Integer, ProjectItemPoint>();
-		for (ProjectItemPoint pointItem : original.getPoints()) {
-			originalPoints.put(pointItem.getId(), pointItem);
-		}
-		
-		for (ProjectItemPoint point : projectItem.getPoints()) {
-			ProjectItemPoint originalPoint = originalPoints.get(point.getId());
-			if (originalPoint == null) {
+		ProjectItemPoint point = projectItem.getPoint();
+		if (point != null) {
+			if (original.getPoint() == null) {
 				service.addProjectItemPoint(projectItem.getId(),
 						user.getScreenname(), point.getDescription(),
 						point.getGeometry());
 				ret.put("updated", true);
 				ret.put("points", ret.optInt("points", 0) + 1);
+
 			} else if (editedPointIds.contains(point.getId())) {
 				service.updateProjectItemPoint(point.getId(),
 						user.getScreenname(), point.getDescription(),
