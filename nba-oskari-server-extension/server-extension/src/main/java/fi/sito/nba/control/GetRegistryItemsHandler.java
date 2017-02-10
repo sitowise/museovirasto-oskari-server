@@ -409,6 +409,15 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				item.put("bounds", bounds);
 			}
 
+			//change the 'point' field to 'points' array for better handling by frontend
+			if (registryObject instanceof ProjectItem){
+				JSONArray pointsArray = new JSONArray();
+				if (item.get("point") != null && item.get("point") != JSONObject.NULL) {
+					pointsArray.put(item.get("point"));
+				}
+				item.put("points", pointsArray);
+			}
+
 		} catch (Exception e) {
 			LOG.error(e, "Error writing JSON");
 		}
@@ -440,8 +449,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					|| (registry.equals("RKY2000") && key.equals("areas"))
 					|| (registry.equals("RKY2000") && key.equals("lines"))
 					|| (registry.equals("RKY2000") && key.equals("points"))
-					|| (registry.equals("ProjectItem") && key.equals("areas"))
-					|| (registry.equals("ProjectItem") && key.equals("points"))) {
+					|| (registry.equals("ProjectItem") && key.equals("areas"))) {
 				JSONArray arr = new JSONArray();
 				for (int i = 0; i < item.getJSONArray(key).length(); ++i) {
 					arr.put(filterAttributes(item.getJSONArray(key)
