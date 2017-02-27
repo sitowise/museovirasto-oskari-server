@@ -38,6 +38,11 @@ public class LayerJSONFormatterWFS extends LayerJSONFormatter {
         }
         JSONHelper.putValue(layerJson, "isQueryable", true);
         JSONHelper.putValue(layerJson, "wps_params", getWpsParams(wfsConf) );
+        final String globalLegend = layer.getLegendImage();
+        // if we have a global legend url, setup the JSON
+        if(globalLegend != null && !globalLegend.isEmpty()) {
+            addInfoForAdmin(layerJson, "legendImage", globalLegend);
+        }
 
         return layerJson;
     }
