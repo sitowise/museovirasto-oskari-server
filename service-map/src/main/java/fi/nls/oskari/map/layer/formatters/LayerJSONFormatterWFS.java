@@ -32,13 +32,14 @@ public class LayerJSONFormatterWFS extends LayerJSONFormatter {
 
         final JSONObject layerJson = getBaseJSON(layer, lang, isSecure);
         final WFSLayerConfiguration wfsConf = wfsService.findConfiguration(layer.getId());
-        JSONHelper.putValue(layerJson, "styles", getStyles(wfsConf));
+        final String globalLegend = layer.getLegendImage();
+        
+        JSONHelper.putValue(layerJson, "styles", getStyles(wfsConf, globalLegend));
         if (JSONHelper.getStringFromJSON(layerJson, "style", "").equals("")) {
         	JSONHelper.putValue(layerJson, "style", "default");
         }
         JSONHelper.putValue(layerJson, "isQueryable", true);
         JSONHelper.putValue(layerJson, "wps_params", getWpsParams(wfsConf) );
-        final String globalLegend = layer.getLegendImage();
         // if we have a global legend url, setup the JSON
         if(globalLegend != null && !globalLegend.isEmpty()) {
             addInfoForAdmin(layerJson, "legendImage", globalLegend);
@@ -52,7 +53,7 @@ public class LayerJSONFormatterWFS extends LayerJSONFormatter {
      *
      * @param  wfsConf wfs layer configuration
      */
-    private JSONArray getStyles(WFSLayerConfiguration wfsConf) {
+    private JSONArray getStyles(WFSLayerConfiguration wfsConf, String globalLegend) {
 
         JSONArray arr = new JSONArray();
         if (wfsConf == null) return arr;
@@ -62,7 +63,7 @@ public class LayerJSONFormatterWFS extends LayerJSONFormatter {
 
         try {
             for (WFSSLDStyle style : styleList) {
-                JSONObject obj = createStylesJSON(style.getName(), style.getName(), style.getName());
+                JSONObject obj = createStylesJSON(style.getName(), style.getName(), globalLegend);
                 if (obj.length() > 0) {
                     arr.put(obj);
                 }
