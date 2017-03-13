@@ -1,0 +1,1 @@
+update portti_view_bundle_seq set config = '{}' where bundleinstance = 'userguide';
