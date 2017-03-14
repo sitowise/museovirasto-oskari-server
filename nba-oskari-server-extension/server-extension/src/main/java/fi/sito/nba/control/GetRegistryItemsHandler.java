@@ -202,16 +202,17 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 								.getHistoricalMunicipalityById(itemId);
 						if (registryItem == null) {
 							registryItem = ((ResourceService) service)
-									.getKYSItemById(itemId);
+									.getProvincialMuseumById(itemId);
 							if (registryItem == null) {
 								registryItem = ((ResourceService) service)
-										.getProvincialMuseumById(itemId);
+										.getMunicipality250ById(itemId);
 								if (registryItem == null) {
 									registryItem = ((ResourceService) service)
-											.getMunicipality250ById(itemId);
-									if (registryItem == null) {
+											.getRegionById(itemId);
+									//Do not show Kulttuuriympäristöpalevluosaston vastuuhenkilöt results for guest users
+									if (registryItem == null && !isGuestUser) {
 										registryItem = ((ResourceService) service)
-												.getRegionById(itemId);
+												.getKYSItemById(itemId);
 									}
 								}
 							}
@@ -1087,7 +1088,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				}
 			}
 
-			if (kysItems != null) {
+			if (kysItems != null && !isGuestUser) {
 				RegistryObjectIterator<KYSItem> iterator = (RegistryObjectIterator<KYSItem>) kysItems
 						.iterator();
 
