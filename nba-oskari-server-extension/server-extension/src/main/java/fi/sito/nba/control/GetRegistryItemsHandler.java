@@ -4,7 +4,9 @@ import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Arrays;
 
+import fi.nls.oskari.domain.Role;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -77,6 +79,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 	}
 
 	private boolean isGuestUser;
+	private boolean hasNbaGuestLink;
 
 	@Override
 	public void handlePost(ActionParameters params) throws ActionException {
@@ -109,6 +112,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 			JSONArray results = new JSONArray();
 
 			isGuestUser = params.getUser().isGuest();
+			hasNbaGuestLink = generateGuestLink(params.getUser());
 
 			if (params.getHttpParam(PARAM_ITEM_ID) != null
 					&& !params.getHttpParam(PARAM_ITEM_ID).equals("")
@@ -378,7 +382,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 				item.put("coordinateY", centroid.getY());
 			}
 
-			item.put("nbaUrl", registryObject.generateNbaUrl(isGuestUser));
+			item.put("nbaUrl", registryObject.generateNbaUrl(hasNbaGuestLink));
 			item.put("itemClassName", registryObject.getClass().getSimpleName());
 
 			JSONArray mapLayersArray = new JSONArray();
@@ -509,7 +513,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
+					item.put("nbaUrl", monument.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -583,7 +587,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
+					item.put("nbaUrl", monument.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						if (monument.getClassification() != null
@@ -657,7 +661,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
+					item.put("nbaUrl", monument.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -730,7 +734,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
+					item.put("nbaUrl", monument.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -812,7 +816,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
+					item.put("nbaUrl", monument.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -887,7 +891,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
+					item.put("nbaUrl", monument.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -943,7 +947,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						item.put("coordinateY", centroid.getY());
 					}
 
-					item.put("nbaUrl", monument.generateNbaUrl(isGuestUser));
+					item.put("nbaUrl", monument.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -1016,7 +1020,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						resultItem.put("coordinateY", centroid.getY());
 					}
 
-					resultItem.put("nbaUrl", item.generateNbaUrl(isGuestUser));
+					resultItem.put("nbaUrl", item.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
 						JSONObject mapLayerObject = new JSONObject();
@@ -1165,6 +1169,21 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		}
 
 		return filteredLayerList;
+	}
+
+	private boolean generateGuestLink(User user) {
+		if (isGuestUser) {
+			return true;
+		}
+		String[] rolesForGuestLink = PropertyUtil.getCommaSeparatedList("nba.guestlink.roles");
+
+		final List<String> rolesToCheck = Arrays.asList(rolesForGuestLink);
+		for (Role r : user.getRoles()) {
+			if (rolesToCheck.contains(r.getName())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }
