@@ -27,6 +27,7 @@ public class EnvHelper {
     private String loggedOutPage;
     private String param_username;
     private String param_password;
+    private String registerUrl;
 
     private String mapUrl;
 
@@ -42,6 +43,7 @@ public class EnvHelper {
         loginUrl = PropertyUtil.get("auth.login.url", "/j_security_check");
         param_username = PropertyUtil.get("auth.login.field.user", "j_username");
         param_password = PropertyUtil.get("auth.login.field.pass", "j_password");
+        registerUrl = PropertyUtil.get("auth.register.url", "");
     }
 
     public boolean isSAMLEnabled() {
@@ -85,4 +87,6 @@ public class EnvHelper {
     public String getMapUrl() {
         return mapUrl;
     }
+
+    public String getRegisterUrl() { return  registerUrl; }
 }

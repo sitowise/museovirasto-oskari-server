@@ -134,6 +134,9 @@
                         <input size="16" id="password" name="${_login_field_pass}" type="password" placeholder="<spring:message code="password" text="Password" />" required>
                         <input type="submit" id="submit" value="<spring:message code="login" text="Log in" />">
                     </form>
+					<c:if test="${!empty _register_uri}">
+						<div><a href="${_register_uri}"><spring:message code="register" text="Register" /></a></div>
+					</c:if>
                 </c:if>
             </c:otherwise>
         </c:choose>
