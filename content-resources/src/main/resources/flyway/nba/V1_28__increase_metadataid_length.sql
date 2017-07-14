@@ -1,0 +1,1 @@
+alter table oskari_maplayer alter column metadataid type varchar(2000);
