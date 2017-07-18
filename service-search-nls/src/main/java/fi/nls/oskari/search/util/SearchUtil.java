@@ -62,6 +62,7 @@ public class SearchUtil {
 		
 		nameSpaceUri.put("pnr", "http://xml.nls.fi/Nimisto/Nimistorekisteri/2009/02");
 		nameSpaceUri.put("gml", "http://www.opengis.net/gml");
+		nameSpaceUri.put("rhr", "http://xml.nls.fi/Rakennustiedot/VTJRaHu/2009/02");
 		
 		rankMap.put("540", RANK_540);
 		rankMap.put("550", RANK_550);
@@ -90,6 +91,11 @@ public class SearchUtil {
 	
 	public static final QName pnrKirjoitusAsu = getQName("kirjoitusasu","pnr");
 	public static final QName pnrkieliKoodi = getQName("kieliKoodi","pnr");
+
+	public static final QName rhrKuntanimiFin = getQName("kuntanimiFin","rhr");
+	public static final QName rhrKuntanimiSwe = getQName("kuntanimiSwe","rhr");
+	public static final QName rhrSijainti = getQName("sijainti","rhr");
+	public static final QName rhrRakennuksenTunnistetiedot = getQName("RakennuksenTunnistetiedot", "rhr");
 
     /**
      * Returns map URL for given locale
