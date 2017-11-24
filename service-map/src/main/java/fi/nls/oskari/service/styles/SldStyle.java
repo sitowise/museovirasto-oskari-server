@@ -43,6 +43,7 @@ public class SldStyle {
             JSONHelper.putValue(me, "id", id);
         }
         JSONHelper.putValue(me, "name", name);
+        JSONHelper.putValue(me, "sld_style", sld_style);
 
         return me;
     }

@@ -27,6 +27,7 @@ public class SldStylesHandler extends ActionHandler {
     private final SldStylesService service = new SldStylesServiceMybatisImpl();
     private static final String PARAM_SLD_NAME = "name";
     private static final String PARAM_SLD_XML = "xml";
+    private static final String PARAM_SLD_ID = "id";
 
     public void init() {
 
@@ -43,8 +44,13 @@ public class SldStylesHandler extends ActionHandler {
     public void handleAction(final ActionParameters params)
             throws ActionException {
         final String name = params.getHttpParam(PARAM_SLD_NAME);
-        if(name != null){
+        final String id = params.getHttpParam(PARAM_SLD_ID);
+        if(id != null) {
+            params.requireAdminUser();
+            updateStyle(params);
+        } else if(name != null){
             // Save new style
+            params.requireAdminUser();
             saveStyle(params);
         } else {
             selectAll(params);
@@ -86,6 +92,28 @@ public class SldStylesHandler extends ActionHandler {
             ResponseHelper.writeResponse(params, result);
         } catch (Exception ex) {
             throw new ActionException("Error inserting new sld style", ex);
+        }
+    }
+    
+    public void updateStyle(final ActionParameters params)
+                throws ActionException {
+        try {
+            final String name = params.getHttpParam(PARAM_SLD_NAME);
+            final String xml = params.getHttpParam(PARAM_SLD_XML);
+            final String id = params.getHttpParam(PARAM_SLD_ID);
+            // Save sld style
+            SldStyle style = new SldStyle();
+            style.setId(Integer.parseInt(id));
+            style.setName(name);
+            String value = URLDecoder.decode(xml, "UTF-8");
+            style.setSld_style(value);
+            final int updateId = service.updateStyle(style);
+
+            final JSONObject result = new JSONObject();
+            JSONHelper.putValue(result, "id", updateId);
+            ResponseHelper.writeResponse(params, result);
+        } catch (Exception ex) {
+            throw new ActionException("Error updating sld style", ex);
         }
     }
 }

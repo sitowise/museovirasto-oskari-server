@@ -22,6 +22,7 @@ public abstract class SldStylesService extends OskariComponent {
 
     public abstract List<SldStyle> selectAll();
     public abstract int saveStyle(SldStyle style);
+    public abstract int updateStyle(SldStyle style);
 
 
 

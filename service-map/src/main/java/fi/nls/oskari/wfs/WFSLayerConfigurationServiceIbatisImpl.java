@@ -40,6 +40,11 @@ public class WFSLayerConfigurationServiceIbatisImpl extends BaseIbatisService<WF
         return styles;
     }
 
+    public List<WFSLayerConfiguration> findWFSLayersWithStyle(final int styleId) {
+        List<WFSLayerConfiguration> layers = queryForList(getNameSpace() + ".findWFSLayersWithStyle", styleId);
+        return layers;
+    }
+
     public List<WFSParserConfig> findWFSParserConfigs(String name) {
         List<WFSParserConfig> configs = queryForList(getNameSpace() + ".findParserConfigs", name);
         return configs;

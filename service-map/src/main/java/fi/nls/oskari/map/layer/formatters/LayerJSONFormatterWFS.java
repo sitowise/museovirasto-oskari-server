@@ -66,7 +66,7 @@ public class LayerJSONFormatterWFS extends LayerJSONFormatter {
 
         try {
             for (WFSSLDStyle style : styleList) {
-                JSONObject obj = createStylesJSON(style.getName(), style.getName(), globalLegend);
+                JSONObject obj = createStylesJSON(style.getName(), style.getName(), globalLegend, style.getId());
                 if (obj.length() > 0) {
                     arr.put(obj);
                 }
