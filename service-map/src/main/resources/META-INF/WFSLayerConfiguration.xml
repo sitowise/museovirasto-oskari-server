@@ -11,6 +11,7 @@
     <typeAlias alias="WFSParserConfig" type="fi.nls.oskari.domain.map.wfs.WFSParserConfig" />
     
     <resultMap class="WFSLayerConfiguration" id="WFSLayerConfiguration">
+    	<result property="id" column="id"/>
         <result property="layerId" column="maplayer_id"/>
         <result property="URL" column="url"/>
         <result property="username" column="username"/>
@@ -86,7 +87,7 @@
 
        <parameter property="WMSLayerId"/>
        <parameter property="wps_params"/>
-        <parameter property="templateModelId"/>
+       <parameter property="templateModelId"/>
        <parameter property="jobType"/>
        <parameter property="requestImpulse"/>
 
@@ -117,19 +118,13 @@
 
     </resultMap>
 
-
-    <cacheModel type="LRU" id="wfs-layer-cache" readOnly="true" serialize="false">
-        <flushInterval minutes="15"/>
-        <property name="CacheSize" value="100"/>
-    </cacheModel>
-
     <select id="maxId" resultClass="int">
         select max(id) from portti_wfs_layer
     </select>
 
-    <select id="findLayer" parameterClass="int" resultMap="WFSLayerConfiguration"
-            cacheModel="wfs-layer-cache">
+    <select id="findLayer" parameterClass="int" resultMap="WFSLayerConfiguration">
     	SELECT
+    	    l.id,
 			l.maplayer_id,
 			map.locale,
 			map.url,
@@ -181,6 +176,63 @@
 		LEFT OUTER JOIN portti_wfs_layer_style ss ON ss.id = l.selection_sld_style_id
 		LEFT OUTER JOIN portti_wfs_template_model m ON m.id = l.wfs_template_model_id
 		WHERE l.maplayer_id = #id#
+    </select>
+
+    <select id="findWFSLayersWithStyle" parameterClass="int" resultMap="WFSLayerConfiguration">
+        SELECT
+            l.id,
+            l.maplayer_id,
+            map.locale,
+            map.url,
+            map.username,
+            map.password,
+            l.layer_name,
+            l.gml_geometry_property,
+              map.srs_name,
+            l.gml_version,
+            l.gml2_separator,
+            map.version,
+            l.max_features,
+            l.feature_namespace,
+            l.feature_namespace_uri,
+            l.geometry_namespace_uri,
+            l.feature_element,
+            l.output_format,
+            
+            l.feature_type,
+            l.selected_feature_params,
+            l.feature_params_locales,
+            l.geometry_type,
+            l.get_map_tiles,
+            l.get_highlight_image,
+            l.get_feature_info,
+            l.tile_request,
+            l.tile_buffer,
+            l.wms_layer_id,
+            l.wps_params,
+            
+            map.minscale,
+            map.maxscale,
+            l.wfs_template_model_id,
+            l.job_type,
+            l.request_impulse,
+
+            m.name as t_name,
+            m.description,
+            m.type,
+            m.request_template,
+            m.parse_config,
+            m.response_template,
+            map.attributes,
+            
+            ss.sld_style as selection_sld_style
+            
+        FROM portti_wfs_layer l
+        JOIN oskari_maplayer map ON map.id = l.maplayer_id
+        LEFT OUTER JOIN portti_wfs_layer_style ss ON ss.id = l.selection_sld_style_id
+        LEFT OUTER JOIN portti_wfs_template_model m ON m.id = l.wfs_template_model_id
+        LEFT OUTER JOIN portti_wfs_layers_styles ls ON ls.wfs_layer_id = l.id
+        WHERE ls.wfs_layer_style_id = #id#
     </select>
 
     <select id="findStylesForLayer" parameterClass="int" resultMap="WFSSLDStyle">
@@ -255,6 +307,19 @@
         values (#name#, #description#, #type#, #request_template#, #response_template#, #parse_config#)
         returning id
     </statement>
+    
+    <statement id="insertLayerSLDStyles" parameterClass="java.util.Map" resultClass="java.lang.Integer" >
+        insert into portti_wfs_layers_styles (
+        wfs_layer_id,
+        wfs_layer_style_id)
+        values (#id#, #sld_style_id#)
+        returning id
+    </statement>
+
+
+    <delete id="removeLayerSLDStyles" parameterClass="int">
+        delete from portti_wfs_layers_styles where wfs_layer_id  = #id#;
+    </delete>
 
 
     <!-- TODO: verify these works as OskariLayer refactoring effort is ongoing

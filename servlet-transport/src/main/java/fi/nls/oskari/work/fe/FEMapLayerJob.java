@@ -87,7 +87,7 @@ public class FEMapLayerJob extends OWSMapLayerJob {
 
     protected WFSImage createHighlightImage() {
 
-        final Style style = getSLD(this.layer.getGMLGeometryPropertyNoNamespace());
+        final Style style = getSLD(this.layer.getGMLGeometryPropertyNoNamespace(),"highlight");
 
         return new WFSImage(this.layer, this.session.getClient(),
                 WFSImage.STYLE_DEFAULT, JobType.HIGHLIGHT.toString()) {
@@ -100,7 +100,8 @@ public class FEMapLayerJob extends OWSMapLayerJob {
     @Override
     protected WFSImage createResponseImage() {
 
-        final Style style = getSLD(this.layer.getGMLGeometryPropertyNoNamespace());
+        final Style style = getSLD(this.layer.getGMLGeometryPropertyNoNamespace(),
+                this.sessionLayer != null ? this.sessionLayer.getStyleName() : "default");
 
         return new WFSImage(this.layer, this.session.getClient(),
                 WFSImage.STYLE_DEFAULT, null) {
@@ -476,31 +477,32 @@ public class FEMapLayerJob extends OWSMapLayerJob {
      * 
      * @return
      */
-    protected Style getSLD(String geomPropertyname) {
+    protected Style getSLD(String geomPropertyname, String styleName) {
 
         List<WFSSLDStyle> sldStyles = this.layer.getSLDStyles();
 
         WFSSLDStyle sldStyle = null;
         for (WFSSLDStyle s : sldStyles) {
-            if ("oskari-feature-engine".equals(s.getName())) {
+            if (styleName.equals(s.getName())) {
                 log.debug("[fe] SLD for  " + this.layerId + " FE style found");
                 sldStyle = s;
                 break;
             }
         }
         String sldPath = null;
+        String sldName = null;
         if (sldStyle == null) {
             log.debug("[fe] SLD for  " + this.layerId + " not found - use default");
             sldPath = this.DEFAULT_FE_SLD_STYLE_PATH+geomPropertyname.toLowerCase()+".xml";
         }
         else {
             sldPath = sldStyle.getSLDStyle();
-
+            sldName = sldStyle.getName();
         }
 
 
 
-        Style sld = FEStyledLayerDescriptorManager.getSLD(sldPath);
+        Style sld = FEStyledLayerDescriptorManager.getSLD(sldName, sldPath);
 
         return sld;
 

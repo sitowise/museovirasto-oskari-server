@@ -35,8 +35,11 @@ public class LayerJSONFormatterWFS extends LayerJSONFormatter {
         final String globalLegend = layer.getLegendImage();
         
         JSONHelper.putValue(layerJson, "styles", getStyles(wfsConf, globalLegend));
-        if (JSONHelper.getStringFromJSON(layerJson, "style", "").equals("")) {
-        	JSONHelper.putValue(layerJson, "style", "default");
+        // Use maplayer setup
+        if (layer.getStyle() == null || layer.getStyle().isEmpty()) {
+            JSONHelper.putValue(layerJson, "style", "default");
+        } else {
+            JSONHelper.putValue(layerJson, "style", layer.getStyle());
         }
         JSONHelper.putValue(layerJson, "isQueryable", true);
         JSONHelper.putValue(layerJson, "wps_params", getWpsParams(wfsConf) );
@@ -63,7 +66,7 @@ public class LayerJSONFormatterWFS extends LayerJSONFormatter {
 
         try {
             for (WFSSLDStyle style : styleList) {
-                JSONObject obj = createStylesJSON(style.getName(), style.getName(), globalLegend);
+                JSONObject obj = createStylesJSON(style.getName(), style.getName(), globalLegend, style.getId());
                 if (obj.length() > 0) {
                     arr.put(obj);
                 }
