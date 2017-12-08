@@ -24,10 +24,10 @@ public class EnvHelper {
     private String loginUrl;
     private String loginUrlSAML = "/saml/login";
     private String logoutUrl;
+    private String registerUrl;
     private String loggedOutPage;
     private String param_username;
     private String param_password;
-    private String registerUrl;
 
     private String mapUrl;
 
@@ -63,6 +63,9 @@ public class EnvHelper {
     public String getLoginUrl() {
         return loginUrl;
     }
+    public String getRegisterUrl() {
+        return registerUrl;
+    }
 
     public String getLoginUrlSAML() {
         return loginUrlSAML;
@@ -87,6 +90,4 @@ public class EnvHelper {
     public String getMapUrl() {
         return mapUrl;
     }
-
-    public String getRegisterUrl() { return  registerUrl; }
 }

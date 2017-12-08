@@ -9,6 +9,7 @@ import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.service.ServiceException;
 import fi.nls.oskari.service.db.BaseIbatisService;
+import fi.nls.oskari.util.ConversionHelper;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -54,10 +55,11 @@ public class WFSLayerConfigurationServiceIbatisImpl extends BaseIbatisService<WF
         return  queryForObject(getNameSpace() + ".insertTemplateModel", map);
     }
 
+
     public synchronized int insertSLDStyle(final Map<String, Integer> map) throws ServiceException {
         return  queryForObject(getNameSpace() + ".insertSLDStyle", map);
     }
-    
+
     public void update(final WFSLayerConfiguration layer) {
         try {
             getSqlMapClient().update(getNameSpace() + ".update", layer);
@@ -116,6 +118,7 @@ public class WFSLayerConfigurationServiceIbatisImpl extends BaseIbatisService<WF
             }
         }
     }
+
 
     public void delete(final int id)  {
         long maplayer_id = Long.valueOf(id);

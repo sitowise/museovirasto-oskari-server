@@ -1,0 +1,1 @@
+update portti_view_bundle_seq set config = '{"supportedProjections":["EPSG:3067","EPSG:4326","EPSG:2393"],"projectionShowFormat":{"decimals":3,"format":"metric","EPSG:4326":{"decimals":3,"format":"degrees"},"EPSG:2393":{"decimals":0},"EPSG:3067":{"decimals":0}}}' where bundleinstance = 'coordinatetool';

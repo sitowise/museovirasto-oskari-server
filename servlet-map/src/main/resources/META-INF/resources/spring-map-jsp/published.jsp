@@ -4,24 +4,25 @@
 <html>
 <head>
     <title>${viewName}</title>
-
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
     <script type="text/javascript" src="/Oskari/libraries/jquery/jquery-1.7.1.min.js">
     </script>
+    <!-- IE 9 polyfill for openlayers 3 - https://github.com/openlayers/ol3/issues/4865 -->
+    <!--[if lte IE 9]> <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=fetch,requestAnimationFrame,Element.prototype.classList"></script> <![endif]-->
 
     <!-- ############# css ################# -->
     <link
             rel="stylesheet"
             type="text/css"
-            href="/Oskari${path}/css/icons.css"/>
+            href="/Oskari/resources/css/forms.css"/>
     <link
             rel="stylesheet"
             type="text/css"
-            href="/Oskari${path}/css/forms.css"/>
+            href="/Oskari/resources/css/portal.css"/>
     <link
             rel="stylesheet"
             type="text/css"
-            href="/Oskari${path}/css/portal.css"/>
-
+            href="/Oskari${path}/icons.css"/>
     <link
             rel="stylesheet"
             type="text/css"
@@ -43,7 +44,7 @@
     <!-- ############# /css ################# -->
 </head>
 <body>
-<div id="contentMap" class="oskariui container-fluid">
+<div id="contentMap" class="oskariui container-fluid published">
     <div class="row-fluid" style="height: 100%; background-color:white;">
         <div class="oskariui-left"></div>
         <div class="span12 oskariui-center" style="height: 100%; margin: 0;">
@@ -62,10 +63,6 @@
 
 <script type="text/javascript">
     var ajaxUrl = '${ajaxUrl}';
-    var viewId = '${viewId}';
-    var ssl = false;
-    var language = '${language}';
-    var preloaded = ${preloaded};
     var controlParams = ${controlParams};
 </script>
 
@@ -86,9 +83,6 @@
             href="/Oskari${path}/oskari.min.css"
             />
     <%--language files --%>
-    <script type="text/javascript"
-            src="/Oskari${path}/oskari_lang_all.js">
-    </script>
     <script type="text/javascript"
             src="/Oskari${path}/oskari_lang_${language}.js">
     </script>

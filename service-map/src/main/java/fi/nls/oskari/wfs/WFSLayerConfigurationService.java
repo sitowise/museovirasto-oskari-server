@@ -6,6 +6,7 @@ import fi.nls.oskari.domain.map.wfs.WFSSLDStyle;
 import fi.nls.oskari.service.ServiceException;
 import fi.nls.oskari.service.db.BaseService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 

@@ -11,22 +11,22 @@
     </script>
     <!-- ############# css ################# -->
     <link
-            rel="stylesheet"
-            type="text/css"
-            href="/Oskari${path}/css/icons.css"/>
+        rel="stylesheet"
+        type="text/css"
+        href="/Oskari/resources/css/forms.css"/>
     <link
-            rel="stylesheet"
-            type="text/css"
-            href="/Oskari${path}/css/forms.css"/>
+        rel="stylesheet"
+        type="text/css"
+        href="/Oskari/resources/css/portal.css"/>
     <link
-            rel="stylesheet"
-            type="text/css"
-            href="/Oskari${path}/css/portal.css"/>
+        rel="stylesheet"
+        type="text/css"
+        href="/Oskari${path}/icons.css"/>
+    <link
+        rel="stylesheet"
+        type="text/css"
+        href="/Oskari${path}/css/overwritten.css"/>
 
-    <link
-            rel="stylesheet"
-            type="text/css"
-            href="/Oskari${path}/css/overwritten.css"/>
     <style type="text/css">
         @media screen {
             body {
@@ -134,9 +134,9 @@
                         <input size="16" id="password" name="${_login_field_pass}" type="password" placeholder="<spring:message code="password" text="Password" />" required>
                         <input type="submit" id="submit" value="<spring:message code="login" text="Log in" />">
                     </form>
-					<c:if test="${!empty _register_uri}">
-						<div><a href="${_register_uri}"><spring:message code="register" text="Register" /></a></div>
-					</c:if>
+                    <c:if test="${!empty _registration_uri}">
+                        <a href="${_registration_uri}"><spring:message code="user.registration" text="Register" /></a>
+                    </c:if>
                 </c:if>
             </c:otherwise>
         </c:choose>
@@ -162,9 +162,6 @@
 
 <script type="text/javascript">
     var ajaxUrl = '${ajaxUrl}';
-    var viewId = '${viewId}';
-    var language = '${language}';
-    var preloaded = ${preloaded};
     var controlParams = ${controlParams};
 </script>
 

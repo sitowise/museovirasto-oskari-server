@@ -21,7 +21,12 @@ public class CapabilitiesCacheServiceMybatisImpl extends CapabilitiesCacheServic
     private SqlSessionFactory factory = null;
 
     public CapabilitiesCacheServiceMybatisImpl() {
+    }
 
+    private SqlSessionFactory getFactory() {
+        if(factory != null) {
+            return factory;
+        }
         final DatasourceHelper helper = DatasourceHelper.getInstance();
         final DataSource dataSource = helper.getDataSource(helper.getOskariDataSourceName());
         if(dataSource != null) {
@@ -29,6 +34,7 @@ public class CapabilitiesCacheServiceMybatisImpl extends CapabilitiesCacheServic
         } else {
             LOG.error("Couldn't get datasource for", getClass().getName());
         }
+        return factory;
     }
 
     private SqlSessionFactory initializeMyBatis(final DataSource dataSource) {
@@ -47,16 +53,17 @@ public class CapabilitiesCacheServiceMybatisImpl extends CapabilitiesCacheServic
      * Tries to load capabilities from the database
      * @return null if not saved to db
      */
-    public OskariLayerCapabilities find(final String url, final String layertype) {
-        if(url == null ||layertype == null) {
+    public OskariLayerCapabilities find(final String url, final String layertype, final String version) {
+        if(url == null || layertype == null) {
             LOG.warn("Incomplete params for capabilities loading:", url, layertype);
             return null;
         }
 
-        final SqlSession session = factory.openSession();
+        final SqlSession session = getFactory().openSession();
         try {
             final CapabilitiesMapper mapper = session.getMapper(CapabilitiesMapper.class);
-            return mapper.find(url.toLowerCase(), layertype.toLowerCase());
+            return mapper.find(url.toLowerCase(), layertype.toLowerCase(), version);
+
         } catch (Exception e) {
             throw new RuntimeException("Failed to load capabilities", e);
         } finally {
@@ -69,12 +76,14 @@ public class CapabilitiesCacheServiceMybatisImpl extends CapabilitiesCacheServic
      */
     public OskariLayerCapabilities save(final OskariLayerCapabilities capabilities) {
 
-        final SqlSession session = factory.openSession();
+        final SqlSession session = getFactory().openSession();
         try {
             final CapabilitiesMapper mapper = session.getMapper(CapabilitiesMapper.class);
-            OskariLayerCapabilities db = mapper.find(capabilities.getUrl().toLowerCase(), capabilities.getLayertype().toLowerCase());
-            if(db != null) {
-                if(db.getData() != null && !db.getData().trim().isEmpty() &&
+
+            OskariLayerCapabilities db = mapper.find(capabilities.getUrl().toLowerCase(), capabilities.getLayertype().toLowerCase(), capabilities.getVersion());
+
+            if (db != null) {
+                if (db.getData() != null && !db.getData().trim().isEmpty() &&
                         (capabilities.getData() == null || capabilities.getData().trim().isEmpty())) {
                     LOG.info("Trying to write empty capabilities on top of existing ones, not saving!");
                     return db;

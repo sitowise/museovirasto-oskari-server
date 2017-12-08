@@ -4,6 +4,7 @@ import fi.mml.wms.v111.*;
 import fi.mml.wms.v111.Layer.Queryable.Enum;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
+import fi.nls.oskari.map.geometry.ProjectionHelper;
 
 import javax.xml.namespace.QName;
 import java.lang.Exception;
@@ -17,11 +18,6 @@ public class WebMapServiceV1_1_1_Impl extends AbstractWebMapService {
 	private Map<String, String> styles = new HashMap<String, String>();
 	
 	/**
-	 * Available styles key: name, value: onlineResource
-	 */
-	private Map<String, String> legends = new HashMap<String, String>();
-	
-	/**
 	 * Available formats
 	 */
 	private String[] formats = new String[0];
@@ -29,6 +25,8 @@ public class WebMapServiceV1_1_1_Impl extends AbstractWebMapService {
 	private boolean isQueryable = false;
     private String[] keywords = new String[0];
 	private List<String> time = new ArrayList<>();
+    public String[] CRSs = new String[0];
+
 	/** Logger */
 	private static final Logger log = LogFactory.getLogger(WebMapServiceV1_1_1_Impl.class);
 	
@@ -77,6 +75,8 @@ public class WebMapServiceV1_1_1_Impl extends AbstractWebMapService {
 			}
 			
 			getFormats(wmtms);
+
+			getCRSs(wmtms);
 			
 		} catch (Exception e) {
 			throw new WebMapServiceParseException(e);
@@ -131,32 +131,33 @@ public class WebMapServiceV1_1_1_Impl extends AbstractWebMapService {
 	 * @param foundStyles
 	 */
 	private void gatherStylesAndLegends(Layer layer, Map<String, String> foundStyles) {
-		if (layer.getStyleArray() != null) {
-			Style[] stylesArray = layer.getStyleArray();
-			for(Style style: stylesArray) {
-				
-				if (style.getName().newCursor() != null && style.getTitle().newCursor()!= null) {
-					String styleName = style.getName().newCursor().getTextValue();
-					String styleTitle = style.getTitle().newCursor().getTextValue();
-					foundStyles.put(styleName, styleTitle);
-					
-					LegendURL[] lurl = style.getLegendURLArray();
-					if (lurl != null) {
-						if (lurl.length > 0) {
-							if (lurl[0].getOnlineResource() != null) {
-								/* OnlineResource is in xlink namespace */
-								String href = lurl[0].getOnlineResource().newCursor().getAttributeText(new QName("http://www.w3.org/1999/xlink", "href"));
-								if (href != null) {
-									legends.put(styleName, href);
-								}
-							}
-						}
-					}
-				}
+		if (layer.getStyleArray() == null) {
+			return;
+		}
+		Style[] stylesArray = layer.getStyleArray();
+		for(Style style: stylesArray) {
+
+			if (style.getName().newCursor() == null || style.getTitle().newCursor() == null) {
+				continue;
+			}
+			String styleName = style.getName().newCursor().getTextValue();
+			String styleTitle = style.getTitle().newCursor().getTextValue();
+			if(styleTitle == null || styleTitle.isEmpty()) {
+				styleTitle = styleName;
+			}
+			foundStyles.put(styleName, styleTitle);
+
+			LegendURL[] lurl = style.getLegendURLArray();
+			if (lurl == null || lurl.length == 0 || lurl[0].getOnlineResource() == null) {
+				continue;
+			}
+			/* OnlineResource is in xlink namespace */
+			String href = lurl[0].getOnlineResource().newCursor().getAttributeText(new QName("http://www.w3.org/1999/xlink", "href"));
+			if (href != null) {
+				legends.put(styleName + LEGEND_HASHMAP_KEY_SEPARATOR + styleTitle, href);
 			}
 		}
 	}
-	
 	/**
 	 * Gathers get feature info formats from feature info
 	 * 
@@ -175,6 +176,23 @@ public class WebMapServiceV1_1_1_Impl extends AbstractWebMapService {
 			}
 		}
 		
+	}
+
+	/**
+	 * Get supported crss  of the service from the parent layer
+	 *
+	 * @param wmtms
+	 */
+	private void getCRSs(WMTMSCapabilitiesDocument wmtms) {
+
+		SRS[] crss = wmtms.getWMTMSCapabilities().getCapability().getLayer().getSRSArray();
+
+		CRSs = new String[crss.length];
+
+		for (int i = 0; i < crss.length; i++) {
+			CRSs[i] = ProjectionHelper.shortSyntaxEpsg(crss[i].newCursor().getTextValue());
+		}
+
 	}
 	
 	
@@ -278,4 +296,8 @@ public class WebMapServiceV1_1_1_Impl extends AbstractWebMapService {
 	public List<String> getTime() {
 		return time;
 	}
+
+    public String[] getCRSs() {
+        return CRSs;
+    }
 }

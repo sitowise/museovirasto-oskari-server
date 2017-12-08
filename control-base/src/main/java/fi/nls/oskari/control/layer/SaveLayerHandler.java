@@ -1,6 +1,7 @@
 package fi.nls.oskari.control.layer;
 
 import fi.mml.map.mapwindow.service.db.InspireThemeService;
+import fi.mml.map.mapwindow.service.db.MaplayerProjectionService;
 import fi.mml.map.mapwindow.service.wms.WebMapService;
 import fi.mml.map.mapwindow.service.wms.WebMapServiceFactory;
 import fi.mml.map.mapwindow.util.OskariLayerWorker;
@@ -20,11 +21,13 @@ import fi.nls.oskari.map.data.domain.OskariLayerResource;
 import fi.nls.oskari.map.layer.LayerGroupService;
 import fi.nls.oskari.map.layer.OskariLayerService;
 import fi.nls.oskari.map.layer.formatters.LayerJSONFormatterWMS;
+import fi.nls.oskari.map.layer.formatters.LayerJSONFormatterWMTS;
 import fi.nls.oskari.permission.domain.Permission;
 import fi.nls.oskari.service.ServiceException;
 import fi.nls.oskari.service.capabilities.CapabilitiesCacheService;
 import fi.nls.oskari.service.capabilities.OskariLayerCapabilities;
 import fi.nls.oskari.util.*;
+import fi.nls.oskari.wfs.GetGtWFSCapabilities;
 import fi.nls.oskari.wfs.WFSLayerConfigurationService;
 import fi.nls.oskari.wfs.util.WFSParserConfigs;
 import fi.nls.oskari.wmts.WMTSCapabilitiesParser;
@@ -55,6 +58,7 @@ public class SaveLayerHandler extends ActionHandler {
     private PermissionsService permissionsService = ServiceFactory.getPermissionsService();
     private LayerGroupService layerGroupService = ServiceFactory.getLayerGroupService();
     private InspireThemeService inspireThemeService = ServiceFactory.getInspireThemeService();
+    private MaplayerProjectionService maplayerProjectionService = ServiceFactory.getMaplayerProjectionService();
     private CapabilitiesCacheService capabilitiesService = ServiceFactory.getCapabilitiesCacheService();
     private WFSParserConfigs wfsParserConfigs = new WFSParserConfigs();
 
@@ -62,6 +66,11 @@ public class SaveLayerHandler extends ActionHandler {
     private static final String PARAM_LAYER_ID = "layer_id";
     private static final String PARAM_LAYER_NAME = "layerName";
     private static final String PARAM_LAYER_URL = "layerUrl";
+    private static final String PARAM_SRS_NAME = "srs_name";
+
+    private static final String KEY_STYLES = "styles";
+    private static final String KEY_NAME = "name";
+
 
     private static final String LAYER_NAME_PREFIX = "name_";
     private static final String LAYER_TITLE_PREFIX = "title_";
@@ -131,21 +140,24 @@ public class SaveLayerHandler extends ActionHandler {
 
                     // TODO: WFS field management implementation
                     // TODO: WFS2 spesific edits
-                    /*
-                     * if(wfsl.getJobType() != null && wfsl.getJobType().equals(OSKARI_FEATURE_ENGINE)){
-                     *   handleFESpesificToWfsLayer(params, wfsl);
-                     * }
-                     */
-                    // wfsLayerService.update(wfsl);
+                    /* if(wfsl.getJobType() != null && wfsl.getJobType().equals(OSKARI_FEATURE_ENGINE)){
+                        handleFESpesificToWfsLayer(params, wfsl);
+                    }  */
+                    //wfsLayerService.update(wfsl);
+
 
                     // Styles setup
                     handleWfsLayerStyles(params, wfsl);
 
-                    // Remove old redis data of WFSLayer_xx, new wfs conf data
-                    // is inserted automatically
+
+                    // Remove old redis data of WFSLayer_xx, new wfs conf data is inserted automatically
                     JedisManager.delAll(WFSLayerConfiguration.KEY + Integer.toString(ml.getId()));
                     JedisManager.delAll(WFSLayerConfiguration.IMAGE_KEY + Integer.toString(ml.getId()));
                 }
+
+                //update maplayer projections - removes old ones and insert new ones
+                maplayerProjectionService.insertList(ml.getId(), ml.getSupportedCRSs());
+
 
                 LOG.debug(ml);
                 result.layerId = ml.getId();
@@ -201,6 +213,9 @@ public class SaveLayerHandler extends ActionHandler {
                 // update keywords
                 GetLayerKeywords glk = new GetLayerKeywords();
                 glk.updateLayerKeywords(id, ml.getMetadataId());
+
+                //update maplayer projections
+                maplayerProjectionService.insertList(ml.getId(), ml.getSupportedCRSs());
 
                 result.layerId = ml.getId();
                 return result;
@@ -264,7 +279,7 @@ public class SaveLayerHandler extends ActionHandler {
         InspireTheme theme = inspireThemeService.find(params.getHttpParam("inspireTheme", -1));
         ml.addInspireTheme(theme);
 
-        ml.setVersion(params.getHttpParam("version"));
+        ml.setVersion(params.getHttpParam("version", ""));
 
         ml.setBaseMap(ConversionHelper.getBoolean(params.getHttpParam("isBase"), false));
 
@@ -315,26 +330,22 @@ public class SaveLayerHandler extends ActionHandler {
         ml.setPassword(params.getHttpParam("password", ml.getPassword()));
 
         String attributes = params.getHttpParam("attributes");
-        if (attributes == null || attributes.equals("")) {
-            attributes = "{}";
+        if (attributes != null && !attributes.equals("")) {
+            ml.setAttributes(JSONHelper.createJSONObject(attributes));
         }
-
-        ml.setAttributes(JSONHelper.createJSONObject(attributes));
 
         String parameters = params.getHttpParam("params");
-        if (parameters == null || parameters.equals("")) {
-            parameters = "{}";
+        if (parameters != null && !parameters.equals("")) {
+            ml.setParams(JSONHelper.createJSONObject(parameters));
         }
-        if (!parameters.startsWith("{")) {
-            parameters = "{time="+parameters+"}";
-        }
-        ml.setParams(JSONHelper.createJSONObject(parameters));
 
         ml.setSrs_name(params.getHttpParam("srs_name", ml.getSrs_name()));
         ml.setVersion(params.getHttpParam("version",ml.getVersion()));
 
         ml.setRealtime(ConversionHelper.getBoolean(params.getHttpParam("realtime"), ml.getRealtime()));
         ml.setRefreshRate(ConversionHelper.getInt(params.getHttpParam("refreshRate"), ml.getRefreshRate()));
+        //Default supported crs for unknown crs layers
+        ml.setSupportedCRSs(new HashSet<String>(Arrays.asList(ml.getSrs_name())));
 
         String orderNumberParam = params.getHttpParam("layerOrderNumber");
         if(orderNumberParam == null || orderNumberParam.equals("")) {
@@ -380,7 +391,6 @@ public class SaveLayerHandler extends ActionHandler {
         wfsl.setGetFeatureInfo(ConversionHelper.getBoolean(params.getHttpParam("getFeatureInfo"), wfsl.isGetFeatureInfo()));
         wfsl.setGetHighlightImage(ConversionHelper.getBoolean(params.getHttpParam("getHighlightImage"), wfsl.isGetHighlightImage()));
         wfsl.setGetMapTiles(ConversionHelper.getBoolean(params.getHttpParam("getMapTiles"), wfsl.isGetMapTiles()));
-
         wfsl.setLayerName(params.getHttpParam("layerName"));
         wfsl.setMaxFeatures(ConversionHelper.getInt(params.getHttpParam("maxFeatures"), wfsl.getMaxFeatures()));
         wfsl.setOutputFormat(params.getHttpParam("outputFormat"));
@@ -393,38 +403,37 @@ public class SaveLayerHandler extends ActionHandler {
 
     private void handleFESpesificToWfsLayer(  final ActionParameters params, WFSLayerConfiguration wfsl) throws ActionException, ServiceException {
 
-
-        if (wfsl != null) {
-            if(!wfsl.getWFSVersion().equals(WFS1_1_0_VERSION)) {
-                wfsl.setRequestTemplate(params.getHttpParam("requestTemplate"));
-                wfsl.setResponseTemplate(params.getHttpParam("responseTemplate"));
-                wfsl.setParseConfig(params.getHttpParam("parseConfig"));
-                wfsl.setTemplateName(params.getHttpParam("templateName"));
-                wfsl.setTemplateType(params.getHttpParam("templateType"));
-                wfsl.setTemplateDescription("FE parser model - wfs version : " + wfsl.getWFSVersion());
-                Map<String, String> model = new HashMap<String, String>();
-
-                model.put("name", wfsl.getFeatureNamespace() + ":" + wfsl.getFeatureElement());
-                model.put("description", wfsl.getTemplateDescription());
-                model.put("type", wfsl.getTemplateType());
-                model.put("request_template", wfsl.getRequestTemplate());
-                model.put("response_template", wfsl.getResponseTemplate());
-                model.put("parse_config", wfsl.getParseConfig().toString());
-
-                int model_id = wfsLayerService.insertTemplateModel(model);
-
-                wfsl.setTemplateModelId(model_id);
-            }
-            else {
-                //TODO: fe save config support for wfs 1.1.0
-                wfsl.setJobType(OSKARI_FEATURE_ENGINE);
-                wfsl.setTileBuffer("{ \"default\" : 1, \"oskari_custom\" : 1}");;
-            }
-
+        if (wfsl == null) {
+            return;
         }
 
+        if(!wfsl.getWFSVersion().equals(WFS1_1_0_VERSION)) {
+            wfsl.setRequestTemplate(params.getHttpParam("requestTemplate"));
+            wfsl.setResponseTemplate(params.getHttpParam("responseTemplate"));
+            wfsl.setParseConfig(params.getHttpParam("parseConfig"));
+            wfsl.setTemplateName(params.getHttpParam("templateName"));
+            wfsl.setTemplateType(params.getHttpParam("templateType"));
+            wfsl.setTemplateDescription("FE parser model - wfs version : " + wfsl.getWFSVersion());
+            Map<String, String> model = new HashMap<String, String>();
+
+            model.put("name", wfsl.getFeatureNamespace() + ":" + wfsl.getFeatureElement());
+            model.put("description", wfsl.getTemplateDescription());
+            model.put("type", wfsl.getTemplateType());
+            model.put("request_template", wfsl.getRequestTemplate());
+            model.put("response_template", wfsl.getResponseTemplate());
+            model.put("parse_config", wfsl.getParseConfig().toString());
+
+            int model_id = wfsLayerService.insertTemplateModel(model);
+
+            wfsl.setTemplateModelId(model_id);
+        }
+        else {
+            //TODO: fe save config support for wfs 1.1.0
+            wfsl.setJobType(OSKARI_FEATURE_ENGINE);
+            wfsl.setTileBuffer("{ \"default\" : 1, \"oskari_custom\" : 1}");;
+        }
     }
-    
+
     /**
      *  Inserts/updates sld style links to single wfs layer
      * @param params
@@ -512,6 +521,19 @@ public class SaveLayerHandler extends ActionHandler {
             }
             JSONObject caps = LayerJSONFormatterWMS.createCapabilitiesJSON(wms);
             ml.setCapabilities(caps);
+            //TODO: similiar parsing for WMS GetCapabilities for admin layerselector  and this
+            // Parsing is processed twice:
+            // 1st with geotools parsing for admin layerselector (styles are not parsered correct in all cases)
+            // 2nd in this class
+            // Fix default style, if no legendimage setup
+            String style = this.getDefaultStyle(ml, caps);
+            if (style != null) {
+                ml.setStyle(style);
+            }
+
+            ml.setSupportedCRSs(LayerJSONFormatterWMS.getCRSs(wms));
+
+
             return true;
         } catch (ServiceException ex) {
             LOG.error(ex, "Couldn't update capabilities for layer", ml);
@@ -520,7 +542,8 @@ public class SaveLayerHandler extends ActionHandler {
     }
 
     private boolean handleWMTSSpecific(final ActionParameters params, OskariLayer ml) throws ActionException {
-        ml.setTileMatrixSetId(params.getHttpParam("matrixSetId", ml.getTileMatrixSetId()));
+
+        final String currentCrs = params.getHttpParam(PARAM_SRS_NAME, ml.getSrs_name());
 
         try {
             OskariLayerCapabilities capabilities = capabilitiesService.getCapabilities(ml, true);
@@ -538,6 +561,14 @@ public class SaveLayerHandler extends ActionHandler {
                 JSONHelper.putValue(ml.getOptions(), "format", resUrl.getFormat());
                 JSONHelper.putValue(ml.getOptions(), "urlTemplate", resUrl.getTemplate());
             }
+
+            JSONObject jscaps = LayerJSONFormatterWMTS.createCapabilitiesJSON(caps, layer);
+            ml.setCapabilities(jscaps);
+
+            ml.setTileMatrixSetId(LayerJSONFormatterWMTS.getTileMatrixSetId(jscaps, currentCrs));
+
+            ml.setSupportedCRSs(LayerJSONFormatterWMTS.getCRSs(caps, layer));
+
             return true;
 
         } catch (Exception ex) {
@@ -547,7 +578,7 @@ public class SaveLayerHandler extends ActionHandler {
     }
 
     private void handleWFSSpecific(final ActionParameters params, OskariLayer ml) throws ActionException {
-        // these are only in insert
+        // These are only in insert
         ml.setSrs_name(params.getHttpParam("srs_name", ml.getSrs_name()));
         ml.setVersion(params.getHttpParam("WFSVersion",ml.getVersion()));
 
@@ -558,6 +589,17 @@ public class SaveLayerHandler extends ActionHandler {
             JSONHelper.putValue(attributes, "manualRefresh", true);
             ml.setAttributes(attributes);
         }
+        // Put resolveDepth mode to attributes if true (solves xlink:href links in GetFeature)
+        attributes = ml.getAttributes();
+        attributes.remove("resolveDepth");
+        if(ConversionHelper.getOnOffBoolean(params.getHttpParam("resolveDepth", "off"), false)){
+            JSONHelper.putValue(attributes, "resolveDepth", true);
+            ml.setAttributes(attributes);
+        }
+        // Get supported projections
+        Map<String, Object> capa = GetGtWFSCapabilities.getGtDataStoreCapabilities(ml.getUrl(), ml.getVersion(), ml.getUsername(), ml.getPassword(), ml.getSrs_name());
+        ml.setSupportedCRSs(GetGtWFSCapabilities.parseProjections(capa, ml.getVersion(), ml.getName()));
+
     }
     private String validateUrl(final String url) throws ActionParamsException {
         try {
@@ -567,6 +609,26 @@ public class SaveLayerHandler extends ActionHandler {
             throw new ActionParamsException(ERROR_INVALID_FIELD_VALUE + PARAM_LAYER_URL);
         }
         return url;
+    }
+
+    /**
+     * Get 1st style name of capabilites styles
+     * @param ml  layer data
+     * @param caps  oskari wms capabilities
+     * @return
+     */
+    private String getDefaultStyle(OskariLayer ml, final JSONObject caps) {
+        String style = null;
+        if (ml.getId() == -1 && ml.getLegendImage() == null && caps.has(KEY_STYLES)) {
+            // Take 1st style name for default - geotools parsing is not always correct
+            JSONArray styles = JSONHelper.getJSONArray(caps, KEY_STYLES);
+            JSONObject jstyle = JSONHelper.getJSONObject(styles, 0);
+            if (jstyle != null) {
+                style = JSONHelper.getStringFromJSON(jstyle, KEY_NAME, null);
+                return style;
+            }
+        }
+        return style;
     }
 
     private void addPermissionsForRoles(final OskariLayer ml, final User user, final String[] externalIds) {

@@ -11,7 +11,7 @@
     <typeAlias alias="WFSParserConfig" type="fi.nls.oskari.domain.map.wfs.WFSParserConfig" />
     
     <resultMap class="WFSLayerConfiguration" id="WFSLayerConfiguration">
-    	<result property="id" column="id"/>
+        <result property="id" column="id"/>
         <result property="layerId" column="maplayer_id"/>
         <result property="URL" column="url"/>
         <result property="username" column="username"/>
@@ -57,7 +57,7 @@
         <result property="parseConfig" column="parse_config"/>
 		<result property="responseTemplate" column="response_template"/>
         <result property="attributes" column="attributes" jdbcType="VARCHAR" javaType="org.json.JSONObject"/>
-		
+
 		<result property="selectionSLDStyle" column="selection_sld_style"/>
     </resultMap>
 
@@ -115,6 +115,7 @@
         <result property="response_template" column="response_template"/>
         <result property="parse_config" column="parse_config"/>
         <result property="sld_style" column="sld_style"/>
+        <result property="title" column="title"/>
 
     </resultMap>
 
@@ -317,12 +318,13 @@
     </statement>
 
 
+
     <delete id="removeLayerSLDStyles" parameterClass="int">
         delete from portti_wfs_layers_styles where wfs_layer_id  = #id#;
     </delete>
 
 
-    <!-- TODO: verify these works as OskariLayer refactoring effort is ongoing
+    <!-- TODO: verify these works as OskariLayer refactoring effort is ongoing - portti_wfs_layer_style management is in SldStylesHandler
     <statement id="insertSLDStyle" parameterClass="java.util.Map" resultClass="java.lang.Integer" >
         insert into portti_wfs_layer_style (
         name,

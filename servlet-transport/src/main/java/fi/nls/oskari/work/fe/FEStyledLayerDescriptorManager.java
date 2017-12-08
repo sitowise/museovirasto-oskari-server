@@ -10,6 +10,7 @@ import org.geotools.xml.Parser;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -131,8 +132,8 @@ public class FEStyledLayerDescriptorManager {
         if(xml == null){
             return null;
         }
-        Configuration config = new SLDConfiguration();
 
+        Configuration config = new SLDConfiguration();
         Parser parser = new Parser(config);
         StyledLayerDescriptor sld = null;
         try {
@@ -146,11 +147,13 @@ public class FEStyledLayerDescriptorManager {
     }
 
     /**
-     * 
+     * Sld style could be path to sdl resource file or sld string content
+     * @param sldName
      * @param sldPath
      * @return
      */
     public static Style getSLD(String sldName, String sldPath) {
+        //Path key
         Style sld = templateSLD.get(sldPath);
 
         if (sld != null) {
@@ -182,7 +185,7 @@ public class FEStyledLayerDescriptorManager {
 
             sld = createSLDStyle(sldPath);
         }
-        
+
         if (sld != null) {
             log.debug("[fe] created and cached SLD for " + sldPath);
             templateSLD.put(sldPath, sld);

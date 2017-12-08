@@ -72,6 +72,17 @@ public class JSONHelper {
             return null;
         }
     }
+    public static final Object get(final JSONObject content, String key) {
+        if(content == null) {
+            return null;
+        }
+        try {
+            return content.get(key);
+        } catch (Exception e) {
+            log.info("Couldn't get Object from ", content, " with key =", key);
+            return null;
+        }
+    }
     public static final JSONObject getJSONObject(final JSONArray content, int key) {
         if(content == null) {
             return null;
@@ -79,7 +90,7 @@ public class JSONHelper {
         try {
             return content.getJSONObject(key);
         } catch (Exception e) {
-            log.warn("Couldn't get JSONObject from ", content, " with key =", key);
+            log.warn("Couldn't get JSONObject from ", content, " with key =", key, " - error: ", e);
             return null;
         }
     }
@@ -158,6 +169,9 @@ public class JSONHelper {
     }
     
     public static final String getStringFromJSON(final JSONObject data, final String key, final String defaultValue) {
+        if(data == null) {
+            return defaultValue;
+        }
         try {
             final String value = (String) data.get(key);
             if (value != null) {
@@ -169,6 +183,18 @@ public class JSONHelper {
         }   
     }
     public static final String getStringFromJSON(final JSONObject data, final String defaultValue) {
+        try {
+            final String value = data.toString();
+            if (value != null) {
+                return value;
+            }
+            return defaultValue;
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
+    public static final String getStringFromJSON(final JSONArray data, final String defaultValue) {
         try {
             final String value = data.toString();
             if (value != null) {
@@ -250,6 +276,24 @@ public class JSONHelper {
         return false;
     }
 
+    /**
+     * Returns an empty array if JSONArray couldn't be created if second parameter is true. For false
+     * returns null if JSONArray couldn't be created.
+     * @param content
+     * @param emptyIfNull
+     * @return
+     */
+    public static JSONArray createJSONArray(final String content, boolean emptyIfNull) {
+        JSONArray array = null;
+        try {
+            array = new JSONArray(content);
+        } catch (Exception ignore) {}
+        if(emptyIfNull) {
+            return getEmptyIfNull(array);
+        }
+        return null;
+    }
+
 	public static JSONArray createJSONArray(final String content) {
         try {
             return new JSONArray(content);
@@ -285,6 +329,7 @@ public class JSONHelper {
             throw new IllegalArgumentException("Couldn't create JSONArray of Json keys" );
         }
     }
+
     /**
      * Compares 2 JSONObjects for equality. Ignores property order and only matches on defined properties and property values.
      * @param jsonObject1

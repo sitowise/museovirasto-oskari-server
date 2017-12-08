@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Arrays;
+import java.text.SimpleDateFormat;
 
 import fi.nls.oskari.domain.Role;
 import org.json.JSONArray;
@@ -76,6 +77,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 	static {
 		mapper.registerModule(new JsonOrgModule());
+		mapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd"));
 	}
 
 	private boolean isGuestUser;

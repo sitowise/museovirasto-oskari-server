@@ -16,7 +16,7 @@ import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.map.userlayer.service.UserLayerDataService;
 import fi.nls.oskari.map.userlayer.service.UserLayerDbService;
-import fi.nls.oskari.map.userlayer.service.UserLayerDbServiceIbatisImpl;
+import fi.nls.oskari.map.userlayer.service.UserLayerDbServiceMybatisImpl;
 import fi.nls.oskari.util.ConversionHelper;
 import fi.nls.oskari.util.JSONHelper;
 import fi.nls.oskari.util.ResponseHelper;
@@ -28,7 +28,7 @@ public class UpdateUserLayerHandler extends ActionHandler {
 	
 	private static final Logger log = LogFactory
             .getLogger(CreateUserLayerHandler.class);
-    private final UserLayerDbService userLayerDbService = new UserLayerDbServiceIbatisImpl();
+    private final UserLayerDbService userLayerDbService = new UserLayerDbServiceMybatisImpl();
     private final UserLayerDataService userlayerDataService = new UserLayerDataService();
     private final static String PARAM_ID = "id";
     private final static String PARAM_DESCRIPTION = "description";

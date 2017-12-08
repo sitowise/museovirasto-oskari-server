@@ -198,6 +198,13 @@ public class LayerJSONFormatter {
         return ((layer.getUsername() != null) && (layer.getUsername().length() > 0)) || forceProxy;
     }
 
+    protected boolean isBeingProxiedViaOskariServer(String url) {
+        if(url == null || url.isEmpty()) {
+            return false;
+        }
+        return url.startsWith(PropertyUtil.get(PROPERTY_AJAXURL));
+    }
+
     public String getProxyUrl(final OskariLayer layer) {
         Map<String, String> urlParams = new HashMap<String, String>();
         urlParams.put("action_route", "GetLayerTile");
@@ -277,8 +284,8 @@ public class LayerJSONFormatter {
         layer.setGeometry(json.optString("geometry", layer.getGeometry()));
         layer.setRealtime(json.optBoolean("realtime", layer.getRealtime()));
         layer.setRefreshRate(json.optInt("refresh_rate", layer.getRefreshRate()));
-        layer.setSrs_name(json.optString("srs_name", layer.getGeometry()));
-        layer.setVersion(json.optString("version", layer.getGeometry()));
+        layer.setSrs_name(json.optString("srs_name", layer.getSrs_name()));
+        layer.setVersion(json.optString("version", layer.getVersion()));
         // omit permissions, these are handled by LayerHelper
 
         // handle params, check for null to avoid overwriting empty JS Object Literal

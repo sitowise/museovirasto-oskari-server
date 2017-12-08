@@ -54,6 +54,9 @@ public enum ConfigValue {
     /* */
     LAYER_TILES_URL_WHITELIST("layer.tiles.url.whitelist"),
 
+    /* For allowing tiles from transport to show in printout */
+    LAYER_TILES_URL_TRANSPORT("layer.transport.url"),
+
     /* */
     EPSGCODE("epsgCode"),
 
@@ -73,6 +76,8 @@ public enum ConfigValue {
     LAYERSURL("layersURL"),
 
     REDIS_BLOB_CACHE("redis.blobcache"),
+    REDIS_HOST("redis.hostname"),
+    REDIS_PORT("redis.port"),
 
     /* temp fix to 'support' ditching useless minor scale resolution maps */
     MAPLINK_ZOOM_OFFSET("maplink.zoom.offset")

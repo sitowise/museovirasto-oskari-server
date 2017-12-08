@@ -6,23 +6,22 @@
 <html>
 <head>
     <title>Oskari - ${viewName}</title>
-
     <script type="text/javascript" src="//code.jquery.com/jquery-1.7.2.min.js">
     </script>
+	
     <!-- ############# css ################# -->
     <link
             rel="stylesheet"
             type="text/css"
-            href="/Oskari${path}/css/icons.css"/>
+            href="/Oskari/resources/css/forms.css"/>
     <link
             rel="stylesheet"
             type="text/css"
-            href="/Oskari${path}/css/forms.css"/>
+            href="/Oskari/resources/css/portal.css"/>
     <link
             rel="stylesheet"
             type="text/css"
-            href="/Oskari${path}/css/portal.css"/>
-
+            href="/Oskari${path}/icons.css"/>
     <link
             rel="stylesheet"
             type="text/css"
@@ -59,7 +58,7 @@
             #login input[type="text"], #login input[type="password"] {
                 width: 90%;
                 margin-bottom: 5px;
-                background-image: url("/Oskari${path}/images/forms/input_shadow.png");
+                background-image: url("/Oskari/resources/images/forms/input_shadow.png");
                 background-repeat: no-repeat;
                 padding-left: 5px;
                 padding-right: 5px;
@@ -90,6 +89,12 @@
                 color: #FFF;
                 padding: 5px;
             }
+            #oskari-system-messages {
+              bottom: 1em;
+              position: fixed;
+              display: table;
+              padding-left: 0.3em;
+            }
 
         }
     </style>
@@ -116,6 +121,8 @@
             <%-- If logout url is present - so logout link --%>
             <c:when test="${!empty _logout_uri}">
                 <a href="${pageContext.request.contextPath}${_logout_uri}"><spring:message code="logout" text="Logout" /></a>
+                <%-- oskari-profile-link id is used by the personaldata bundle - do not modify --%>
+                <a href="${pageContext.request.contextPath}${_registration_uri}" id="oskari-profile-link"><spring:message code="account" text="Account" /></a>
             </c:when>
             <%-- Otherwise show appropriate logins --%>
             <c:otherwise>
@@ -130,9 +137,13 @@
                         <input type="submit" id="submit" value="<spring:message code="login" text="Log in" />">
                     </form>
                 </c:if>
+                <c:if test="${!empty _registration_uri}">
+                    <a href="${pageContext.request.contextPath}${_registration_uri}"><spring:message code="user.registration" text="Register" /></a>
+                </c:if>
             </c:otherwise>
         </c:choose>
     </div>
+    <div id="oskari-system-messages"></div>
 </nav>
 <div id="contentMap" class="oskariui container-fluid">
     <div id="menutoolbar" class="container-fluid"></div>
@@ -154,9 +165,6 @@
 
 <script type="text/javascript">
     var ajaxUrl = '${ajaxUrl}';
-    var viewId = '${viewId}';
-    var language = '${language}';
-    var preloaded = ${preloaded};
     var controlParams = ${controlParams};
 </script>
 
@@ -176,9 +184,6 @@
             href="/Oskari${path}/oskari.min.css"
             />
     <%--language files --%>
-    <script type="text/javascript"
-            src="/Oskari${path}/oskari_lang_all.js">
-    </script>
     <script type="text/javascript"
             src="/Oskari${path}/oskari_lang_${language}.js">
     </script>

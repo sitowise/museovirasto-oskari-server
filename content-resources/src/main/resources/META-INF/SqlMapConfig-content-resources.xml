@@ -17,7 +17,6 @@ PUBLIC "-//ibatis.apache.org//DTD SQL Map Config 2.0//EN"
   
   <sqlMap resource="META-INF/LayerGroup.xml" />
   <sqlMap resource="META-INF/OskariLayer.xml" />
-  <sqlMap resource="META-INF/Visualization.xml" />
   <sqlMap resource="META-INF/InspireTheme.xml" />
   <sqlMap resource="META-INF/Permissions.xml" />
   <sqlMap resource="META-INF/PublishedMapUsage.xml" />
@@ -27,5 +26,5 @@ PUBLIC "-//ibatis.apache.org//DTD SQL Map Config 2.0//EN"
   <sqlMap resource="META-INF/BackendStatus.xml" />
   <sqlMap resource="META-INF/PublishedMap.xml" />
   <sqlMap resource="META-INF/WFSLayerConfiguration.xml" />
-  <sqlMap resource="META-INF/Roles.xml" />
+  <sqlMap resource="META-INF/MaplayerProjections.xml" />
 </sqlMapConfig>
