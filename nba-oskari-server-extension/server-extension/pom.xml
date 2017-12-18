@@ -27,7 +27,7 @@
         <dependency>
             <groupId>fi.sito</groupId>
             <artifactId>nba-registry-api</artifactId>
-            <version>1.0.194.b6daf4a-SNAPSHOT</version>
+            <version>1.0.197.c41e78b-SNAPSHOT</version>
         </dependency>
 
         <dependency>
