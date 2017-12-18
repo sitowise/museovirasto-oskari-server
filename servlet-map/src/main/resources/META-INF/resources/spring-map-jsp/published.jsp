@@ -22,7 +22,7 @@
     <link
             rel="stylesheet"
             type="text/css"
-            href="/Oskari${path}/icons.css"/>
+            href="/Oskari/resources/icons.css"/>
     <link
             rel="stylesheet"
             type="text/css"
