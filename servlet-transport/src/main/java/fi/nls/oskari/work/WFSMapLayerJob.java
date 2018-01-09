@@ -278,10 +278,13 @@ public class WFSMapLayerJob extends OWSMapLayerJob {
             String fid = feature.getIdentifier().getID();
             log.debug("Processing properties of feature:", fid);
 
+            // get feature geometry (transform if needed) and get geometry center
+            Geometry geometry = WFSParser.getFeatureGeometry(feature, this.layer.getGMLGeometryProperty(), this.transformClient);
+
             // if is not in shown area -> skip
             ReferencedEnvelope envelope = this.session.getLocation().getEnvelope();
             envelope = this.session.getLocation().getTransformEnvelope(envelope, this.layer.getSRSName(), true);
-            if(!envelope.intersects(((Geometry)feature.getDefaultGeometry()).getEnvelopeInternal())) {
+            if(!envelope.intersects(geometry.getEnvelopeInternal())) {
                 log.debug("Feature not on screen, skipping", fid);
                 continue;
             }
@@ -295,9 +298,6 @@ public class WFSMapLayerJob extends OWSMapLayerJob {
             // __fid value
             values.add(fid);
             this.processedFIDs.add(fid);
-
-            // get feature geometry (transform if needed) and get geometry center
-            Geometry geometry = WFSParser.getFeatureGeometry(feature, this.layer.getGMLGeometryProperty(), this.transformClient);
 
             // Add geometry property, if requested  in hili
             if (this.session.isGeomRequest())
