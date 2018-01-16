@@ -802,13 +802,13 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("id", monument.getObjectId());
 					if (!monument.getPoints().isEmpty()) {
 						item.put("desc", monument.getPoints().get(0)
-								.getObjectName());
+								.getFeatureName());
 					} else if (!monument.getLines().isEmpty()) {
 						item.put("desc", monument.getLines().get(0)
-								.getObjectName());
+								.getFeatureName());
 					} else if (!monument.getAreas().isEmpty()) {
 						item.put("desc", monument.getAreas().get(0)
-								.getObjectName());
+								.getFeatureName());
 					}
 					item.put("municipality", monument.getMunicipalityName());
 
