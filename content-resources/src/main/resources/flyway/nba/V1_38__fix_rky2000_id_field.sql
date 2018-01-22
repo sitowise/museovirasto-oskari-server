@@ -1,0 +1,1 @@
+UPDATE nba_registry_layers SET gfi_attributes='["id", "featureName", "objectName", "nbaUrl", "createDate", "modifyDate", "author", "description"]' WHERE registry_id=5;
