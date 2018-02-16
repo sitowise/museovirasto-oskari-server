@@ -2,6 +2,7 @@ package fi.nls.oskari.domain.map;
 
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
+import fi.nls.oskari.util.IOHelper;
 import fi.nls.oskari.util.PropertyUtil;
 import org.json.JSONObject;
 
@@ -10,6 +11,7 @@ import java.util.*;
 public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable<OskariLayer> {
 
     private static Logger log = LogFactory.getLogger(OskariLayer.class);
+    public static final String PROPERTY_AJAXURL = "oskari.ajax.url.prefix";
 
     private static final String TYPE_COLLECTION = "collection";
     public static final String TYPE_WMS = "wmslayer";
@@ -32,7 +34,7 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
     private String url;
 
     // simplied url is just for caching so we don't need to create it but once
-    private final static String secureBaseUrl = PropertyUtil.get("maplayer.wmsurl.secure");
+    private String secureBaseUrl = PropertyUtil.get("maplayer.wmsurl.secure", "");
     private String simplifiedUrl;
 
     // defaults
@@ -62,8 +64,10 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
     private String username;
     private String password;
 
-    private String version;
+    private String version = "";
     private String srs_name;
+
+    private Set<String> supportedCRSs = null;
 
     private Date created = null;
     private Date updated = null;
@@ -297,8 +301,24 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
     }
 
     public String getUrl(final boolean isSecure) {
+        if(url == null) {
+            return "";
+        }
+        if(url.toLowerCase().startsWith("https://") || url.startsWith("/")) {
+            // don't use prefix for urls that:
+            // - already use secure protocol
+            // - are like /action?, /wms or //domain.com/path
+            return url;
+        }
         if(isSecure) {
-            return secureBaseUrl + getSimplifiedUrl();
+            if(!secureBaseUrl.isEmpty()) {
+                return secureBaseUrl + getSimplifiedUrl();
+            }
+            // proxy layer url
+            Map<String, String> urlParams = new LinkedHashMap<String, String>();
+            urlParams.put("action_route", "GetLayerTile");
+            urlParams.put("id", Integer.toString(getId()));
+            return IOHelper.constructUrl(PropertyUtil.get(PROPERTY_AJAXURL), urlParams);
         }
         return url;
     }
@@ -425,6 +445,15 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
 
     public void setSrs_name(String srs_name) {
         this.srs_name = srs_name;
+    }
+
+   // Only available for savelayer handler
+    public Set<String> getSupportedCRSs() {
+        return supportedCRSs;
+    }
+
+    public void setSupportedCRSs(Set<String> supportedCrss) {
+        this.supportedCRSs = supportedCrss;
     }
 
     public Integer getOrder_number() {

@@ -5,6 +5,8 @@ import com.ibatis.sqlmap.client.SqlMapClient;
 import com.ibatis.sqlmap.client.SqlMapClientBuilder;
 import fi.mml.map.mapwindow.service.db.InspireThemeService;
 import fi.mml.map.mapwindow.service.db.InspireThemeServiceIbatisImpl;
+import fi.mml.map.mapwindow.util.OskariLayerWorker;
+import fi.nls.oskari.annotation.Oskari;
 import fi.nls.oskari.domain.map.InspireTheme;
 import fi.nls.oskari.domain.map.LayerGroup;
 import fi.nls.oskari.domain.map.OskariLayer;
@@ -12,6 +14,7 @@ import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.util.ConversionHelper;
 import fi.nls.oskari.util.JSONHelper;
+import fi.nls.oskari.util.PropertyUtil;
 
 import java.io.Reader;
 import java.sql.SQLException;
@@ -24,9 +27,11 @@ import java.util.*;
  * Time: 13:43
  * To change this template use File | Settings | File Templates.
  */
-public class OskariLayerServiceIbatisImpl implements OskariLayerService {
+@Oskari("OskariLayerService")
+public class OskariLayerServiceIbatisImpl extends OskariLayerService {
 
     private static final Logger LOG = LogFactory.getLogger(OskariLayerServiceIbatisImpl.class);
+    private static boolean crsSupported = PropertyUtil.getOptional("oskari.crs.switch.supported", false);
     private SqlMapClient client = null;
 
     // make it static so we can change this with one call to all services when needed
@@ -256,18 +261,31 @@ public class OskariLayerServiceIbatisImpl implements OskariLayerService {
     }
 
     
-    public List<OskariLayer> find(final List<String> idList) {
+    public List<OskariLayer> find(final List<String> idList, String crs) {
         // TODO: break list into external and internalIds -> make 2 "where id/externalID in (...)" SQLs
         // ensure order stays the same
-        final List<OskariLayer> layers = new ArrayList<OskariLayer>();
-        for(String id : idList) {
-            OskariLayer layer = find(id);
-            if(layer != null) {
-                layers.add(layer);
-            }
+        final List<Integer> intList = ConversionHelper.getIntList(idList);
+        final List<String> strList =  ConversionHelper.getStringList(idList);
+        if(intList.size() < 1 && strList.size() < 1){
+            return new ArrayList<OskariLayer>();
         }
-        return layers;
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("strList", strList);
+        params.put("intList", intList);
+        if(crsSupported){
+            params.put("crs", crs);
+        } else {
+            params.put("crs", null);
+        }
+
+        List<Map<String,Object>> result = queryForList(getNameSpace() + ".findByIdList", params);
+        final List<OskariLayer> layers = mapDataList(result);
+
+        //Reorder layers to requested order
+        return OskariLayerWorker.reorderLayers(layers, idList);
+
     }
+
 
     public OskariLayer find(int id) {
         try {
@@ -285,19 +303,17 @@ public class OskariLayerServiceIbatisImpl implements OskariLayerService {
         return null;
     }
 
-    public List<OskariLayer> findByuuid(String uuid) {
+    public List<OskariLayer> findByMetadataId(String uuid) {
         try {
             client = getSqlMapClient();
-            final List<OskariLayer> layers =  mapDataList(queryForList(getNameSpace() + ".findByUuId", uuid));
-            if(layers != null && !layers.isEmpty()) {
-                // should we check for multiples? only should have one since sublayers are mapped in mapDataList()
-                return layers;
-            }
+            final List<Map<String,Object>> list = queryForList(getNameSpace() + ".findByUuId", uuid);
+            final List<OskariLayer> layers = mapDataList(list);
+            return layers;
         } catch (Exception e) {
             LOG.warn(e, "Exception when getting layer with uuid:", uuid);
         }
         LOG.warn("Couldn't find layer with id:", uuid);
-        return null;
+        return Collections.emptyList();
     }
 
     private List<OskariLayer> findByParentId(int parentId) {
@@ -310,14 +326,19 @@ public class OskariLayerServiceIbatisImpl implements OskariLayerService {
         return null;
     }
 
-    public List<OskariLayer> findAll() {
+    public List<OskariLayer> findAll(String crs) {
         long start = System.currentTimeMillis();
-        final List<Map<String,Object>> result = queryForList(getNameSpace() + ".findAll");
+        String crsIn = crsSupported ? crs : null;
+        List<Map<String,Object>> result = queryForList(getNameSpace() + ".findAll", crsIn);
         LOG.debug("Find all layers:", System.currentTimeMillis() - start, "ms");
         start = System.currentTimeMillis();
         final List<OskariLayer> layers = mapDataList(result);
         LOG.debug("Parsing all layers:", System.currentTimeMillis() - start, "ms");
         return layers;
+    }
+
+    public List<OskariLayer> findAll() {
+       return this.findAll(null);
     }
 
     public void update(final OskariLayer layer) {
@@ -394,4 +415,6 @@ public class OskariLayerServiceIbatisImpl implements OskariLayerService {
         }
         return Collections.emptyList();
     }
+
+
 }

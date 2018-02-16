@@ -28,6 +28,7 @@ public class GetWSCapabilitiesHandler extends ActionHandler {
     private static final String PARM_VERSION = "version";
     private static final String PARM_USER = "user";
     private static final String PARM_PW = "pw";
+    private static final String PARM_CRS = "crs";
 
     private final CapabilitiesCacheService capabilitiesService = OskariComponentManager.getComponentOfType(CapabilitiesCacheService.class);
     private String[] permittedRoles = new String[0];
@@ -48,12 +49,13 @@ public class GetWSCapabilitiesHandler extends ActionHandler {
         final String version = params.getHttpParam(PARM_VERSION, "");
         final String user = params.getHttpParam(PARM_USER, "");
         final String pw = params.getHttpParam(PARM_PW, "");
+        final String currentCrs = params.getHttpParam(PARM_CRS, "EPSG:3067");
 
         log.debug("Trying to get capabilities for type:", layerType, "with url:", url);
         try {
             if(OskariLayer.TYPE_WMS.equals(layerType)) {
                 // New method for parsing WMSCetGapabilites to Oskari layers structure
-                final JSONObject capabilities = GetGtWMSCapabilities.getWMSCapabilities(url, user, pw);
+                final JSONObject capabilities = GetGtWMSCapabilities.getWMSCapabilities(url, user, pw, version, currentCrs);
                 ResponseHelper.writeResponse(params, capabilities);
             }
             else {
@@ -61,14 +63,20 @@ public class GetWSCapabilitiesHandler extends ActionHandler {
                     WMTSCapabilitiesParser parser = new WMTSCapabilitiesParser();
 
                     // setup capabilities URL
-                    final OskariLayerCapabilities caps  = capabilitiesService.getCapabilities(url, OskariLayer.TYPE_WMTS, user, pw);
-                    JSONObject resultJSON = parser.parseCapabilitiesToJSON(caps.getData(), url);
+                    OskariLayerCapabilities caps  = capabilitiesService.getCapabilities(url, OskariLayer.TYPE_WMTS, user, pw, version);
+                    String capabilitiesXML = caps.getData();
+                    if(capabilitiesXML == null || capabilitiesXML.trim().isEmpty()) {
+                        // retry from service - might get empty xml from db
+                        caps = capabilitiesService.getCapabilities(url, OskariLayer.TYPE_WMTS, user, pw, version, true);
+                        capabilitiesXML = caps.getData();
+                    }
+                    JSONObject resultJSON = parser.parseCapabilitiesToJSON(capabilitiesXML, url, currentCrs);
                     JSONHelper.putValue(resultJSON, "xml", caps.getData());
                     ResponseHelper.writeResponse(params, resultJSON);
                 }
                 else if(OskariLayer.TYPE_WFS.equals(layerType)) {
                     // New method for parsing WFSCetGapabilites to Oskari layers structure
-                    final JSONObject capabilities = GetGtWFSCapabilities.getWFSCapabilities(url, version, user, pw);
+                    final JSONObject capabilities = GetGtWFSCapabilities.getWFSCapabilities(url, version, user, pw, currentCrs);
                     ResponseHelper.writeResponse(params, capabilities);
                 }
                 else {

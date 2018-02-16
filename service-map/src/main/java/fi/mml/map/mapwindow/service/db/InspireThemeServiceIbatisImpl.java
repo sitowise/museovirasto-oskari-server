@@ -1,12 +1,13 @@
 package fi.mml.map.mapwindow.service.db;
 
 import com.ibatis.sqlmap.client.SqlMapClient;
+import fi.nls.oskari.annotation.Oskari;
 import fi.nls.oskari.cache.Cache;
 import fi.nls.oskari.cache.CacheManager;
 import fi.nls.oskari.domain.map.InspireTheme;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
-import fi.nls.oskari.service.db.BaseIbatisService;
+import fi.nls.oskari.service.ServiceRuntimeException;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -16,14 +17,15 @@ import java.util.*;
  * 
  *
  */
-public class InspireThemeServiceIbatisImpl extends BaseIbatisService<InspireTheme> implements InspireThemeService {
+@Oskari("InspireTheme")
+public class InspireThemeServiceIbatisImpl extends InspireThemeService {
 
     private Logger log = LogFactory.getLogger(InspireThemeServiceIbatisImpl.class);
 
     // key is theme id
-    final private static Cache<InspireTheme> ID_CACHE = CacheManager.getCache(InspireThemeServiceIbatisImpl.class.getName());
+    private static final Cache<InspireTheme> ID_CACHE = CacheManager.getCache(InspireThemeServiceIbatisImpl.class.getName());
     // key is layer id
-    final private static Cache<List<Integer>> LINK_CACHE = CacheManager.getCache(InspireThemeServiceIbatisImpl.class.getName() + "Links");
+    private static final Cache<List<Integer>> LINK_CACHE = CacheManager.getCache(InspireThemeServiceIbatisImpl.class.getName() + "Links");
 
 	@Override
 	protected String getNameSpace() {
@@ -32,7 +34,7 @@ public class InspireThemeServiceIbatisImpl extends BaseIbatisService<InspireThem
 
     public List<InspireTheme> findByMaplayerId(final int layerId) {
 
-        final List<Integer> links = LINK_CACHE.get("" + layerId);
+        final List<Integer> links = LINK_CACHE.get(Integer.toString(layerId));
         if(links == null) {
             // very crude way to populate cache, but load all if it's empty. Most applications provide layer listing anyways
             if(LINK_CACHE.getSize() == 0) {
@@ -81,7 +83,7 @@ public class InspireThemeServiceIbatisImpl extends BaseIbatisService<InspireThem
 
     @Override
     public InspireTheme find(int id) {
-        InspireTheme theme = ID_CACHE.get("" + id);
+        InspireTheme theme = ID_CACHE.get(Integer.toString(id));
         if(theme == null) {
             theme = super.find(id);
             if(theme != null) {
@@ -91,12 +93,13 @@ public class InspireThemeServiceIbatisImpl extends BaseIbatisService<InspireThem
         return theme;
     }
 
+    @Override
     public List<InspireTheme> findAll() {
         final List<InspireTheme> groups = super.findAll();
         ID_CACHE.setLimit(groups.size() + 10);
         ID_CACHE.flush(true);
         for(InspireTheme group : groups) {
-            ID_CACHE.put("" + group.getId(), group);
+            ID_CACHE.put(Integer.toString(group.getId()), group);
         }
         return groups;
     }
@@ -109,7 +112,7 @@ public class InspireThemeServiceIbatisImpl extends BaseIbatisService<InspireThem
         for(Map<String,Object> result : mappings) {
             if(result.get("themeid") == null) {
                 // this will make the keys case insensitive (needed for hsqldb compatibility...)
-                final Map<String, Object> caseInsensitiveData = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+                final Map<String, Object> caseInsensitiveData = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
                 caseInsensitiveData.putAll(result);
                 result = caseInsensitiveData;
             }
@@ -119,10 +122,12 @@ public class InspireThemeServiceIbatisImpl extends BaseIbatisService<InspireThem
             themeLayers.add(themeid);
         }
     }
+
+    @Override
     public void delete(int id) {
         super.delete(id);
         // update caches
-        ID_CACHE.remove("" + id);
+        ID_CACHE.remove(Integer.toString(id));
         findLayerMappings();
     }
 
@@ -130,14 +135,17 @@ public class InspireThemeServiceIbatisImpl extends BaseIbatisService<InspireThem
         return queryForList(getNameSpace() + ".findMaplayersByTheme", id);
     }
 
+    @Override
     public void update(final InspireTheme theme) {
-        ID_CACHE.put("" + theme.getId(), theme);
+        ID_CACHE.put(Integer.toString(theme.getId()), theme);
         super.update(theme);
     }
+
+    @Override
     public int insert(final InspireTheme theme) {
         final int id = super.insert(theme);
         theme.setId(id);
-        ID_CACHE.put("" + theme.getId(), theme);
+        ID_CACHE.put(Integer.toString(theme.getId()), theme);
         return id;
     }
 
@@ -152,7 +160,7 @@ public class InspireThemeServiceIbatisImpl extends BaseIbatisService<InspireThem
             final List<Integer> themeLayers = getLinkCache((int)maplayerId);
             themeLayers.clear();
             // link new set of themes and update cache
-            final Map<String, Object> params = new HashMap<String, Object>(2);
+            final Map<String, Object> params = new HashMap<>(2);
             params.put("layerId", maplayerId);
             if(themes != null) {
                 // sublayers dont have themes
@@ -164,7 +172,7 @@ public class InspireThemeServiceIbatisImpl extends BaseIbatisService<InspireThem
             }
             client.commitTransaction();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to set links", e);
+            throw new ServiceRuntimeException("Failed to set links", e);
         } finally {
             if (client != null) {
                 try {
@@ -185,7 +193,7 @@ public class InspireThemeServiceIbatisImpl extends BaseIbatisService<InspireThem
     }
 
     private List<Integer> getLinkCache(int maplayerid) {
-        List<Integer> themeLayers = LINK_CACHE.get("" + maplayerid);
+        List<Integer> themeLayers = LINK_CACHE.get(Integer.toString(maplayerid));
         if(themeLayers == null) {
             themeLayers = new ArrayList<>();
             LINK_CACHE.put("" + maplayerid, themeLayers);

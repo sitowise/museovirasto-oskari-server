@@ -1,0 +1,1 @@
+update portti_view_bundle_seq set config = '{"selectionTools":true, "allowLocateOnMap":true}' where bundleinstance = 'featuredata2';

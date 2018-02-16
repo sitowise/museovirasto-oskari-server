@@ -11,7 +11,7 @@
     ],
     "views" : [
         "default-view.json",
-        "publisher-template-view.json",
+        "ol3-publisher-template-view-4326.json",
         "default-transport-view.json",
         "default-full-view.json",
         "ol3-view.json",
@@ -19,7 +19,6 @@
     ],
     "sql" : [
         "add_oskari_wfs_parser_config.sql",
-        "example-wfslayer.sql",
         "example-permissions.sql"
     ]
 }

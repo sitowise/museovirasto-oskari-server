@@ -45,6 +45,7 @@ public class GetAppSetupHandler extends ActionHandler {
     public static final String VIEW_DATA = "viewData";
     public static final String STATE = "state";
 
+    private static final String KEY_ENV = "env";
     private static final String KEY_STARTUP = "startupSequence";
     private static final String KEY_CONFIGURATION = "configuration";
 
@@ -58,7 +59,8 @@ public class GetAppSetupHandler extends ActionHandler {
     // for adding extra bundle(s) for users with specific roles
     private Map<String, List<Bundle>> bundlesForRole = new HashMap<String, List<Bundle>>();
 
-    private final Set<String> paramHandlers = new HashSet<String>();
+    // params need to be in a list that keeps order since there is a priority order
+    private final List<String> paramHandlers = new ArrayList<>();
     private final Map<String, BundleHandler> bundleHandlers = new HashMap<String, BundleHandler>();
 
     public void setViewService(final ViewService service) {
@@ -138,11 +140,14 @@ public class GetAppSetupHandler extends ActionHandler {
         final String referer = RequestHelper.getDomainFromReferer(params
                 .getHttpHeader(IOHelper.HEADER_REFERER));
 
+
         // ignore saved state when loading:
         //   - views that are not system default views
         //   - when explicitly told with parameter
+        //   - when the cookie's srs is different from the view's
         boolean ignoreSavedState = !viewService.isSystemDefaultView(viewId)
-                || params.getHttpParam(PARAM_NO_SAVED_STATE, false);
+                || params.getHttpParam(PARAM_NO_SAVED_STATE, false)
+                || !srsNamesMatch(params, view);
         // restore state from cookie if not
         if (!ignoreSavedState) {
             log.debug("Modifying map view if saved state is available");
@@ -230,9 +235,27 @@ UNRESTRICTED_USAGE_ROLE = PropertyUtil.get("view.published.usage.unrestrictedRol
         modifierParams.setModifyURLs(isSecure(params));
         modifierParams.setAjaxRouteParamName(ActionControl.PARAM_ROUTE);
 
+        // Add admin-layerselector/layer-rights bundle, if admin role and default view
+        // TODO: check if we can assume ViewTypes.DEFAULT || ViewTypes.USER for this.
+        //add bundles according to role/rights
+        if (ViewTypes.DEFAULT.equals(view.getType()) ||
+                ViewTypes.USER.equals(view.getType())) {
+            log.debug("Adding bundles for user", params.getUser());
+
+            for(Role r : params.getUser().getRoles()) {
+                List<Bundle> bundles = bundlesForRole.get(r.getName());
+                if(bundles != null) {
+                    for(Bundle b : bundles) {
+                        addBundle(modifierParams, b.getName(), b);
+                    }
+                }
+            }
+        }
+
         int locationModified = 0;
         for (String paramKey : paramHandlers) {
             final String value = params.getHttpParam(paramKey);
+            log.debug("Handling parameter", paramKey);
             modifierParams.setParamValue(value);
             try {
                 if (value != null
@@ -268,36 +291,32 @@ UNRESTRICTED_USAGE_ROLE = PropertyUtil.get("view.published.usage.unrestrictedRol
             }
         }
 
-        // Add admin-layerselector/layer-rights bundle, if admin role and default view
-        // TODO: check if we can assume ViewTypes.DEFAULT || ViewTypes.USER for this.
-        //add bundles according to role/rights
-        if (ViewTypes.DEFAULT.equals(view.getType()) ||
-            ViewTypes.USER.equals(view.getType())) {
-            log.debug("Adding bundles for user", params.getUser());
-
-            for(Role r : params.getUser().getRoles()) {
-                List<Bundle> bundles = bundlesForRole.get(r.getName());
-                if(bundles != null) {
-                    for(Bundle b : bundles) {
-                        addBundle(modifierParams, b.getName(), b);
-                    }
-                }
-            }
-        }
-
         // write response
         try {
             JSONObject appSetup = new JSONObject();
+            appSetup.put(KEY_ENV, EnvHelper.getEnvironmentJSON(params));
             appSetup.put(KEY_STARTUP, startupSequence);
             appSetup.put(KEY_CONFIGURATION, configuration);
             ResponseHelper.writeResponse(params, appSetup);
         } catch (JSONException jsonex) {
-            throw new ActionException("Malformed startup sequence/config!",
-                    jsonex);
+            throw new ActionException("Malformed startup sequence/config!", jsonex);
         }
     }
 
-
+    /**
+     * Check whether cookie srs matches the view's native srs
+     * @return
+     */
+    private boolean srsNamesMatch(ActionParameters params, View view) {
+        try {
+            JSONObject cookieState = getStateFromCookie(params.getCookie(COOKIE_SAVED_STATE));
+            String srs = JSONHelper.getStringFromJSON(cookieState, "srs", null);
+            return getConfiguration(view).getJSONObject("mapfull").getJSONObject("conf").getJSONObject("mapOptions").get("srsName").equals(srs);
+        } catch(Exception e) {
+            log.error("Srs parsing failed. ", e);
+            return true;
+        }
+    }
     private boolean updateUsageData(final View view)  {
         try {
             viewService.updateViewUsage(view);
@@ -354,13 +373,13 @@ UNRESTRICTED_USAGE_ROLE = PropertyUtil.get("view.published.usage.unrestrictedRol
         }
         // cookie view data
         try {
-            String value = URLDecoder.decode(cookie.getValue());
+            String value = URLDecoder.decode(cookie.getValue(),"UTF-8");
             if (!value.isEmpty()) {
                 log.debug("Using cookie state:", value);
                 return new JSONObject(value);
             }
         } catch (Exception je) {
-            log.warn("Got cookie but couldnt transform to JSON", cookie);
+            log.info("Got cookie but couldn't transform to JSON", cookie);
         }
         return null;
     }
@@ -390,33 +409,34 @@ UNRESTRICTED_USAGE_ROLE = PropertyUtil.get("view.published.usage.unrestrictedRol
         log.info("[GetAppSetupHandler] Fetching View from cookie", myview);
         // merge cookie state for mapfull
         try {
-            // TODO: add error handling a bit more
-            JSONObject viewdata = new JSONObject(myview.getString(VIEW_DATA));
+            JSONObject viewdata = myview.optJSONObject(VIEW_DATA);
+            if(viewdata == null) {
+                return;
+            }
             for ( Iterator<String> bundleIterator = viewdata.keys(); bundleIterator.hasNext(); ) {
                 final String bundleName = bundleIterator.next();
-                final String bundle = viewdata.getString(bundleName);
-                String bundleState = null;
-                if (!"{}".equals(bundle)) {
-                    bundleState = new JSONObject(bundle).getString(STATE);
-                    log.debug("Got state for bundle", bundleName, "- state:", bundleState);
-                } else {
+                //final String bundle = viewdata.getString(bundleName);
+                final JSONObject bundle = viewdata.optJSONObject(bundleName);
+                if(bundle == null) {
                     continue;
                 }
-                if (!"{}".equals(bundleState)) {
-                    view.getBundleByName(bundleName).setState(bundleState);
+                final JSONObject state = bundle.optJSONObject(STATE);
+                if(state == null || state.names() == null) {
+                    continue;
+                }
+                log.debug("Got state for bundle", bundleName, "- state:", state);
+                if(ViewModifier.BUNDLE_MAPFULL.equals(bundleName) &&
+                        state.optJSONArray("selectedLayers").length() == 0) {
+                    // Do not use mapfull state if there's no selected layers
+                    continue;
+                }
+                Bundle b = view.getBundleByName(bundleName);
+                if(b != null) {
+                    b.setState(state.toString());
                 }
             }
-
-            final String cookiestate = viewdata.getString(ViewModifier.BUNDLE_MAPFULL);
-            final JSONObject jscookiestate = new JSONObject(cookiestate);
-            final String cookiestatedata = jscookiestate.getString(STATE);
-            // Check for empty layers array/is valid
-            if (cookiestatedata.indexOf("[]") !=  -1) {
-                view.getBundleByName(ViewModifier.BUNDLE_MAPFULL).setState(
-                        cookiestatedata);
-            }
         } catch (Exception ex) {
-            log.warn("Error parsing cookie JSON:", myview, ex);
+            log.info(ex, "Error parsing cookie JSON:", myview);
         }
     }
 

@@ -10,14 +10,15 @@
     <name>NBA applications</name>
 
     <properties>
-        <oskari.version>1.34.1</oskari.version>
+        <oskari.version>1.44.1</oskari.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.7</java.version>
+        <java.version>1.8</java.version>
+        <jdk.version>1.8</jdk.version>
         <commons-dbcp2.version>2.0.1</commons-dbcp2.version>
-        <postgresql.version>9.3-1102-jdbc41</postgresql.version>
+        <postgresql.version>42.1.4</postgresql.version>
         <junit.version>4.11</junit.version>
         <slf4j.version>1.7.12</slf4j.version>
-		<jackson.version>2.5.4</jackson.version>
+        <jackson.version>2.9.0</jackson.version>
     </properties>
 	
 	<dependencyManagement>

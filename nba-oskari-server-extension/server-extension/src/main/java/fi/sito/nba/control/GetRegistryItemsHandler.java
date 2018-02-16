@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Arrays;
+import java.text.SimpleDateFormat;
 
 import fi.nls.oskari.domain.Role;
 import org.json.JSONArray;
@@ -76,6 +77,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 
 	static {
 		mapper.registerModule(new JsonOrgModule());
+		mapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd"));
 	}
 
 	private boolean isGuestUser;
@@ -800,13 +802,13 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("id", monument.getObjectId());
 					if (!monument.getPoints().isEmpty()) {
 						item.put("desc", monument.getPoints().get(0)
-								.getObjectName());
+								.getFeatureName());
 					} else if (!monument.getLines().isEmpty()) {
 						item.put("desc", monument.getLines().get(0)
-								.getObjectName());
+								.getFeatureName());
 					} else if (!monument.getAreas().isEmpty()) {
 						item.put("desc", monument.getAreas().get(0)
-								.getObjectName());
+								.getFeatureName());
 					}
 					item.put("municipality", monument.getMunicipalityName());
 

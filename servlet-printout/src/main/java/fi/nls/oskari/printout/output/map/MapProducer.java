@@ -657,6 +657,9 @@ public class MapProducer {
         String urlWhiteList = ConfigValue.LAYER_TILES_URL_WHITELIST
                 .getConfigProperty(props);
 
+        String transportUrl = ConfigValue.LAYER_TILES_URL_TRANSPORT
+                .getConfigProperty(props);
+
         int n = 0;
         for (Map<String, ?> predefinedTile : layerDefinition.getTiles()) {
             ++n;
@@ -668,7 +671,7 @@ public class MapProducer {
                 continue;
             }
 
-            if (!url.matches(urlWhiteList)) {
+            if ((transportUrl == null || !url.startsWith(transportUrl)) && !url.matches(urlWhiteList)) {
                 log.warn("WHITELIST MISMATCH " + url);
                 continue;
             }

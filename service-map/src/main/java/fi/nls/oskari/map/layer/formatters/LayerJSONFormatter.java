@@ -38,7 +38,7 @@ public class LayerJSONFormatter {
     private static final String KEY_ID = "id";
     private static final String KEY_TYPE = "type";
     private static final String KEY_ADMIN = "admin";
-    protected static final String[] STYLE_KEYS ={"name", "title", "legend"};
+    protected static final String[] STYLE_KEYS = {"name", "title", "legend", "id"};
 
     private static Logger log = LogFactory.getLogger(LayerJSONFormatter.class);
     // map different layer types for JSON formatting
@@ -198,6 +198,13 @@ public class LayerJSONFormatter {
         return ((layer.getUsername() != null) && (layer.getUsername().length() > 0)) || forceProxy;
     }
 
+    protected boolean isBeingProxiedViaOskariServer(String url) {
+        if(url == null || url.isEmpty()) {
+            return false;
+        }
+        return url.startsWith(PropertyUtil.get(PROPERTY_AJAXURL));
+    }
+
     public String getProxyUrl(final OskariLayer layer) {
         Map<String, String> urlParams = new HashMap<String, String>();
         urlParams.put("action_route", "GetLayerTile");
@@ -206,11 +213,18 @@ public class LayerJSONFormatter {
     }
 
 
-    public static JSONObject createStylesJSON(String name, String title, String legend) {
+    public static JSONObject createStylesJSON(String name, String title, String legend, String id) {
         final JSONObject style = JSONHelper.createJSONObject(STYLE_KEYS[0], name);
         JSONHelper.putValue(style, STYLE_KEYS[1], title);
         JSONHelper.putValue(style, STYLE_KEYS[2], legend);
+        if(id != null) {
+            JSONHelper.putValue(style, STYLE_KEYS[3], id);
+        }
         return style;
+    }
+    
+    public static JSONObject createStylesJSON(String name, String title, String legend) {
+        return createStylesJSON(name, title, legend, null);
     }
 
     // This is solution of transition for dataUrl and for dataUrl_uuid
@@ -270,8 +284,8 @@ public class LayerJSONFormatter {
         layer.setGeometry(json.optString("geometry", layer.getGeometry()));
         layer.setRealtime(json.optBoolean("realtime", layer.getRealtime()));
         layer.setRefreshRate(json.optInt("refresh_rate", layer.getRefreshRate()));
-        layer.setSrs_name(json.optString("srs_name", layer.getGeometry()));
-        layer.setVersion(json.optString("version", layer.getGeometry()));
+        layer.setSrs_name(json.optString("srs_name", layer.getSrs_name()));
+        layer.setVersion(json.optString("version", layer.getVersion()));
         // omit permissions, these are handled by LayerHelper
 
         // handle params, check for null to avoid overwriting empty JS Object Literal

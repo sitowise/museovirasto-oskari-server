@@ -13,13 +13,12 @@ import fi.nls.oskari.map.layer.OskariLayerService;
 import fi.nls.oskari.map.layer.OskariLayerServiceIbatisImpl;
 import fi.nls.oskari.map.layer.formatters.LayerJSONFormatter;
 import fi.nls.oskari.util.JSONHelper;
+import fi.nls.oskari.util.PropertyUtil;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Worker class for rendering json objects from domain objects
@@ -41,13 +40,17 @@ public class OskariLayerWorker {
 
     private final static LayerJSONFormatter FORMATTER = new LayerJSONFormatter();
     
-    public static JSONObject getListOfAllMapLayers(final User user, final String lang) {
-        return getListOfAllMapLayers(user, lang, false);
+    public static JSONObject getListOfAllMapLayers(final User user, final String lang, final String crs) {
+        return getListOfAllMapLayers(user, lang, crs, false);
     }
 
-    public static JSONObject getListOfAllMapLayers(final User user, final String lang, final boolean isSecure) {
+    public static JSONObject getListOfAllMapLayers(final User user, final String lang) {
+        return getListOfAllMapLayers(user, lang, null, false);
+    }
+
+    public static JSONObject getListOfAllMapLayers(final User user, final String lang, final String crs, final boolean isSecure) {
         long start = System.currentTimeMillis();
-        final List<OskariLayer> layers = mapLayerService.findAll();
+        final List<OskariLayer> layers = mapLayerService.findAll(crs);
         log.debug("Layers loaded in", System.currentTimeMillis() - start, "ms");
         final boolean isPublished = false;
         return getListOfMapLayers(layers, user, lang, isPublished, isSecure);
@@ -59,13 +62,25 @@ public class OskariLayerWorker {
      * @param layerIdList List of selected layer IDs
      * @param user        User
      * @param lang        Language
+     * @return JSONObject containing the selected layers
+     */
+    public static JSONObject getListOfMapLayersById(final List<String> layerIdList, final User user,
+                                                    final String lang) {
+        return getListOfMapLayersById(layerIdList, user, lang, null, false, false);
+    }
+    /**
+     * Gets all the selected map layers
+     *
+     * @param layerIdList List of selected layer IDs
+     * @param user        User
+     * @param lang        Language
      * @param isPublished Determines the permission type used for the layers (view/published view)
      * @param isSecure    true to modify urls for easier proxy forwarding/false to keep as is
      * @return JSONObject containing the selected layers
      */
     public static JSONObject getListOfMapLayersById(final List<String> layerIdList, final User user,
-                                                    final String lang, final boolean isPublished, final boolean isSecure) {
-        final List<OskariLayer> layers = mapLayerService.find(layerIdList);
+                                                    final String lang, final String crs, final boolean isPublished, final boolean isSecure) {
+        final List<OskariLayer> layers = mapLayerService.find(layerIdList, crs);
         return getListOfMapLayers(layers, user, lang, isPublished, isSecure);
     }
 
@@ -100,6 +115,18 @@ public class OskariLayerWorker {
         final Set<String> editAccessList = permissionsService.getEditPermissions();
         log.debug("Edit permissions loaded in", System.currentTimeMillis() - start, "ms");
 
+        final Set<String> additionalPermissions = permissionsService.getAdditionalPermissions();
+    	log.debug("Loading dynamic permissions ", additionalPermissions);
+        final Map<String, List<String>> dynamicPermissions = new HashMap<String, List<String>>();
+        for (String permissionId : additionalPermissions) {
+            final List<String> permissions = permissionsService
+                    .getResourcesWithGrantedPermissions(
+                            Permissions.RESOURCE_TYPE_MAP_LAYER, user,
+                            permissionId);
+            dynamicPermissions.put(permissionId,permissions);
+            log.debug("Got " + permissions.size() + " permissions of type " + permissionId);
+        }
+
         final JSONArray layersList = new JSONArray();
         start = System.currentTimeMillis();
         for (OskariLayer layer : layers) {
@@ -114,7 +141,7 @@ public class OskariLayerWorker {
                 //log.debug("Generated JSON");
                 if (layerJson != null) {
                     //log.debug("Generating permissions JSON");
-                    JSONObject permissions = getPermissions(user, permissionKey, permissionsList, downloadPermissionsList, editAccessList);
+                    JSONObject permissions = getPermissions(user, permissionKey, permissionsList, downloadPermissionsList, editAccessList, dynamicPermissions);
                     JSONHelper.putValue(layerJson, "permissions", permissions);
                     if(permissions.optBoolean("edit")) {
                         // has edit rights, alter JSON/add info for admin bundle
@@ -201,15 +228,20 @@ public class OskariLayerWorker {
     public static void transformWKTGeom(final JSONObject layerJSON, final String mapSRS) {
 
         final String wktWGS84 = layerJSON.optString("geom");
-        if(wktWGS84 == null) {
+        if(wktWGS84 == null || wktWGS84.isEmpty() || mapSRS == null || mapSRS.isEmpty()) {
+            layerJSON.remove("geom");
             return;
         }
-        // WTK is saved as EPSG:4326 in database
-        final String transformed = WKTHelper.transform(wktWGS84, WKTHelper.PROJ_EPSG_4326, mapSRS);
-        // value will be removed if transform failed, that's ok since client can't handle it if it's in unknown projection
-        JSONHelper.putValue(layerJSON, "geom", transformed);
+        try {
+            // WTK is saved as EPSG:4326 in database
+            final String transformed = WKTHelper.transformLayerCoverage(wktWGS84, mapSRS);
+            // value will be removed if transform failed, that's ok since client can't handle it if it's in unknown projection
+            JSONHelper.putValue(layerJSON, "geom", transformed);
+        } catch (Exception ex) {
+            log.debug("Error transforming coverage to", mapSRS, "from", wktWGS84);
+        }
     }
-
+    
     /**
      * Create permission information for JSON
      *
@@ -221,6 +253,22 @@ public class OskariLayerWorker {
      */
     public static JSONObject getPermissions(final User user, final String layerPermissionKey,
                                              final Set<String> permissionsList, final Set<String> downloadPermissionsList, final Set<String> editAccessList) {
+    
+    	return getPermissions(user, layerPermissionKey, permissionsList, downloadPermissionsList, editAccessList, null);
+    } 
+
+    /**
+     * Create permission information for JSON
+     *
+     * @param user               Current user
+     * @param layerPermissionKey Layer permission key
+     * @param permissionsList    List of user publish permissions
+     * @param downloadPermissionsList    List of user download permissions
+     * @param editAccessList     List of user edit permissions
+     * @param dynamicPermissions 
+     */
+    public static JSONObject getPermissions(final User user, final String layerPermissionKey,
+                                             final Set<String> permissionsList, final Set<String> downloadPermissionsList, final Set<String> editAccessList, Map<String, List<String>> dynamicPermissions) {
 
         final JSONObject permission = new JSONObject();
         if (user.isAdmin()) {
@@ -243,6 +291,17 @@ public class OskariLayerWorker {
                 }
             }
         }
+		if (dynamicPermissions != null) {
+			for (String permissionType : dynamicPermissions.keySet()) {
+				List<String> permissionList = dynamicPermissions
+						.get(permissionType);
+				if (permissionList != null
+						&& permissionList.contains(layerPermissionKey)) {
+					JSONHelper.putValue(permission, permissionType, true);
+				}
+			}
+		}
+        
         return permission;
     }
 
@@ -254,6 +313,29 @@ public class OskariLayerWorker {
         JSONHelper.putValue(permissions, "download", DOWNLOAD_PERMISSION_OK);
 
         return permissions;
+    }
+
+    /**
+     * Reorder Oskari layers in to requested order
+     * @param layers
+     * @param ids  layer ids and externalids
+     * @return  reorder layers
+     */
+    public static List<OskariLayer> reorderLayers(List<OskariLayer> layers, List<String> ids) {
+
+        List<OskariLayer> reLayers = new ArrayList<OskariLayer>();
+
+        for (String id : ids) {
+            for (OskariLayer lay : layers) {
+
+                if (Integer.toString(lay.getId()).equals(id) || (lay.getExternalId() != null && lay.getExternalId().equals(id))) {
+                    reLayers.add(lay);
+                    break;
+                }
+            }
+
+        }
+        return reLayers;
     }
 
     private static String getPermissionType(final boolean isPublished) {
