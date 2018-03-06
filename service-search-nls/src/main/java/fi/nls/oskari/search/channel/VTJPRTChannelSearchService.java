@@ -11,7 +11,6 @@ import fi.mml.nameregister.FeaturePropertyType;
 import fi.mml.portti.service.search.ChannelSearchResult;
 import fi.mml.portti.service.search.SearchCriteria;
 import fi.mml.portti.service.search.SearchResultItem;
-import fi.mml.portti.service.search.SearchService;
 import fi.nls.oskari.annotation.Oskari;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
@@ -86,9 +85,9 @@ public class VTJPRTChannelSearchService extends SearchChannel {
                 item.setContentURL(lonLat[0] + "_" + lonLat[1]);
                 item.setLocationName(searchString);
                 if (currentLocaleCode.equals("swe")) {
-                    item.setVillage(tiedot[0].selectChildren(SearchUtil.rhrKuntanimiSwe)[0].newCursor().getTextValue());
+                    item.setRegion(tiedot[0].selectChildren(SearchUtil.rhrKuntanimiSwe)[0].newCursor().getTextValue());
                 } else {
-                    item.setVillage(tiedot[0].selectChildren(SearchUtil.rhrKuntanimiFin)[0].newCursor().getTextValue());
+                    item.setRegion(tiedot[0].selectChildren(SearchUtil.rhrKuntanimiFin)[0].newCursor().getTextValue());
                 }
 
                 item.setLon(lonLat[0]);
