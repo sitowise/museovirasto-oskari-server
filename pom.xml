@@ -1111,6 +1111,7 @@
 
         <module>service-feedback</module>
         <module>service-feedback-open311</module>
+        <module>download-basket</module>
 
         <!-- print -->
         <module>service-print</module>

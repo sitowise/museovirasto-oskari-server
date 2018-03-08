@@ -110,6 +110,12 @@
             <groupId>fi.nls.oskari.service</groupId>
             <artifactId>oskari-search-nls</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>fi.nls.oskari</groupId>
+            <artifactId>download-basket</artifactId>
+            <version>${fi.nls.oskari.service.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -35,7 +35,7 @@
             <artifactId>icu4j</artifactId>
             <version>51.1</version>
         </dependency>
-        
+
         <!-- oskari -->
         <dependency>
             <groupId>fi.nls.oskari</groupId>
@@ -54,13 +54,13 @@
             <artifactId>oskari-control-example</artifactId>
             <version>${oskari.version}</version>
         </dependency>
-		
+
 		<dependency>
             <groupId>fi.nls.oskari.service</groupId>
             <artifactId>oskari-control-myplaces</artifactId>
             <version>${oskari.version}</version>
         </dependency>
-		
+
 		<dependency>
             <groupId>fi.nls.oskari.service</groupId>
             <artifactId>oskari-control-admin</artifactId>
@@ -84,20 +84,27 @@
             <artifactId>service-logging</artifactId>
             <version>${oskari.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>fi.nls.oskari</groupId>
+            <artifactId>download-basket</artifactId>
+            <version>${oskari.version}</version>
+        </dependency>
+
 		<!--
 		<dependency>
             <groupId>fi.nls.oskari.service</groupId>
             <artifactId>oskari-search-nls</artifactId>
             <version>${oskari.version}</version>
         </dependency>
-		
+
 		<dependency>
             <groupId>fi.nls.oskari</groupId>
             <artifactId>servlet-ad-config</artifactId>
             <version>${oskari.version}</version>
         </dependency>-->
         <!-- /oskari -->
-		
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
@@ -120,5 +127,5 @@
     <build>
         <finalName>${appName}</finalName>
     </build>
-	
+
 </project>
