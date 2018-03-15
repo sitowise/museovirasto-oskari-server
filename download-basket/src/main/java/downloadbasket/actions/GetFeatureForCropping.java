@@ -30,6 +30,7 @@ import java.net.HttpURLConnection;
 /**
  * Handles the cropping of the data before adding it to the download basket.
  * Gets layer attributes and geometry for the cropping process.
+ * Added support for authorized cropping areas.
  */
 
 @OskariActionRoute("GetFeatureForCropping")
@@ -53,34 +54,34 @@ public class GetFeatureForCropping extends ActionHandler {
 		final int id = params.getRequiredParamInt(PARAM_ID);
 		final OskariLayer oskariLayer = mapLayerService.find(id);
 		if (oskariLayer == null) {
-		    throw new ActionParamsException("Layer not found, id: " + id);
+			throw new ActionParamsException("Layer not found, id: " + id);
 		}
-		
-			String url = oskariLayer.getUrl();
 
-			String wmsUrl = Helpers.getGetFeatureInfoUrlForProxy(url, params.getHttpParam(PARAM_SRS),
-					params.getHttpParam(PARAM_BBOX), params.getHttpParam(PARAM_WIDTH),
-					params.getHttpParam(PARAM_HEIGHT), params.getHttpParam(PARAM_X), params.getHttpParam(PARAM_Y),
-					params.getHttpParam(PARAM_LAYERS));
+		String url = oskariLayer.getUrl();
+
+		String wmsUrl = Helpers.getGetFeatureInfoUrlForProxy(url, params.getHttpParam(PARAM_SRS),
+				params.getHttpParam(PARAM_BBOX), params.getHttpParam(PARAM_WIDTH),
+				params.getHttpParam(PARAM_HEIGHT), params.getHttpParam(PARAM_X), params.getHttpParam(PARAM_Y),
+				params.getHttpParam(PARAM_LAYERS));
 
 		LOGGER.debug("Details of the data cropping feature");
-			try {
+		try {
 
-				HttpURLConnection con = IOHelper.getConnection(wmsUrl);
-				con.setRequestProperty("Accept-Charset", "UTF-8");
-				final String data = IOHelper.readString(con, "UTF-8");
+			HttpURLConnection con = IOHelper.getConnection(wmsUrl, oskariLayer.getUsername(), oskariLayer.getPassword());
+			con.setRequestProperty("Accept-Charset", "UTF-8");
+			final String data = IOHelper.readString(con, "UTF-8");
 
-				JSONObject json = new JSONObject(data);
+			JSONObject json = new JSONObject(data);
 
-				ResponseHelper.writeResponse(params, json);
+			ResponseHelper.writeResponse(params, json);
 
-			} catch (JSONException e) {
-				throw new ActionException("Could not get cropping:", e);
-			} catch (MalformedURLException e) {
-				throw new ActionException("Could not get cropping:", e);
-			} catch (IOException e) {
-				throw new ActionException("Could not get cropping:", e);
-			}
+		} catch (JSONException e) {
+			throw new ActionException("Could not get cropping:", e);
+		} catch (MalformedURLException e) {
+			throw new ActionException("Could not get cropping:", e);
+		} catch (IOException e) {
+			throw new ActionException("Could not get cropping:", e);
+		}
 
 	}
 
