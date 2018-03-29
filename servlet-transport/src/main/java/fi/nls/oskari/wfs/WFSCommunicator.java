@@ -1,29 +1,34 @@
 package fi.nls.oskari.wfs;
 
-import com.vividsolutions.jts.geom.Geometry;
+import java.io.BufferedReader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMAttribute;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMFactory;
+import org.apache.axiom.om.OMNamespace;
+import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import org.geotools.feature.FeatureCollection;
+import org.geotools.xml.Parser;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.referencing.operation.MathTransform;
+
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.map.geometry.ProjectionHelper;
 import fi.nls.oskari.pojo.SessionStore;
 import fi.nls.oskari.service.ServiceRuntimeException;
 import fi.nls.oskari.transport.TransportJobException;
+import fi.nls.oskari.util.IOHelper;
 import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.wfs.pojo.WFSLayerStore;
 import fi.nls.oskari.wfs.util.XMLHelper;
 import fi.nls.oskari.work.JobType;
-import org.apache.axiom.om.*;
-import org.apache.axiom.om.impl.builder.StAXOMBuilder;
-import org.geotools.feature.FeatureCollection;
-import org.geotools.feature.FeatureIterator;
-import org.geotools.xml.Parser;
-import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.referencing.operation.MathTransform;
-
-import java.io.BufferedReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * WFS request creators and response parsers
@@ -36,6 +41,7 @@ public class WFSCommunicator {
 	private static final String VERSION_1_1_0 = "1.1.0";
 
     private static final String PROPERTY_PREFIX_EXT = "wfs.extension.";
+    private static final boolean ARCGIS_10_5_WORKAROUND = PropertyUtil.getOptional("arcgis.10.5.workaround", false);
 
 	/**
 	 * Creates request payload for WFS 1.1.0 (default request type)
@@ -196,10 +202,22 @@ public class WFSCommunicator {
 		} else { // 3.1.1, 3.0, 3.1 ...
 			log.debug("Using GML Parser 3");
 			parser = GMLParser3.getParser(layer);
-		}
+        }
 
 		Object obj = null;
 		try {
+            //ArcGis Server 10.5 added support for numberOfFeatures attribute in WFS response
+            //however, the value always seems to be "unknown", which can't be parsed as nonNegativeInteger and we get an exception
+            if (ARCGIS_10_5_WORKAROUND) {
+                String line = "";
+                StringBuffer fixedResponse = new StringBuffer();
+                while ((line = response.readLine()) != null) {
+                    fixedResponse.append(line.replace("numberOfFeatures=\"unknown\"", ""));
+                }
+                IOHelper.close(response);
+                response = new BufferedReader(new StringReader(fixedResponse.toString()));
+            }
+
 			obj = parser.parse(response);
             if(obj instanceof FeatureCollection) {
                 FeatureCollection<SimpleFeatureType, SimpleFeature> featureCollection = (FeatureCollection<SimpleFeatureType, SimpleFeature>) obj;
