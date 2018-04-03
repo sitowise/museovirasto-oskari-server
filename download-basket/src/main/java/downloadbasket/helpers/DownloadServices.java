@@ -18,10 +18,12 @@ import javax.mail.util.ByteArrayDataSource;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.UUID;
 import java.util.Locale;
-import java.util.zip.ZipException;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 import org.springframework.context.MessageSource;
 import fi.nls.oskari.spring.SpringContextHolder;
 
@@ -42,15 +44,15 @@ public class DownloadServices {
 
 	/**
 	 * Load shape-ZIP from Geoserver.
-	 * 
+	 *
 	 * @param ldz
 	 *            load zip details
 	 * @return filename file name
 	 * @throws IOException
-	 * 
+	 *
 	 *             Normal way download uses BBOX as the cropping method.
 	 *             Otherwise, filter plugin is used.
-	 * 
+	 *
 	 */
 	public String loadZip(LoadZipDetails ldz, Locale locale) throws IOException {
 		String realFileName = null;
@@ -77,11 +79,29 @@ public class DownloadServices {
 			String strTempDir = ldz.getTemporaryDirectory();
 			File dir0 = new File(strTempDir);
 			dir0.mkdirs();
+			String gmlFileName = filename + ".gml";
+			String zipFileName = filename + ".zip";
+			File gmlFile = new File(dir0, gmlFileName);
+			File zipFile = new File(dir0, zipFileName);
 
 			try (InputStream istream = conn.getInputStream();
-					OutputStream ostream = new FileOutputStream(new File(dir0, filename + ".zip"))) {
+					OutputStream ostream = new FileOutputStream(gmlFile)) {
 				IOHelper.copy(istream, ostream);
-				realFileName = new File(dir0, filename + ".zip").getAbsolutePath();
+				FileOutputStream fos = new FileOutputStream(zipFile);
+				ZipOutputStream zipOut = new ZipOutputStream(fos);
+				FileInputStream fis = new FileInputStream(gmlFile);
+				ZipEntry zipEntry = new ZipEntry(gmlFile.getName());
+				zipOut.putNextEntry(zipEntry);
+				final byte[] bytes = new byte[1024];
+				int length;
+				while((length = fis.read(bytes)) >= 0) {
+					zipOut.write(bytes, 0, length);
+				}
+				zipOut.close();
+				fis.close();
+				fos.close();
+				Files.deleteIfExists(gmlFile.toPath());
+				realFileName = new File(dir0, zipFileName).getAbsolutePath();
 			}
 
 		} catch (Exception ex) {
@@ -92,7 +112,7 @@ public class DownloadServices {
 
 	/**
 	 * Check if zipfile is valid.
-	 * 
+	 *
 	 * @param file
 	 *            zip file
 	 * @return
@@ -106,22 +126,6 @@ public class DownloadServices {
 			return false;
 		}
 	}
-
-	/***
-	 * Send error report to support email.
-	 * 
-	 * @param xmlRequest
-	 *            xml request
-	 * @param wfsUrl
-	 *            wfs url
-	 */
-
-	/**
-	 * Send error report to support email.
-	 * 
-	 * @param errorDetails
-	 *            error report details
-	 */
 
 	private MessageSource getMessages() {
 		if (messages == null) {

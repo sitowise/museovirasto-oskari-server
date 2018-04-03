@@ -182,7 +182,7 @@ public class OGCServices {
 
 		s.append("?SERVICE=wfs&version=1.0.0&request=GetFeature&srsName=");
 		s.append(srs);
-		s.append("&outputFormat=SHAPE-ZIP&typeNames=");
+		s.append("&typeNames=");
 
 		if (addNameSpace) {
 			s.append(download.getString(KEY_LAYER));
