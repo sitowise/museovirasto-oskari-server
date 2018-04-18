@@ -6,7 +6,9 @@ import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.util.IOHelper;
 import downloadbasket.data.ErrorReportDetails;
 import downloadbasket.data.LoadZipDetails;
-import org.apache.commons.mail.DefaultAuthenticator;
+import org.geotools.feature.DefaultFeatureCollection;
+import org.geotools.geometry.jts.JTS;
+import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.mail.MultiPartEmail;
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
@@ -27,16 +29,19 @@ import java.util.zip.ZipOutputStream;
 import com.opencsv.CSVReader;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.streaming.SXSSFSheet;
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.apache.poi.xssf.streaming.SXSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.geotools.data.DataStore;
 import org.geotools.data.ogr.OGRDataStore;
 import org.geotools.data.ogr.OGRDataStoreFactory;
 import org.geotools.data.ogr.bridj.BridjOGRDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
+import org.geotools.referencing.CRS;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.operation.MathTransform;
 import org.springframework.context.MessageSource;
 import fi.nls.oskari.spring.SpringContextHolder;
 
@@ -65,6 +70,11 @@ public class DownloadServices {
     public String loadZip(LoadZipDetails ldz, Locale locale) throws IOException {
         String zipFileName = null;
         HttpURLConnection conn = null;
+        CoordinateReferenceSystem sourceCrs;
+        CoordinateReferenceSystem targetCrs;
+        MathTransform transform = null;
+        SimpleFeatureIterator it;
+        SimpleFeature feature;
 
         try {
             LOGGER.debug("WFS URL: " + ldz.getWFSUrl());
@@ -102,27 +112,66 @@ public class DownloadServices {
                 connectionParams.put("DriverName", "GML");
                 connectionParams.put("DatasourceName", new File(dir0, gmlFileName).getAbsolutePath());
                 OGRDataStoreFactory factory = new BridjOGRDataStoreFactory();
+                if(!factory.isAvailable()){
+                    LOGGER.error("GDAL library is not found for data export -- http://www.gdal.org/");
+                    return null;
+                }
                 DataStore store = factory.createDataStore(connectionParams);
                 String[] typeNames = store.getTypeNames();
+
+                sourceCrs = CRS.decode("EPSG:3067",true);
+                targetCrs = CRS.decode("EPSG:4326", true);
+                if (!targetCrs.getName().equals(sourceCrs.getName())) {
+                    transform = CRS.findMathTransform(sourceCrs, targetCrs, true);
+                }
+
                 for (int i = 0; i < typeNames.length; i++) {
                     SimpleFeatureSource source = store.getFeatureSource(typeNames[i]);
-                    SimpleFeatureCollection features = source.getFeatures();
+                    SimpleFeatureCollection features3067 = source.getFeatures();
+                    DefaultFeatureCollection features4326 = new DefaultFeatureCollection();
 
+                    // Coordinate transformation
+                    it = features3067.features();
+                    while (it.hasNext()) {
+                        feature = it.next();
+                        if (transform != null) {
+                            Geometry geometry = (Geometry) feature.getDefaultGeometry();
+                            feature.setDefaultGeometry(JTS.transform(geometry, transform));
+                            features4326.add(feature);
+                        }
+                    }
+                    it.close();
+
+                    // CSV
                     String csvFileName = typeNames[i] + basketId + ".csv";
-                    File csvFile = new File(outputDir, csvFileName);
+                    File csvFile = new File(dir0, csvFileName);
                     Map<String, String> connectionParamsCsv = new HashMap<>();
                     connectionParamsCsv.put("DriverName", "CSV");
                     String csvFilePath = csvFile.getAbsolutePath();
                     connectionParamsCsv.put("DatasourceName", csvFilePath);
                     OGRDataStoreFactory factoryCsv = new BridjOGRDataStoreFactory();
                     OGRDataStore dataStoreCsv = (OGRDataStore) factoryCsv.createNewDataStore(connectionParamsCsv);
-                    dataStoreCsv.createSchema(features, true, new String[]{
+                    dataStoreCsv.createSchema(features4326, true, new String[]{
                         "GEOMETRY=AS_YX"
                     });
 
-                    //File xlsFile = new File(outputDir, typeNames[i] + basketId + ".xls");
-                    //convertCsvToXls(xlsFile.getAbsolutePath(), csvFilePath);
+                    // Excel
+                    File xlsFile = new File(outputDir, typeNames[i] + basketId + ".xls");
+                    convertCsvToXls(xlsFile.getAbsolutePath(), csvFilePath);
 
+                    // GPX
+                    String gpxFileName = typeNames[i] + basketId + ".gpx";
+                    File gpxFile = new File(outputDir, gpxFileName);
+                    Map<String, String> connectionParamsGpx = new HashMap<>();
+                    connectionParamsGpx.put("DriverName", "GPX");
+                    connectionParamsGpx.put("DatasourceName", gpxFile.getAbsolutePath());
+                    OGRDataStoreFactory factoryGpx = new BridjOGRDataStoreFactory();
+                    OGRDataStore dataStoreGpx = (OGRDataStore) factoryGpx.createNewDataStore(connectionParamsGpx);
+                    dataStoreGpx.createSchema(features4326, true, new String[]{
+                        "GPX_USE_EXTENSIONS=YES"
+                    });
+
+                    // Shapefile
                     String shpFileName = typeNames[i] + basketId;
                     File shpFile = new File(outputDir, shpFileName);
                     Map<String, String> connectionParamsShp = new HashMap<>();
@@ -130,7 +179,7 @@ public class DownloadServices {
                     connectionParamsShp.put("DatasourceName", shpFile.getAbsolutePath());
                     OGRDataStoreFactory factoryShp = new BridjOGRDataStoreFactory();
                     OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
-                    dataStoreShp.createSchema(features, true, null);
+                    dataStoreShp.createSchema(features3067, true, null);
                 }
                 File zipFile = new File(dir0, basketId + ".zip");
                 zipFileName = zipFile.getAbsolutePath();
@@ -164,9 +213,9 @@ public class DownloadServices {
     }
 
     public String convertCsvToXls(String xlsFilePath, String csvFilePath) {
-        SXSSFSheet sheet = null;
+        HSSFSheet sheet = null;
         CSVReader reader = null;
-        Workbook workBook = null;
+        HSSFWorkbook workBook = null;
         String generatedXlsFilePath = xlsFilePath;
         FileOutputStream fileOutputStream = null;
 
@@ -174,8 +223,8 @@ public class DownloadServices {
             /**** Get the CSVReader Instance & Specify The Delimiter To Be Used ****/
             String[] nextLine;
             reader = new CSVReader(new FileReader(csvFilePath), CSV_FILE_DELIMITER);
-            workBook = new SXSSFWorkbook();
-            sheet = (SXSSFSheet) workBook.createSheet("Sheet");
+            workBook = new HSSFWorkbook();
+            sheet = (HSSFSheet) workBook.createSheet("Sheet");
             int rowNum = 0;
             LOGGER.info("Creating New .Xls File From The Already Generated .Csv File");
             while((nextLine = reader.readNext()) != null) {
