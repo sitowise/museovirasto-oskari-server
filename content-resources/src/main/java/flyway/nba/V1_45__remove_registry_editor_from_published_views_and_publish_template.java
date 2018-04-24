@@ -12,9 +12,9 @@ import org.flywaydb.core.api.migration.jdbc.JdbcMigration;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
 
-public class V1_45_remove_registry_editor_from_published_views_and_publish_template implements JdbcMigration {
+public class V1_45__remove_registry_editor_from_published_views_and_publish_template implements JdbcMigration {
 
-    private static final Logger LOG  = LogFactory.getLogger(V1_45_remove_registry_editor_from_published_views_and_publish_template.class);
+    private static final Logger LOG  = LogFactory.getLogger(V1_45__remove_registry_editor_from_published_views_and_publish_template.class);
 
     public void migrate(Connection connection) throws Exception {
         // find all published maps
@@ -23,7 +23,7 @@ public class V1_45_remove_registry_editor_from_published_views_and_publish_templ
         long bundleId = getIdForRegisteryEditorBundle(connection);
         for(long id : viewsToUpdate) {
             try {
-                removeBundle(bundleId, connection);
+            	removeBundleFromView(bundleId, id, connection);
             } catch (Exception ex) {
                 LOG.error("Error updating view with id", id, ": ", ex.getMessage());
                 viewsNotUpdated.add(id);
@@ -62,10 +62,12 @@ public class V1_45_remove_registry_editor_from_published_views_and_publish_templ
         throw new Exception("nba-registry-editor bundle not in portti_bundle");
     }
 
-    private void removeBundle(Long bundleId, Connection conn) throws SQLException {
-        final String sql = "DELETE FROM portti_view_bundle_seq WHERE bundle_id = ?";
+    private void removeBundleFromView(Long bundleId, Long viewId, Connection conn) throws SQLException {
+        final String sql = "DELETE FROM portti_view_bundle_seq WHERE bundle_id = ? AND view_id = ?";
         try(PreparedStatement statement = conn.prepareStatement(sql)) {
             statement.setLong(1, bundleId);
+            statement.setLong(2, viewId);
+            statement.execute();
         }
     }
 
