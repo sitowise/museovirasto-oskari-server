@@ -1,17 +1,16 @@
 package flyway.nba;
 
-import fi.nls.oskari.log.LogFactory;
-import fi.nls.oskari.log.Logger;
-import fi.nls.oskari.util.JSONHelper;
-import org.flywaydb.core.api.migration.jdbc.JdbcMigration;
-import org.json.JSONObject;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.flywaydb.core.api.migration.jdbc.JdbcMigration;
+
+import fi.nls.oskari.log.LogFactory;
+import fi.nls.oskari.log.Logger;
 
 public class V1_45_remove_registry_editor_from_published_views implements JdbcMigration {
 
