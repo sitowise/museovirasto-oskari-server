@@ -12,9 +12,9 @@ import org.flywaydb.core.api.migration.jdbc.JdbcMigration;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
 
-public class V1_45_remove_registry_editor_from_published_views implements JdbcMigration {
+public class V1_45_remove_registry_editor_from_published_views_and_publish_template implements JdbcMigration {
 
-    private static final Logger LOG  = LogFactory.getLogger(V1_45_remove_registry_editor_from_published_views.class);
+    private static final Logger LOG  = LogFactory.getLogger(V1_45_remove_registry_editor_from_published_views_and_publish_template.class);
 
     public void migrate(Connection connection) throws Exception {
         // find all published maps
