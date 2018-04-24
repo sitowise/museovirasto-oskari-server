@@ -11,6 +11,7 @@ target/
 .project
 .metadata
 .recommenders
+.sonarlint
 /data/
 /test-output/
 /servlet-map/data/
