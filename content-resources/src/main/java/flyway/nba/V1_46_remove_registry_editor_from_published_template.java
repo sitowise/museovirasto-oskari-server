@@ -17,6 +17,8 @@ public class V1_46_remove_registry_editor_from_published_template {
         try(PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, bundleId);
             statement.setLong(2, 2);
+        } catch(Exception e) {
+        	LOG.error("Error removing registry editor from published template.", e.getMessage());
         }
     }
 
