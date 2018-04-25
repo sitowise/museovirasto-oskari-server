@@ -57,6 +57,7 @@ public class WFSFilter {
     private static final GeometricShapeFactory gsf = new GeometricShapeFactory(gf);
     
     private static final boolean ARCGIS_10_5_WORKAROUND = PropertyUtil.getOptional("arcgis.10.5.workaround", false);
+    private static final String ARCGIS_10_5_WORKAROUND_PATTERN = PropertyUtil.getOptional("arcgis.10.5.workaround.pattern");
 
     private WFSLayerStore layer;
     private MathTransform transform;
@@ -205,7 +206,7 @@ public class WFSFilter {
         // configuration that makes correct XML elements (v1_1 uses exterior and bbox envelope works)
         Configuration configuration = new org.geotools.filter.v1_1.OGCConfiguration();
         QName qName = org.geotools.filter.v1_1.OGC.Filter;
-        if (ARCGIS_10_5_WORKAROUND) {
+        if (ARCGIS_10_5_WORKAROUND && this.layer.getURL().matches(ARCGIS_10_5_WORKAROUND_PATTERN)) {
             configuration = new org.geotools.filter.v1_0.OGCConfiguration();
             qName = org.geotools.filter.v1_0.OGC.Filter;
         }
