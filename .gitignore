@@ -9,6 +9,9 @@ target/
 .classpath
 .idea
 .project
+.metadata
+.recommenders
+.sonarlint
 /data/
 /test-output/
 /servlet-map/data/
@@ -24,3 +27,4 @@ transport.log
 */nb-configuration.xml
 
 /service-search-nls/nbproject/
+geoserver-ext/OskariMarkFactory/bin/
