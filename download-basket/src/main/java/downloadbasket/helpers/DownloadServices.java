@@ -23,6 +23,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -39,6 +42,7 @@ import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.referencing.CRS;
+import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
@@ -101,12 +105,47 @@ public class DownloadServices {
             File outputDir = new File(strOutputDir);
             outputDir.mkdirs();
 
+            String gmlOrigFileName = basketId + "-original.gml";
+            File gmlOrigFile = new File(dir0, gmlOrigFileName);
+
             String gmlFileName = basketId + ".gml";
             File gmlFile = new File(dir0, gmlFileName);
 
             try (InputStream istream = conn.getInputStream();
-                 OutputStream ostream = new FileOutputStream(gmlFile)) {
+                 OutputStream ostream = new FileOutputStream(gmlOrigFile)) {
                 IOHelper.copy(istream, ostream);
+                try{
+                    FileReader fr = new FileReader(gmlOrigFile);
+                    String s;
+                    String totalStr = "";
+                    try (BufferedReader br = new BufferedReader(fr)) {
+                        while ((s = br.readLine()) != null) {
+                            totalStr += s;
+                        }
+                        String resultString = totalStr;
+                        try {
+                            Pattern regex = Pattern.compile("(?<before3>> {0})(?<field1>[0-9]+)(?<after3> *<)");
+                            Matcher regexMatcher = regex.matcher(totalStr);
+                            try {
+                                resultString = regexMatcher.replaceAll("${before3}\"${field1}\"${after3}");
+                            } catch (IllegalArgumentException ex) {
+                                LOGGER.error("Syntax error in the replacement text (unescaped $ signs?)");
+                                return null;
+                            } catch (IndexOutOfBoundsException ex) {
+                                LOGGER.error("Non-existent backreference used the replacement text");
+                                return null;
+                            }
+                        } catch (PatternSyntaxException ex) {
+                            LOGGER.error("Syntax error in the regular expression");
+                            return null;
+                        }
+                        FileWriter fw = new FileWriter(gmlFile);
+                        fw.write(resultString);
+                        fw.close();
+                    }
+                } catch(Exception e){
+                    e.printStackTrace();
+                }
 
                 Map<String, String> connectionParams = new HashMap<>();
                 connectionParams.put("DriverName", "GML");
@@ -127,13 +166,27 @@ public class DownloadServices {
 
                 for (int i = 0; i < typeNames.length; i++) {
                     SimpleFeatureSource source = store.getFeatureSource(typeNames[i]);
-                    SimpleFeatureCollection features3067 = source.getFeatures();
+                    SimpleFeatureCollection features = source.getFeatures();
+                    DefaultFeatureCollection features3067 = new DefaultFeatureCollection();
                     DefaultFeatureCollection features4326 = new DefaultFeatureCollection();
-
                     // Coordinate transformation
-                    it = features3067.features();
+                    it = features.features();
                     while (it.hasNext()) {
                         feature = it.next();
+                        // Remove extra quotes
+                        for (Property property : feature.getProperties()) {
+                            String name = property.getName().toString();
+                            Object value = feature.getAttribute(name);
+                            if (value.getClass().equals(java.lang.String.class)) {
+                                String newValue = value.toString().trim();
+                                int lastIndex = newValue.length() - 1;
+                                if ((newValue.charAt(0) == '"') && (newValue.charAt(lastIndex) == '"')) {
+                                    newValue = newValue.substring(1, lastIndex);
+                                    feature.setAttribute(name, newValue);
+                                }
+                            }
+                        }
+                        features3067.add(feature);
                         if (transform != null) {
                             Geometry geometry = (Geometry) feature.getDefaultGeometry();
                             feature.setDefaultGeometry(JTS.transform(geometry, transform));
@@ -151,7 +204,7 @@ public class DownloadServices {
                     connectionParamsCsv.put("DatasourceName", csvFilePath);
                     OGRDataStoreFactory factoryCsv = new BridjOGRDataStoreFactory();
                     OGRDataStore dataStoreCsv = (OGRDataStore) factoryCsv.createNewDataStore(connectionParamsCsv);
-                    dataStoreCsv.createSchema(features4326, true, new String[]{
+                    dataStoreCsv.createSchema(features3067, true, new String[]{
                         "GEOMETRY=AS_YX"
                     });
 
@@ -179,7 +232,9 @@ public class DownloadServices {
                     connectionParamsShp.put("DatasourceName", shpFile.getAbsolutePath());
                     OGRDataStoreFactory factoryShp = new BridjOGRDataStoreFactory();
                     OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
-                    dataStoreShp.createSchema(features3067, true, null);
+                    dataStoreShp.createSchema(features3067, true, new String[]{
+                        "ENCODING=UTF-8"
+                    });
                 }
                 File zipFile = new File(dir0, basketId + ".zip");
                 zipFileName = zipFile.getAbsolutePath();
