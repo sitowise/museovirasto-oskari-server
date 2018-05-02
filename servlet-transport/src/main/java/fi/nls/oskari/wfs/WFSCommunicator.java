@@ -42,6 +42,7 @@ public class WFSCommunicator {
 
     private static final String PROPERTY_PREFIX_EXT = "wfs.extension.";
     private static final boolean ARCGIS_10_5_WORKAROUND = PropertyUtil.getOptional("arcgis.10.5.workaround", false);
+    private static final String ARCGIS_10_5_WORKAROUND_PATTERN = PropertyUtil.getOptional("arcgis.10.5.workaround.pattern");
 
 	/**
 	 * Creates request payload for WFS 1.1.0 (default request type)
@@ -208,7 +209,7 @@ public class WFSCommunicator {
 		try {
             //ArcGis Server 10.5 added support for numberOfFeatures attribute in WFS response
             //however, the value always seems to be "unknown", which can't be parsed as nonNegativeInteger and we get an exception
-            if (ARCGIS_10_5_WORKAROUND) {
+            if (ARCGIS_10_5_WORKAROUND && layer.getURL().matches(ARCGIS_10_5_WORKAROUND_PATTERN)) {
                 String line = "";
                 StringBuffer fixedResponse = new StringBuffer();
                 while ((line = response.readLine()) != null) {
