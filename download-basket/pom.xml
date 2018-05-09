@@ -17,6 +17,7 @@
 		<javax.mail.version>1.4.7</javax.mail.version>
 		<commons-email.version>1.5</commons-email.version>
 		<commons-lang.version>2.6</commons-lang.version>
+		<commons-io.version>2.6</commons-io.version>
 		<gdal.version>2.2.0</gdal.version>
 		<opencsv.version>3.9</opencsv.version>
 		<apache-poi.version>3.17</apache-poi.version>
@@ -56,6 +57,11 @@
 			<groupId>commons-lang</groupId>
 			<artifactId>commons-lang</artifactId>
 			<version>${commons-lang.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>${commons-io.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.geotools</groupId>

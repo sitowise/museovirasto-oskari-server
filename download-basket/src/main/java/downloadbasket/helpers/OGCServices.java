@@ -2,20 +2,21 @@ package downloadbasket.helpers;
 
 import fi.nls.oskari.domain.map.OskariLayer;
 import fi.nls.oskari.log.LogFactory;
-import fi.nls.oskari.map.layer.OskariLayerService;
-import fi.nls.oskari.map.layer.OskariLayerServiceIbatisImpl;
 import fi.nls.oskari.util.PropertyUtil;
 import downloadbasket.data.NormalWayDownloads;
+import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import java.io.ByteArrayOutputStream;
+import java.io.*;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.lang.StringBuilder;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 public class OGCServices {
 	private static final fi.nls.oskari.log.Logger LOGGER = LogFactory.getLogger(OGCServices.class);
@@ -34,6 +35,10 @@ public class OGCServices {
 	private static final String KEY_UNIQUE_COLUMN= "uniqueColumn";
 	private static final String KEY_UNIQUE_VALUE = "uniqueValue";
 	private static final String KEY_CROP_GEOMETRY_NAME = "geometryName";
+	private static final String WFS_GETCAPABILITIES_POSTFIX = "?REQUEST=GetCapabilities&service=WFS";
+	private static final String WFS_NAME_PREFIX = "<wfs:Name>";
+	private static final String WFS_NAME_POSTFIX = "</wfs:Name>";
+	private static final String CHAR_SET = "UTF-8";
 
 	/**
 	 * Get filter
@@ -178,8 +183,41 @@ public class OGCServices {
 	public static String doGetFeatureUrl(String srs, JSONObject download, boolean addNameSpace) throws JSONException {
 		String getFeatureUrl = "";
 		StringBuilder s = new StringBuilder();
-		s.append(PropertyUtil.get("oskari.wfs.service.url"));
-
+		String[] wfsServiceUrls = PropertyUtil.getCommaSeparatedList("oskari.wfs.service.url");
+		File capabilitiesCacheDirectory = new File(System.getProperty("java.io.tmpdir"));
+		String wfsServiceUrl = null;
+		int numWfsServiceUrls = wfsServiceUrls.length;
+		for (int i = 0; i < numWfsServiceUrls; i++) {
+			String filename = null;
+			try {
+				filename = URLEncoder.encode(wfsServiceUrls[i], CHAR_SET);
+			} catch (UnsupportedEncodingException e) {
+				LOGGER.error(e, "Error");
+				continue;
+			}
+			File capabilitiesCache = new File(capabilitiesCacheDirectory, filename);
+			if ((!capabilitiesCache.exists()) || (new Date().getTime() - capabilitiesCache.lastModified() > TimeUnit.DAYS.toMillis(1))) {
+				try {
+					downloadFromUrl(wfsServiceUrls[i] + WFS_GETCAPABILITIES_POSTFIX, capabilitiesCache.getAbsolutePath());
+				} catch (IOException e) {
+					LOGGER.error(e, "Error");
+					continue;
+				}
+			}
+			try {
+				if (FileUtils.readFileToString(capabilitiesCache, CHAR_SET).contains(WFS_NAME_PREFIX+download.getString(KEY_LAYER)+WFS_NAME_POSTFIX)) {
+					wfsServiceUrl = wfsServiceUrls[i];
+					break;
+				}
+			} catch (IOException e) {
+				LOGGER.error(e, "Error");
+				continue;
+			}
+		}
+		if (wfsServiceUrl == null) {
+			return null;
+		}
+		s.append(wfsServiceUrl);
 		s.append("?SERVICE=wfs&version=1.0.0&request=GetFeature&srsName=");
 		s.append(srs);
 		s.append("&typeNames=");
@@ -191,5 +229,25 @@ public class OGCServices {
 		}
 		getFeatureUrl = s.toString();
 		return getFeatureUrl;
+	}
+
+	/**
+	 *
+	 * @param urlStr
+	 * @param file
+	 * @throws IOException
+	 */
+	private static void downloadFromUrl(String urlStr, String file) throws IOException{
+		URL url = new URL(urlStr);
+		BufferedInputStream bis = new BufferedInputStream(url.openStream());
+		FileOutputStream fis = new FileOutputStream(file, false);
+		byte[] buffer = new byte[1024];
+		int count = 0;
+		while((count = bis.read(buffer,0,1024)) != -1)
+		{
+			fis.write(buffer, 0, count);
+		}
+		fis.close();
+		bis.close();
 	}
 }
