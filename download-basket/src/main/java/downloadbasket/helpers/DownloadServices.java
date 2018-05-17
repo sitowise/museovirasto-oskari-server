@@ -44,8 +44,10 @@ import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.referencing.CRS;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
+import org.opengis.referencing.operation.TransformException;
 import org.springframework.context.MessageSource;
 import fi.nls.oskari.spring.SpringContextHolder;
 
@@ -80,121 +82,151 @@ public class DownloadServices {
         SimpleFeatureIterator it;
         SimpleFeature feature;
 
-        try {
-            LOGGER.debug("WFS URL: " + ldz.getWFSUrl());
+        LOGGER.debug("WFS URL: " + ldz.getWFSUrl());
 
-            if (ldz.isDownloadNormalWay()) {
-                LOGGER.debug("Download normal way");
-            }
+        if (ldz.isDownloadNormalWay()) {
+            LOGGER.debug("Download normal way");
+        }
 
-            LOGGER.debug("WFS URL: " + ldz.getWFSUrl());
-            LOGGER.debug("-- filter: " + ldz.getGetFeatureInfoRequest());
-            final URL url = new URL(ldz.getWFSUrl() + ldz.getGetFeatureInfoRequest());
+        LOGGER.debug("WFS URL: " + ldz.getWFSUrl());
+        LOGGER.debug("-- filter: " + ldz.getGetFeatureInfoRequest());
+        final URL url = new URL(ldz.getWFSUrl() + ldz.getGetFeatureInfoRequest());
 
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(600000);
+        conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        conn.setConnectTimeout(600000);
 
-            conn.connect();
+        conn.connect();
 
-            String basketId = UUID.randomUUID().toString();
-            String strTempDir = ldz.getTemporaryDirectory();
-            String strOutputDir = strTempDir + File.separator + basketId;
+        String basketId = UUID.randomUUID().toString();
+        String strTempDir = ldz.getTemporaryDirectory();
+        String strOutputDir = strTempDir + File.separator + basketId;
 
-            File dir0 = new File(strTempDir);
-            File outputDir = new File(strOutputDir);
-            outputDir.mkdirs();
+        File dir0 = new File(strTempDir);
+        File outputDir = new File(strOutputDir);
+        outputDir.mkdirs();
 
-            String gmlOrigFileName = basketId + "-original.gml";
-            File gmlOrigFile = new File(dir0, gmlOrigFileName);
+        String gmlOrigFileName = basketId + "-original.gml";
+        File gmlOrigFile = new File(dir0, gmlOrigFileName);
 
-            String gmlFileName = basketId + ".gml";
-            File gmlFile = new File(dir0, gmlFileName);
+        String gmlFileName = basketId + ".gml";
+        File gmlFile = new File(dir0, gmlFileName);
 
-            try (InputStream istream = conn.getInputStream();
-                 OutputStream ostream = new FileOutputStream(gmlOrigFile)) {
-                IOHelper.copy(istream, ostream);
-                try{
-                    FileReader fr = new FileReader(gmlOrigFile);
-                    String s;
-                    String totalStr = "";
-                    try (BufferedReader br = new BufferedReader(fr)) {
-                        while ((s = br.readLine()) != null) {
-                            totalStr += s;
-                        }
-                        String resultString = totalStr;
+        String gmlBoundaryFileName = basketId + "-boundary.gml";
+        File gmlBoundaryFile = new File(dir0, gmlBoundaryFileName);
+
+        try (InputStream istream = conn.getInputStream();
+             OutputStream ostream = new FileOutputStream(gmlOrigFile)) {
+            IOHelper.copy(istream, ostream);
+            try {
+                FileReader fr = new FileReader(gmlOrigFile);
+                String s;
+                String totalStr = "";
+                try (BufferedReader br = new BufferedReader(fr)) {
+                    while ((s = br.readLine()) != null) {
+                        totalStr += s;
+                    }
+                    String resultString = totalStr;
+                    try {
+                        Pattern regex = Pattern.compile("(?<before3>> {0})(?<field1>[0-9]+)(?<after3> *<)");
+                        Matcher regexMatcher = regex.matcher(totalStr);
                         try {
-                            Pattern regex = Pattern.compile("(?<before3>> {0})(?<field1>[0-9]+)(?<after3> *<)");
-                            Matcher regexMatcher = regex.matcher(totalStr);
-                            try {
-                                resultString = regexMatcher.replaceAll("${before3}\"${field1}\"${after3}");
-                            } catch (IllegalArgumentException ex) {
-                                LOGGER.error("Syntax error in the replacement text (unescaped $ signs?)");
-                                return null;
-                            } catch (IndexOutOfBoundsException ex) {
-                                LOGGER.error("Non-existent backreference used the replacement text");
-                                return null;
-                            }
-                        } catch (PatternSyntaxException ex) {
-                            LOGGER.error("Syntax error in the regular expression");
+                            resultString = regexMatcher.replaceAll("${before3}\"${field1}\"${after3}");
+                        } catch (IllegalArgumentException ex) {
+                            LOGGER.error("Syntax error in the replacement text (unescaped $ signs?)");
+                            return null;
+                        } catch (IndexOutOfBoundsException ex) {
+                            LOGGER.error("Non-existent backreference used the replacement text");
                             return null;
                         }
-                        FileWriter fw = new FileWriter(gmlFile);
-                        fw.write(resultString);
-                        fw.close();
+                    } catch (PatternSyntaxException ex) {
+                        LOGGER.error("Syntax error in the regular expression");
+                        return null;
                     }
-                } catch(Exception e){
-                    e.printStackTrace();
+                    FileWriter fw = new FileWriter(gmlFile);
+                    fw.write(resultString);
+                    fw.close();
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
-                Map<String, String> connectionParams = new HashMap<>();
-                connectionParams.put("DriverName", "GML");
-                connectionParams.put("DatasourceName", new File(dir0, gmlFileName).getAbsolutePath());
-                OGRDataStoreFactory factory = new BridjOGRDataStoreFactory();
-                if(!factory.isAvailable()){
-                    LOGGER.error("GDAL library is not found for data export -- http://www.gdal.org/");
+            FileReader fr = new FileReader(gmlOrigFile);
+            String s;
+            String totalStr = "";
+            try (BufferedReader br = new BufferedReader(fr)) {
+                while ((s = br.readLine()) != null) {
+                    totalStr += s;
+                }
+                String resultString = totalStr;
+                try {
+                    Pattern regex = Pattern.compile("(?<before3>> {0})(?<field1>[0-9]+)(?<after3> *<)");
+                    Matcher regexMatcher = regex.matcher(totalStr);
+                    try {
+                        resultString = regexMatcher.replaceAll("${before3}\"${field1}\"${after3}");
+                    } catch (IllegalArgumentException ex) {
+                        LOGGER.error("Syntax error in the replacement text (unescaped $ signs?)");
+                        return null;
+                    } catch (IndexOutOfBoundsException ex) {
+                        LOGGER.error("Non-existent backreference used the replacement text");
+                        return null;
+                    }
+                } catch (PatternSyntaxException ex) {
+                    LOGGER.error("Syntax error in the regular expression");
                     return null;
                 }
-                DataStore store = factory.createDataStore(connectionParams);
-                String[] typeNames = store.getTypeNames();
+                FileWriter fw = new FileWriter(gmlFile);
+                fw.write(resultString);
+                fw.close();
+            }
 
-                sourceCrs = CRS.decode("EPSG:3067",true);
-                targetCrs = CRS.decode("EPSG:4326", true);
-                if (!targetCrs.getName().equals(sourceCrs.getName())) {
-                    transform = CRS.findMathTransform(sourceCrs, targetCrs, true);
-                }
+            Map<String, String> connectionParams = new HashMap<>();
+            connectionParams.put("DriverName", "GML");
+            connectionParams.put("DatasourceName", new File(dir0, gmlFileName).getAbsolutePath());
+            OGRDataStoreFactory factory = new BridjOGRDataStoreFactory();
+            if (!factory.isAvailable()) {
+                LOGGER.error("GDAL library is not found for data export -- http://www.gdal.org/");
+                return null;
+            }
+            DataStore store = factory.createDataStore(connectionParams);
+            String[] typeNames = store.getTypeNames();
 
-                for (int i = 0; i < typeNames.length; i++) {
-                    SimpleFeatureSource source = store.getFeatureSource(typeNames[i]);
-                    SimpleFeatureCollection features = source.getFeatures();
-                    DefaultFeatureCollection features3067 = new DefaultFeatureCollection();
-                    DefaultFeatureCollection features4326 = new DefaultFeatureCollection();
-                    // Coordinate transformation
-                    it = features.features();
-                    while (it.hasNext()) {
-                        feature = it.next();
-                        // Remove extra quotes
-                        for (Property property : feature.getProperties()) {
-                            String name = property.getName().toString();
-                            Object value = feature.getAttribute(name);
-                            if (value.getClass().equals(java.lang.String.class)) {
-                                String newValue = value.toString().trim();
-                                int lastIndex = newValue.length() - 1;
-                                if ((newValue.charAt(0) == '"') && (newValue.charAt(lastIndex) == '"')) {
-                                    newValue = newValue.substring(1, lastIndex);
-                                    feature.setAttribute(name, newValue);
-                                }
+            for (int i = 0; i < typeNames.length; i++) {
+                SimpleFeatureSource source = store.getFeatureSource(typeNames[i]);
+                SimpleFeatureCollection features = source.getFeatures();
+                DefaultFeatureCollection features3067 = new DefaultFeatureCollection();
+                DefaultFeatureCollection features4326 = new DefaultFeatureCollection();
+                // Coordinate transformation
+                it = features.features();
+                while (it.hasNext()) {
+                    feature = it.next();
+                    // Remove extra quotes
+                    for (Property property : feature.getProperties()) {
+                        String name = property.getName().toString();
+                        Object value = feature.getAttribute(name);
+                        if (value.getClass().equals(java.lang.String.class)) {
+                            String newValue = value.toString().trim();
+                            int lastIndex = newValue.length() - 1;
+                            if ((newValue.charAt(0) == '"') && (newValue.charAt(lastIndex) == '"')) {
+                                newValue = newValue.substring(1, lastIndex);
+                                feature.setAttribute(name, newValue);
                             }
                         }
-                        features3067.add(feature);
-                        if (transform != null) {
-                            Geometry geometry = (Geometry) feature.getDefaultGeometry();
-                            feature.setDefaultGeometry(JTS.transform(geometry, transform));
-                            features4326.add(feature);
-                        }
                     }
-                    it.close();
+                    features3067.add(feature);
+                    if (transform != null) {
+                        Geometry geometry = (Geometry) feature.getDefaultGeometry();
+                        try {
+                            feature.setDefaultGeometry(JTS.transform(geometry, transform));
+                        } catch (TransformException ex) {
+                            LOGGER.error("Coordinate transformation error:", ex);
+                        }
+                        features4326.add(feature);
+                    }
+                }
+                it.close();
 
+                try {
                     // CSV
                     String csvFileName = typeNames[i] + basketId + ".csv";
                     File csvFile = new File(dir0, csvFileName);
@@ -205,26 +237,18 @@ public class DownloadServices {
                     OGRDataStoreFactory factoryCsv = new BridjOGRDataStoreFactory();
                     OGRDataStore dataStoreCsv = (OGRDataStore) factoryCsv.createNewDataStore(connectionParamsCsv);
                     dataStoreCsv.createSchema(features3067, true, new String[]{
-                        "GEOMETRY=AS_YX"
+                            "GEOMETRY=AS_YX"
                     });
 
                     // Excel
                     File xlsFile = new File(outputDir, typeNames[i] + basketId + ".xls");
                     convertCsvToXls(xlsFile.getAbsolutePath(), csvFilePath);
+                } catch (Exception ex) {
+                    LOGGER.error("Excel conversion error: ", ex);
+                }
 
-                    // GPX
-                    String gpxFileName = typeNames[i] + basketId + ".gpx";
-                    File gpxFile = new File(outputDir, gpxFileName);
-                    Map<String, String> connectionParamsGpx = new HashMap<>();
-                    connectionParamsGpx.put("DriverName", "GPX");
-                    connectionParamsGpx.put("DatasourceName", gpxFile.getAbsolutePath());
-                    OGRDataStoreFactory factoryGpx = new BridjOGRDataStoreFactory();
-                    OGRDataStore dataStoreGpx = (OGRDataStore) factoryGpx.createNewDataStore(connectionParamsGpx);
-                    dataStoreGpx.createSchema(features4326, true, new String[]{
-                        "GPX_USE_EXTENSIONS=YES"
-                    });
-
-                    // Shapefile
+                // Shapefile
+                try {
                     String shpFileName = typeNames[i] + basketId;
                     File shpFile = new File(outputDir, shpFileName);
                     Map<String, String> connectionParamsShp = new HashMap<>();
@@ -233,18 +257,113 @@ public class DownloadServices {
                     OGRDataStoreFactory factoryShp = new BridjOGRDataStoreFactory();
                     OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
                     dataStoreShp.createSchema(features3067, true, new String[]{
-                        "ENCODING=UTF-8"
+                            "ENCODING=UTF-8"
                     });
+                } catch (Exception ex) {
+                    LOGGER.error("Shapefile conversion error: ", ex);
                 }
-                File zipFile = new File(dir0, basketId + ".zip");
-                zipFileName = zipFile.getAbsolutePath();
-                pack(outputDir.getAbsolutePath(), zipFileName);
-            } catch (IOException ioe) {
-                LOGGER.error("Error: ", ioe);
             }
-        } catch (Exception ex) {
-            LOGGER.error("Error: ", ex);
+
+            try {
+                sourceCrs = CRS.decode("EPSG:3067", true);
+                targetCrs = CRS.decode("EPSG:4326", true);
+                if (!targetCrs.getName().equals(sourceCrs.getName())) {
+                    transform = CRS.findMathTransform(sourceCrs, targetCrs, true);
+                }
+            } catch (FactoryException ex) {
+                LOGGER.error("Factory error:", ex);
+            }
+
+            fr = new FileReader(gmlFile);
+            s = null;
+            totalStr = "";
+            try (BufferedReader br = new BufferedReader(fr)) {
+                while ((s = br.readLine()) != null) {
+                    totalStr += s;
+                }
+                String resultString = totalStr;
+                resultString = resultString.replaceAll("<gml:MultiPolygon", "<gml:MultiLineString");
+                resultString = resultString.replaceAll("</gml:MultiPolygon", "</gml:MultiLineString");
+                resultString = resultString.replaceAll("<gml:polygonMember>", "<gml:lineStringMember>");
+                resultString = resultString.replaceAll("</gml:polygonMember>", "</gml:lineStringMember>");
+                resultString = resultString.replaceAll("<gml:LinearRing>", "<gml:LineString>");
+                resultString = resultString.replaceAll("</gml:LinearRing>", "</gml:LineString>");
+                resultString = resultString.replaceAll("<gml:outerBoundaryIs>", "");
+                resultString = resultString.replaceAll("</gml:outerBoundaryIs>", "");
+                resultString = resultString.replaceAll("<gml:Polygon>", "");
+                resultString = resultString.replaceAll("</gml:Polygon>", "");
+                FileWriter fw = new FileWriter(gmlBoundaryFile);
+                fw.write(resultString);
+                fw.close();
+            }
+
+            Map<String, String> connectionParamsBoundary = new HashMap<>();
+            connectionParamsBoundary.put("DriverName", "GML");
+            connectionParamsBoundary.put("DatasourceName", gmlBoundaryFile.getAbsolutePath());
+            OGRDataStoreFactory factoryBoundary = new BridjOGRDataStoreFactory();
+            if (!factoryBoundary.isAvailable()) {
+                LOGGER.error("GDAL library is not found for data export -- http://www.gdal.org/");
+                return null;
+            }
+            DataStore storeBoundary = factoryBoundary.createDataStore(connectionParamsBoundary);
+            String[] typeNamesBoundary = storeBoundary.getTypeNames();
+
+            for (int i = 0; i < typeNamesBoundary.length; i++) {
+                SimpleFeatureSource source = storeBoundary.getFeatureSource(typeNamesBoundary[i]);
+                SimpleFeatureCollection featuresBoundary = source.getFeatures();
+                DefaultFeatureCollection features3067Boundary = new DefaultFeatureCollection();
+                DefaultFeatureCollection features4326Boundary = new DefaultFeatureCollection();
+                // Coordinate transformation
+                SimpleFeatureIterator itBoundary = featuresBoundary.features();
+                while (itBoundary.hasNext()) {
+                    SimpleFeature featureBoundary = itBoundary.next();
+                    // Remove extra quotes
+                    for (Property property : featureBoundary.getProperties()) {
+                        String nameBoundary = property.getName().toString();
+                        Object valueBoundary = featureBoundary.getAttribute(nameBoundary);
+                        if (valueBoundary.getClass().equals(java.lang.String.class)) {
+                            String newValueBoundary = valueBoundary.toString().trim();
+                            int lastIndexBoundary = newValueBoundary.length() - 1;
+                            if ((newValueBoundary.charAt(0) == '"') && (newValueBoundary.charAt(lastIndexBoundary) == '"')) {
+                                newValueBoundary = newValueBoundary.substring(1, lastIndexBoundary);
+                                featureBoundary.setAttribute(nameBoundary, newValueBoundary);
+                            }
+                        }
+                    }
+                    features3067Boundary.add(featureBoundary);
+                    if (transform != null) {
+                        Geometry geometryBoundary = (Geometry) featureBoundary.getDefaultGeometry();
+                        try {
+                            featureBoundary.setDefaultGeometry(JTS.transform(geometryBoundary, transform));
+                        } catch (TransformException ex) {
+                            LOGGER.error("Coordinate transformation error:", ex);
+                        }
+                        features4326Boundary.add(featureBoundary);
+                    }
+                }
+                itBoundary.close();
+
+                // GPX
+                try {
+                    String gpxFileName = typeNames[i] + basketId + ".gpx";
+                    File gpxFile = new File(outputDir, gpxFileName);
+                    Map<String, String> connectionParamsGpx = new HashMap<>();
+                    connectionParamsGpx.put("DriverName", "GPX");
+                    connectionParamsGpx.put("DatasourceName", gpxFile.getAbsolutePath());
+                    OGRDataStoreFactory factoryGpx = new BridjOGRDataStoreFactory();
+                    OGRDataStore dataStoreGpx = (OGRDataStore) factoryGpx.createNewDataStore(connectionParamsGpx);
+                    dataStoreGpx.createSchema(features4326Boundary, true, new String[]{
+                            "GPX_USE_EXTENSIONS=YES"
+                    });
+                } catch (Exception ex) {
+                    LOGGER.error("GPX conversion error: ", ex);
+                }
+            }
         }
+
+        File zipFile = new File(dir0, basketId + ".zip");
+        zipFileName = zipFile.getAbsolutePath();
+        pack(outputDir.getAbsolutePath(), zipFileName);
         return zipFileName;
     }
 
@@ -253,17 +372,17 @@ public class DownloadServices {
         try (ZipOutputStream zs = new ZipOutputStream(Files.newOutputStream(p))) {
             Path pp = Paths.get(sourceDirPath);
             Files.walk(pp)
-                .filter(path -> !Files.isDirectory(path))
-                .forEach(path -> {
-                    ZipEntry zipEntry = new ZipEntry(pp.relativize(path).toString());
-                    try {
-                        zs.putNextEntry(zipEntry);
-                        Files.copy(path, zs);
-                        zs.closeEntry();
-                    } catch (IOException ex) {
-                        LOGGER.error("Error: ", ex);
-                    }
-                });
+                    .filter(path -> !Files.isDirectory(path))
+                    .forEach(path -> {
+                        ZipEntry zipEntry = new ZipEntry(pp.relativize(path).toString());
+                        try {
+                            zs.putNextEntry(zipEntry);
+                            Files.copy(path, zs);
+                            zs.closeEntry();
+                        } catch (IOException ex) {
+                            LOGGER.error("Error: ", ex);
+                        }
+                    });
         }
     }
 
@@ -282,10 +401,10 @@ public class DownloadServices {
             sheet = (HSSFSheet) workBook.createSheet("Sheet");
             int rowNum = 0;
             LOGGER.info("Creating New .Xls File From The Already Generated .Csv File");
-            while((nextLine = reader.readNext()) != null) {
+            while ((nextLine = reader.readNext()) != null) {
                 Row currentRow = sheet.createRow(rowNum++);
-                for(int i=0; i < nextLine.length; i++) {
-                    if(NumberUtils.isDigits(nextLine[i])) {
+                for (int i = 0; i < nextLine.length; i++) {
+                    if (NumberUtils.isDigits(nextLine[i])) {
                         currentRow.createCell(i).setCellValue(Integer.parseInt(nextLine[i]));
                     } else if (NumberUtils.isNumber(nextLine[i])) {
                         currentRow.createCell(i).setCellValue(Double.parseDouble(nextLine[i]));
@@ -299,7 +418,7 @@ public class DownloadServices {
 
             fileOutputStream = new FileOutputStream(generatedXlsFilePath);
             workBook.write(fileOutputStream);
-        } catch(Exception exObj) {
+        } catch (Exception exObj) {
             LOGGER.error("Exception In convertCsvToXls() Method?=  " + exObj);
         } finally {
             try {
