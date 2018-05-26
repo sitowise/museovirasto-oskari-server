@@ -150,214 +150,214 @@ public class DownloadServices {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
 
-            FileReader fr = new FileReader(gmlOrigFile);
-            String s;
-            String totalStr = "";
-            try (BufferedReader br = new BufferedReader(fr)) {
-                while ((s = br.readLine()) != null) {
-                    totalStr += s;
-                }
-                String resultString = totalStr;
+        FileReader fr = new FileReader(gmlOrigFile);
+        String s;
+        String totalStr = "";
+        try (BufferedReader br = new BufferedReader(fr)) {
+            while ((s = br.readLine()) != null) {
+                totalStr += s;
+            }
+            String resultString = totalStr;
+            try {
+                Pattern regex = Pattern.compile("(?<before3>> {0})(?<field1>[0-9]+)(?<after3> *<)");
+                Matcher regexMatcher = regex.matcher(totalStr);
                 try {
-                    Pattern regex = Pattern.compile("(?<before3>> {0})(?<field1>[0-9]+)(?<after3> *<)");
-                    Matcher regexMatcher = regex.matcher(totalStr);
-                    try {
-                        resultString = regexMatcher.replaceAll("${before3}\"${field1}\"${after3}");
-                    } catch (IllegalArgumentException ex) {
-                        LOGGER.error("Syntax error in the replacement text (unescaped $ signs?)");
-                        return null;
-                    } catch (IndexOutOfBoundsException ex) {
-                        LOGGER.error("Non-existent backreference used the replacement text");
-                        return null;
-                    }
-                } catch (PatternSyntaxException ex) {
-                    LOGGER.error("Syntax error in the regular expression");
+                    resultString = regexMatcher.replaceAll("${before3}\"${field1}\"${after3}");
+                } catch (IllegalArgumentException ex) {
+                    LOGGER.error("Syntax error in the replacement text (unescaped $ signs?)");
+                    return null;
+                } catch (IndexOutOfBoundsException ex) {
+                    LOGGER.error("Non-existent backreference used the replacement text");
                     return null;
                 }
-                FileWriter fw = new FileWriter(gmlFile);
-                fw.write(resultString);
-                fw.close();
-            }
-
-            Map<String, String> connectionParams = new HashMap<>();
-            connectionParams.put("DriverName", "GML");
-            connectionParams.put("DatasourceName", new File(dir0, gmlFileName).getAbsolutePath());
-            OGRDataStoreFactory factory = new BridjOGRDataStoreFactory();
-            if (!factory.isAvailable()) {
-                LOGGER.error("GDAL library is not found for data export -- http://www.gdal.org/");
+            } catch (PatternSyntaxException ex) {
+                LOGGER.error("Syntax error in the regular expression");
                 return null;
             }
-            DataStore store = factory.createDataStore(connectionParams);
-            String[] typeNames = store.getTypeNames();
+            FileWriter fw = new FileWriter(gmlFile);
+            fw.write(resultString);
+            fw.close();
+        }
 
-            for (int i = 0; i < typeNames.length; i++) {
-                SimpleFeatureSource source = store.getFeatureSource(typeNames[i]);
-                SimpleFeatureCollection features = source.getFeatures();
-                DefaultFeatureCollection features3067 = new DefaultFeatureCollection();
-                DefaultFeatureCollection features4326 = new DefaultFeatureCollection();
-                // Coordinate transformation
-                it = features.features();
-                while (it.hasNext()) {
-                    feature = it.next();
-                    // Remove extra quotes
-                    for (Property property : feature.getProperties()) {
-                        String name = property.getName().toString();
-                        Object value = feature.getAttribute(name);
-                        if (value.getClass().equals(java.lang.String.class)) {
-                            String newValue = value.toString().trim();
-                            int lastIndex = newValue.length() - 1;
-                            if ((newValue.charAt(0) == '"') && (newValue.charAt(lastIndex) == '"')) {
-                                newValue = newValue.substring(1, lastIndex);
-                                feature.setAttribute(name, newValue);
-                            }
+        Map<String, String> connectionParams = new HashMap<>();
+        connectionParams.put("DriverName", "GML");
+        connectionParams.put("DatasourceName", new File(dir0, gmlFileName).getAbsolutePath());
+        OGRDataStoreFactory factory = new BridjOGRDataStoreFactory();
+        if (!factory.isAvailable()) {
+            LOGGER.error("GDAL library is not found for data export -- http://www.gdal.org/");
+            return null;
+        }
+        DataStore store = factory.createDataStore(connectionParams);
+        String[] typeNames = store.getTypeNames();
+
+        for (int i = 0; i < typeNames.length; i++) {
+            SimpleFeatureSource source = store.getFeatureSource(typeNames[i]);
+            SimpleFeatureCollection features = source.getFeatures();
+            DefaultFeatureCollection features3067 = new DefaultFeatureCollection();
+            DefaultFeatureCollection features4326 = new DefaultFeatureCollection();
+            // Coordinate transformation
+            it = features.features();
+            while (it.hasNext()) {
+                feature = it.next();
+                // Remove extra quotes
+                for (Property property : feature.getProperties()) {
+                    String name = property.getName().toString();
+                    Object value = feature.getAttribute(name);
+                    if (value.getClass().equals(java.lang.String.class)) {
+                        String newValue = value.toString().trim();
+                        int lastIndex = newValue.length() - 1;
+                        if ((newValue.charAt(0) == '"') && (newValue.charAt(lastIndex) == '"')) {
+                            newValue = newValue.substring(1, lastIndex);
+                            feature.setAttribute(name, newValue);
                         }
                     }
-                    features3067.add(feature);
-                    if (transform != null) {
-                        Geometry geometry = (Geometry) feature.getDefaultGeometry();
-                        try {
-                            feature.setDefaultGeometry(JTS.transform(geometry, transform));
-                        } catch (TransformException ex) {
-                            LOGGER.error("Coordinate transformation error:", ex);
-                        }
-                        features4326.add(feature);
+                }
+                features3067.add(feature);
+                if (transform != null) {
+                    Geometry geometry = (Geometry) feature.getDefaultGeometry();
+                    try {
+                        feature.setDefaultGeometry(JTS.transform(geometry, transform));
+                    } catch (TransformException ex) {
+                        LOGGER.error("Coordinate transformation error:", ex);
                     }
-                }
-                it.close();
-
-                try {
-                    // CSV
-                    String csvFileName = typeNames[i] + basketId + ".csv";
-                    File csvFile = new File(dir0, csvFileName);
-                    Map<String, String> connectionParamsCsv = new HashMap<>();
-                    connectionParamsCsv.put("DriverName", "CSV");
-                    String csvFilePath = csvFile.getAbsolutePath();
-                    connectionParamsCsv.put("DatasourceName", csvFilePath);
-                    OGRDataStoreFactory factoryCsv = new BridjOGRDataStoreFactory();
-                    OGRDataStore dataStoreCsv = (OGRDataStore) factoryCsv.createNewDataStore(connectionParamsCsv);
-                    dataStoreCsv.createSchema(features3067, true, new String[]{
-                            "GEOMETRY=AS_YX"
-                    });
-
-                    // Excel
-                    File xlsFile = new File(outputDir, typeNames[i] + basketId + ".xls");
-                    convertCsvToXls(xlsFile.getAbsolutePath(), csvFilePath);
-                } catch (Exception ex) {
-                    LOGGER.error("Excel conversion error: ", ex);
-                }
-
-                // Shapefile
-                try {
-                    String shpFileName = typeNames[i] + basketId;
-                    File shpFile = new File(outputDir, shpFileName);
-                    Map<String, String> connectionParamsShp = new HashMap<>();
-                    connectionParamsShp.put("DriverName", "ESRI Shapefile");
-                    connectionParamsShp.put("DatasourceName", shpFile.getAbsolutePath());
-                    OGRDataStoreFactory factoryShp = new BridjOGRDataStoreFactory();
-                    OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
-                    dataStoreShp.createSchema(features3067, true, new String[]{
-                            "ENCODING=UTF-8"
-                    });
-                } catch (Exception ex) {
-                    LOGGER.error("Shapefile conversion error: ", ex);
+                    features4326.add(feature);
                 }
             }
+            it.close();
 
             try {
-                sourceCrs = CRS.decode("EPSG:3067", true);
-                targetCrs = CRS.decode("EPSG:4326", true);
-                if (!targetCrs.getName().equals(sourceCrs.getName())) {
-                    transform = CRS.findMathTransform(sourceCrs, targetCrs, true);
-                }
-            } catch (FactoryException ex) {
-                LOGGER.error("Factory error:", ex);
+                // CSV
+                String csvFileName = typeNames[i] + basketId + ".csv";
+                File csvFile = new File(dir0, csvFileName);
+                Map<String, String> connectionParamsCsv = new HashMap<>();
+                connectionParamsCsv.put("DriverName", "CSV");
+                String csvFilePath = csvFile.getAbsolutePath();
+                connectionParamsCsv.put("DatasourceName", csvFilePath);
+                OGRDataStoreFactory factoryCsv = new BridjOGRDataStoreFactory();
+                OGRDataStore dataStoreCsv = (OGRDataStore) factoryCsv.createNewDataStore(connectionParamsCsv);
+                dataStoreCsv.createSchema(features3067, true, new String[]{
+                        "GEOMETRY=AS_YX"
+                });
+
+                // Excel
+                File xlsFile = new File(outputDir, typeNames[i] + basketId + ".xls");
+                convertCsvToXls(xlsFile.getAbsolutePath(), csvFilePath);
+            } catch (Exception ex) {
+                LOGGER.error("Excel conversion error: ", ex);
             }
 
-            fr = new FileReader(gmlFile);
-            s = null;
-            totalStr = "";
-            try (BufferedReader br = new BufferedReader(fr)) {
-                while ((s = br.readLine()) != null) {
-                    totalStr += s;
-                }
-                String resultString = totalStr;
-                resultString = resultString.replaceAll("<gml:MultiPolygon", "<gml:MultiLineString");
-                resultString = resultString.replaceAll("</gml:MultiPolygon", "</gml:MultiLineString");
-                resultString = resultString.replaceAll("<gml:polygonMember>", "<gml:lineStringMember>");
-                resultString = resultString.replaceAll("</gml:polygonMember>", "</gml:lineStringMember>");
-                resultString = resultString.replaceAll("<gml:LinearRing>", "<gml:LineString>");
-                resultString = resultString.replaceAll("</gml:LinearRing>", "</gml:LineString>");
-                resultString = resultString.replaceAll("<gml:outerBoundaryIs>", "");
-                resultString = resultString.replaceAll("</gml:outerBoundaryIs>", "");
-                resultString = resultString.replaceAll("<gml:Polygon>", "");
-                resultString = resultString.replaceAll("</gml:Polygon>", "");
-                FileWriter fw = new FileWriter(gmlBoundaryFile);
-                fw.write(resultString);
-                fw.close();
+            // Shapefile
+            try {
+                String shpFileName = typeNames[i] + basketId;
+                File shpFile = new File(outputDir, shpFileName);
+                Map<String, String> connectionParamsShp = new HashMap<>();
+                connectionParamsShp.put("DriverName", "ESRI Shapefile");
+                connectionParamsShp.put("DatasourceName", shpFile.getAbsolutePath());
+                OGRDataStoreFactory factoryShp = new BridjOGRDataStoreFactory();
+                OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
+                dataStoreShp.createSchema(features3067, true, new String[]{
+                        "ENCODING=UTF-8"
+                });
+            } catch (Exception ex) {
+                LOGGER.error("Shapefile conversion error: ", ex);
             }
+        }
 
-            Map<String, String> connectionParamsBoundary = new HashMap<>();
-            connectionParamsBoundary.put("DriverName", "GML");
-            connectionParamsBoundary.put("DatasourceName", gmlBoundaryFile.getAbsolutePath());
-            OGRDataStoreFactory factoryBoundary = new BridjOGRDataStoreFactory();
-            if (!factoryBoundary.isAvailable()) {
-                LOGGER.error("GDAL library is not found for data export -- http://www.gdal.org/");
-                return null;
+        try {
+            sourceCrs = CRS.decode("EPSG:3067", true);
+            targetCrs = CRS.decode("EPSG:4326", true);
+            if (!targetCrs.getName().equals(sourceCrs.getName())) {
+                transform = CRS.findMathTransform(sourceCrs, targetCrs, true);
             }
-            DataStore storeBoundary = factoryBoundary.createDataStore(connectionParamsBoundary);
-            String[] typeNamesBoundary = storeBoundary.getTypeNames();
+        } catch (FactoryException ex) {
+            LOGGER.error("Factory error:", ex);
+        }
 
-            for (int i = 0; i < typeNamesBoundary.length; i++) {
-                SimpleFeatureSource source = storeBoundary.getFeatureSource(typeNamesBoundary[i]);
-                SimpleFeatureCollection featuresBoundary = source.getFeatures();
-                DefaultFeatureCollection features3067Boundary = new DefaultFeatureCollection();
-                DefaultFeatureCollection features4326Boundary = new DefaultFeatureCollection();
-                // Coordinate transformation
-                SimpleFeatureIterator itBoundary = featuresBoundary.features();
-                while (itBoundary.hasNext()) {
-                    SimpleFeature featureBoundary = itBoundary.next();
-                    // Remove extra quotes
-                    for (Property property : featureBoundary.getProperties()) {
-                        String nameBoundary = property.getName().toString();
-                        Object valueBoundary = featureBoundary.getAttribute(nameBoundary);
-                        if (valueBoundary.getClass().equals(java.lang.String.class)) {
-                            String newValueBoundary = valueBoundary.toString().trim();
-                            int lastIndexBoundary = newValueBoundary.length() - 1;
-                            if ((newValueBoundary.charAt(0) == '"') && (newValueBoundary.charAt(lastIndexBoundary) == '"')) {
-                                newValueBoundary = newValueBoundary.substring(1, lastIndexBoundary);
-                                featureBoundary.setAttribute(nameBoundary, newValueBoundary);
-                            }
+        fr = new FileReader(gmlFile);
+        s = null;
+        totalStr = "";
+        try (BufferedReader br = new BufferedReader(fr)) {
+            while ((s = br.readLine()) != null) {
+                totalStr += s;
+            }
+            String resultString = totalStr;
+            resultString = resultString.replaceAll("<gml:MultiPolygon", "<gml:MultiLineString");
+            resultString = resultString.replaceAll("</gml:MultiPolygon", "</gml:MultiLineString");
+            resultString = resultString.replaceAll("<gml:polygonMember>", "<gml:lineStringMember>");
+            resultString = resultString.replaceAll("</gml:polygonMember>", "</gml:lineStringMember>");
+            resultString = resultString.replaceAll("<gml:LinearRing>", "<gml:LineString>");
+            resultString = resultString.replaceAll("</gml:LinearRing>", "</gml:LineString>");
+            resultString = resultString.replaceAll("<gml:outerBoundaryIs>", "");
+            resultString = resultString.replaceAll("</gml:outerBoundaryIs>", "");
+            resultString = resultString.replaceAll("<gml:Polygon>", "");
+            resultString = resultString.replaceAll("</gml:Polygon>", "");
+            FileWriter fw = new FileWriter(gmlBoundaryFile);
+            fw.write(resultString);
+            fw.close();
+        }
+
+        Map<String, String> connectionParamsBoundary = new HashMap<>();
+        connectionParamsBoundary.put("DriverName", "GML");
+        connectionParamsBoundary.put("DatasourceName", gmlBoundaryFile.getAbsolutePath());
+        OGRDataStoreFactory factoryBoundary = new BridjOGRDataStoreFactory();
+        if (!factoryBoundary.isAvailable()) {
+            LOGGER.error("GDAL library is not found for data export -- http://www.gdal.org/");
+            return null;
+        }
+        DataStore storeBoundary = factoryBoundary.createDataStore(connectionParamsBoundary);
+        String[] typeNamesBoundary = storeBoundary.getTypeNames();
+
+        for (int i = 0; i < typeNamesBoundary.length; i++) {
+            SimpleFeatureSource source = storeBoundary.getFeatureSource(typeNamesBoundary[i]);
+            SimpleFeatureCollection featuresBoundary = source.getFeatures();
+            DefaultFeatureCollection features3067Boundary = new DefaultFeatureCollection();
+            DefaultFeatureCollection features4326Boundary = new DefaultFeatureCollection();
+            // Coordinate transformation
+            SimpleFeatureIterator itBoundary = featuresBoundary.features();
+            while (itBoundary.hasNext()) {
+                SimpleFeature featureBoundary = itBoundary.next();
+                // Remove extra quotes
+                for (Property property : featureBoundary.getProperties()) {
+                    String nameBoundary = property.getName().toString();
+                    Object valueBoundary = featureBoundary.getAttribute(nameBoundary);
+                    if (valueBoundary.getClass().equals(java.lang.String.class)) {
+                        String newValueBoundary = valueBoundary.toString().trim();
+                        int lastIndexBoundary = newValueBoundary.length() - 1;
+                        if ((newValueBoundary.charAt(0) == '"') && (newValueBoundary.charAt(lastIndexBoundary) == '"')) {
+                            newValueBoundary = newValueBoundary.substring(1, lastIndexBoundary);
+                            featureBoundary.setAttribute(nameBoundary, newValueBoundary);
                         }
                     }
-                    features3067Boundary.add(featureBoundary);
-                    if (transform != null) {
-                        Geometry geometryBoundary = (Geometry) featureBoundary.getDefaultGeometry();
-                        try {
-                            featureBoundary.setDefaultGeometry(JTS.transform(geometryBoundary, transform));
-                        } catch (TransformException ex) {
-                            LOGGER.error("Coordinate transformation error:", ex);
-                        }
-                        features4326Boundary.add(featureBoundary);
+                }
+                features3067Boundary.add(featureBoundary);
+                if (transform != null) {
+                    Geometry geometryBoundary = (Geometry) featureBoundary.getDefaultGeometry();
+                    try {
+                        featureBoundary.setDefaultGeometry(JTS.transform(geometryBoundary, transform));
+                    } catch (TransformException ex) {
+                        LOGGER.error("Coordinate transformation error:", ex);
                     }
+                    features4326Boundary.add(featureBoundary);
                 }
-                itBoundary.close();
+            }
+            itBoundary.close();
 
-                // GPX
-                try {
-                    String gpxFileName = typeNames[i] + basketId + ".gpx";
-                    File gpxFile = new File(outputDir, gpxFileName);
-                    Map<String, String> connectionParamsGpx = new HashMap<>();
-                    connectionParamsGpx.put("DriverName", "GPX");
-                    connectionParamsGpx.put("DatasourceName", gpxFile.getAbsolutePath());
-                    OGRDataStoreFactory factoryGpx = new BridjOGRDataStoreFactory();
-                    OGRDataStore dataStoreGpx = (OGRDataStore) factoryGpx.createNewDataStore(connectionParamsGpx);
-                    dataStoreGpx.createSchema(features4326Boundary, true, new String[]{
-                            "GPX_USE_EXTENSIONS=YES"
-                    });
-                } catch (Exception ex) {
-                    LOGGER.error("GPX conversion error: ", ex);
-                }
+            // GPX
+            try {
+                String gpxFileName = typeNames[i] + basketId + ".gpx";
+                File gpxFile = new File(outputDir, gpxFileName);
+                Map<String, String> connectionParamsGpx = new HashMap<>();
+                connectionParamsGpx.put("DriverName", "GPX");
+                connectionParamsGpx.put("DatasourceName", gpxFile.getAbsolutePath());
+                OGRDataStoreFactory factoryGpx = new BridjOGRDataStoreFactory();
+                OGRDataStore dataStoreGpx = (OGRDataStore) factoryGpx.createNewDataStore(connectionParamsGpx);
+                dataStoreGpx.createSchema(features4326Boundary, true, new String[]{
+                        "GPX_USE_EXTENSIONS=YES"
+                });
+            } catch (Exception ex) {
+                LOGGER.error("GPX conversion error: ", ex);
             }
         }
 

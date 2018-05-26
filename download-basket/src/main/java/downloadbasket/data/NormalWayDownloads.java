@@ -12,7 +12,7 @@ public class NormalWayDownloads {
 
 	/**
 	 * Add normal way download.
-	 * 
+	 *
 	 * @param download
 	 */
 	public void addDownload(String download) {
@@ -20,9 +20,9 @@ public class NormalWayDownloads {
 	}
 
 	/**
-	 * Cheks if download is cropped with BBOX. Normal way uses BBOX as the
+	 * Checks if download is cropped with BBOX. Normal way uses BBOX as the
 	 * cropping method. If not, GeoServer Cross-layer filtering is used.
-	 * 
+	 *
 	 * @param croppingMode
 	 *            the cropping mode
 	 * @param croppingLayer

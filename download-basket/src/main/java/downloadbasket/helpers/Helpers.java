@@ -12,7 +12,7 @@ public class Helpers {
 
 	/**
 	 * Get GetFeatureInfoUrl for proxy
-	 * 
+	 *
 	 * @param url
 	 *            a url
 	 * @param projection
@@ -49,13 +49,14 @@ public class Helpers {
 		urlParams.put("INFO_FORMAT", "application/json");
 		urlParams.put("EXCEPTIONS", "application/vnd.ogc.se_xml");
 		urlParams.put("BUFFER", "0");
+		urlParams.put("STYLES", "");
 
 		return IOHelper.constructUrl(url, urlParams);
 	}
 
 	/**
 	 * Get layer name without namespace.
-	 * 
+	 *
 	 * @param layerName
 	 *            layer name
 	 * @return layer name without namespace

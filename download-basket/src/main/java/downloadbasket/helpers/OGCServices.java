@@ -4,19 +4,16 @@ import fi.nls.oskari.domain.map.OskariLayer;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.util.PropertyUtil;
 import downloadbasket.data.NormalWayDownloads;
-import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.lang.StringBuilder;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 public class OGCServices {
 	private static final fi.nls.oskari.log.Logger LOGGER = LogFactory.getLogger(OGCServices.class);
@@ -35,10 +32,9 @@ public class OGCServices {
 	private static final String KEY_UNIQUE_COLUMN= "uniqueColumn";
 	private static final String KEY_UNIQUE_VALUE = "uniqueValue";
 	private static final String KEY_CROP_GEOMETRY_NAME = "geometryName";
-	private static final String WFS_GETCAPABILITIES_POSTFIX = "?REQUEST=GetCapabilities&service=WFS";
-	private static final String WFS_NAME_PREFIX = "<wfs:Name>";
-	private static final String WFS_NAME_POSTFIX = "</wfs:Name>";
-	private static final String CHAR_SET = "UTF-8";
+	private static final String KEY_FREE_CROPPING = "free";
+	private static final String KEY_ALL_CROPPING = "all";
+	private static final String KEY_COORDINATES = "coordinates";
 
 	/**
 	 * Get filter
@@ -68,19 +64,23 @@ public class OGCServices {
 		if (downloadDetails.has(KEY_CROPPING_LAYER)) {
 			croppingLayer = downloadDetails.getString(KEY_CROPPING_LAYER);
 		}
-
-		if (normalDownloads.isBboxCropping(croppingMode, croppingLayer)) {
-			if (writeParam) {
-				s.append("&bbox=");
-			}
-			s.append(getBbox(downloadDetails.getJSONObject(KEY_BBOX)));
-		} else {
-			if (writeParam) {
+		if (!croppingMode.equals(KEY_ALL_CROPPING)) {
+			if (croppingMode.equals(KEY_FREE_CROPPING)) {
+				final String coordinates = downloadDetails.getString(KEY_COORDINATES);
 				s.append("&filter=");
+				s.append(URLEncoder.encode(getSinglePolygon(coordinates), "utf-8"));
+			} else if (normalDownloads.isBboxCropping(croppingMode, croppingLayer)) {
+				if (writeParam) {
+					s.append("&bbox=");
+				}
+				s.append(getBbox(downloadDetails.getJSONObject(KEY_BBOX)));
+			} else {
+				if (writeParam) {
+					s.append("&filter=");
+				}
+				s.append(URLEncoder.encode(getPluginFilter(downloadDetails, oskariLayer), "UTF-8"));
 			}
-			s.append(URLEncoder.encode(getPluginFilter(downloadDetails, oskariLayer), "UTF-8"));
 		}
-
 		return s.toString();
 	}
 
@@ -94,6 +94,16 @@ public class OGCServices {
 	private static String getBbox(JSONObject bbox) throws JSONException {
 		return bbox.getString(KEY_BBOX_LEFT) + "," + bbox.getString(KEY_BBOX_BOTTOM) + ","
 				+ bbox.getString(KEY_BBOX_RIGHT) + "," + bbox.getString(KEY_BBOX_TOP);
+	}
+
+	/**
+	 * Get single polygon
+	 *
+	 * @param coordinates
+	 * @return
+	 */
+	private static String getSinglePolygon(String coordinates) {
+		return "<ogc:Filter><ogc:Within><ogc:PropertyName>SHAPE</ogc:PropertyName><gml:Polygon srsName=\"urn:ogc:def:crs:EPSG::3067\"><gml:outerBoundaryIs><gml:LinearRing><gml:coordinates>" + coordinates + "</gml:coordinates></gml:LinearRing></gml:outerBoundaryIs></gml:Polygon></ogc:Within></ogc:Filter>";
 	}
 
 	/**
@@ -178,47 +188,16 @@ public class OGCServices {
 	 *            download details
 	 * @param addNameSpace
 	 *            add namespace to layer name
+	 * @param serviceUrl
+	 *            add namespace to layer name
 	 * @return WFS GET feature URL
 	 */
-	public static String doGetFeatureUrl(String srs, JSONObject download, boolean addNameSpace) throws JSONException {
+	public static String doGetFeatureUrl(String srs, JSONObject download, boolean addNameSpace, String serviceUrl) throws JSONException {
 		String getFeatureUrl = "";
 		StringBuilder s = new StringBuilder();
-		String[] wfsServiceUrls = PropertyUtil.getCommaSeparatedList("oskari.wfs.service.url");
-		File capabilitiesCacheDirectory = new File(System.getProperty("java.io.tmpdir"));
-		String wfsServiceUrl = null;
-		int numWfsServiceUrls = wfsServiceUrls.length;
-		for (int i = 0; i < numWfsServiceUrls; i++) {
-			String filename = null;
-			try {
-				filename = URLEncoder.encode(wfsServiceUrls[i], CHAR_SET);
-			} catch (UnsupportedEncodingException e) {
-				LOGGER.error(e, "Error");
-				continue;
-			}
-			File capabilitiesCache = new File(capabilitiesCacheDirectory, filename);
-			if ((!capabilitiesCache.exists()) || (new Date().getTime() - capabilitiesCache.lastModified() > TimeUnit.DAYS.toMillis(1))) {
-				try {
-					downloadFromUrl(wfsServiceUrls[i] + WFS_GETCAPABILITIES_POSTFIX, capabilitiesCache.getAbsolutePath());
-				} catch (IOException e) {
-					LOGGER.error(e, "Error");
-					continue;
-				}
-			}
-			try {
-				if (FileUtils.readFileToString(capabilitiesCache, CHAR_SET).contains(WFS_NAME_PREFIX+download.getString(KEY_LAYER)+WFS_NAME_POSTFIX)) {
-					wfsServiceUrl = wfsServiceUrls[i];
-					break;
-				}
-			} catch (IOException e) {
-				LOGGER.error(e, "Error");
-				continue;
-			}
-		}
-		if (wfsServiceUrl == null) {
-			return null;
-		}
-		s.append(wfsServiceUrl);
-		s.append("?SERVICE=wfs&version=1.0.0&request=GetFeature&srsName=");
+		s.append(serviceUrl);
+
+		s.append("?SERVICE=wfs&version=1.1.0&request=GetFeature&srsName=");
 		s.append(srs);
 		s.append("&typeNames=");
 
@@ -229,25 +208,5 @@ public class OGCServices {
 		}
 		getFeatureUrl = s.toString();
 		return getFeatureUrl;
-	}
-
-	/**
-	 *
-	 * @param urlStr
-	 * @param file
-	 * @throws IOException
-	 */
-	private static void downloadFromUrl(String urlStr, String file) throws IOException{
-		URL url = new URL(urlStr);
-		BufferedInputStream bis = new BufferedInputStream(url.openStream());
-		FileOutputStream fis = new FileOutputStream(file, false);
-		byte[] buffer = new byte[1024];
-		int count = 0;
-		while((count = bis.read(buffer,0,1024)) != -1)
-		{
-			fis.write(buffer, 0, count);
-		}
-		fis.close();
-		bis.close();
 	}
 }
