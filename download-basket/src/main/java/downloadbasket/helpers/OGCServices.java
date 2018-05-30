@@ -71,9 +71,9 @@ public class OGCServices {
 				s.append(URLEncoder.encode(getSinglePolygon(coordinates), "utf-8"));
 			} else if (normalDownloads.isBboxCropping(croppingMode, croppingLayer)) {
 				if (writeParam) {
-					s.append("&bbox=");
+					s.append("&filter=");
 				}
-				s.append(getBbox(downloadDetails.getJSONObject(KEY_BBOX)));
+				s.append(URLEncoder.encode(getBbox(downloadDetails.getJSONObject(KEY_BBOX)), "UTF-8"));
 			} else {
 				if (writeParam) {
 					s.append("&filter=");
@@ -92,8 +92,12 @@ public class OGCServices {
 	 * @throws JSONException
 	 */
 	private static String getBbox(JSONObject bbox) throws JSONException {
-		return bbox.getString(KEY_BBOX_LEFT) + "," + bbox.getString(KEY_BBOX_BOTTOM) + ","
-				+ bbox.getString(KEY_BBOX_RIGHT) + "," + bbox.getString(KEY_BBOX_TOP);
+		String coordinates = bbox.getString(KEY_BBOX_BOTTOM) + "," + bbox.getString(KEY_BBOX_LEFT) + " "
+				+ bbox.getString(KEY_BBOX_BOTTOM) + "," + bbox.getString(KEY_BBOX_RIGHT) + " "
+				+ bbox.getString(KEY_BBOX_TOP) + "," + bbox.getString(KEY_BBOX_RIGHT) + " "
+				+ bbox.getString(KEY_BBOX_TOP) + "," + bbox.getString(KEY_BBOX_LEFT) + " "
+				+ bbox.getString(KEY_BBOX_BOTTOM) + "," + bbox.getString(KEY_BBOX_LEFT);
+		return  getSinglePolygon(coordinates);
 	}
 
 	/**

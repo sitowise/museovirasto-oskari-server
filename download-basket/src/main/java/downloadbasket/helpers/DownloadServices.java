@@ -42,6 +42,8 @@ import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.referencing.CRS;
+import org.geotools.referencing.operation.DefaultMathTransformFactory;
+import org.geotools.referencing.operation.matrix.GeneralMatrix;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.referencing.FactoryException;
@@ -79,6 +81,7 @@ public class DownloadServices {
         CoordinateReferenceSystem sourceCrs;
         CoordinateReferenceSystem targetCrs;
         MathTransform transform = null;
+        MathTransform swap = null;
         SimpleFeatureIterator it;
         SimpleFeature feature;
 
@@ -114,6 +117,20 @@ public class DownloadServices {
 
         String gmlBoundaryFileName = basketId + "-boundary.gml";
         File gmlBoundaryFile = new File(dir0, gmlBoundaryFileName);
+
+
+        DefaultMathTransformFactory mathFactory = new DefaultMathTransformFactory();
+        try {
+            double[][] matrix = {{0, 1, 0}, {1, 0, 0}, {0, 0, 1}};
+            swap = mathFactory.createAffineTransform(new GeneralMatrix(matrix));
+            sourceCrs = CRS.decode("EPSG:3067");
+            targetCrs = CRS.decode("EPSG:4326");
+            if (!targetCrs.getName().equals(sourceCrs.getName())) {
+                transform = CRS.findMathTransform(sourceCrs, targetCrs, true);
+            }
+        } catch (FactoryException ex) {
+            LOGGER.error("Factory error:", ex);
+        }
 
         try (InputStream istream = conn.getInputStream();
              OutputStream ostream = new FileOutputStream(gmlOrigFile)) {
@@ -152,35 +169,6 @@ public class DownloadServices {
             }
         }
 
-        FileReader fr = new FileReader(gmlOrigFile);
-        String s;
-        String totalStr = "";
-        try (BufferedReader br = new BufferedReader(fr)) {
-            while ((s = br.readLine()) != null) {
-                totalStr += s;
-            }
-            String resultString = totalStr;
-            try {
-                Pattern regex = Pattern.compile("(?<before3>> {0})(?<field1>[0-9]+)(?<after3> *<)");
-                Matcher regexMatcher = regex.matcher(totalStr);
-                try {
-                    resultString = regexMatcher.replaceAll("${before3}\"${field1}\"${after3}");
-                } catch (IllegalArgumentException ex) {
-                    LOGGER.error("Syntax error in the replacement text (unescaped $ signs?)");
-                    return null;
-                } catch (IndexOutOfBoundsException ex) {
-                    LOGGER.error("Non-existent backreference used the replacement text");
-                    return null;
-                }
-            } catch (PatternSyntaxException ex) {
-                LOGGER.error("Syntax error in the regular expression");
-                return null;
-            }
-            FileWriter fw = new FileWriter(gmlFile);
-            fw.write(resultString);
-            fw.close();
-        }
-
         Map<String, String> connectionParams = new HashMap<>();
         connectionParams.put("DriverName", "GML");
         connectionParams.put("DatasourceName", new File(dir0, gmlFileName).getAbsolutePath());
@@ -214,16 +202,14 @@ public class DownloadServices {
                         }
                     }
                 }
-                features3067.add(feature);
-                if (transform != null) {
-                    Geometry geometry = (Geometry) feature.getDefaultGeometry();
-                    try {
-                        feature.setDefaultGeometry(JTS.transform(geometry, transform));
-                    } catch (TransformException ex) {
-                        LOGGER.error("Coordinate transformation error:", ex);
-                    }
-                    features4326.add(feature);
+                Geometry geometry3067 = (Geometry) feature.getDefaultGeometry();
+                try {
+                    geometry3067 = JTS.transform(geometry3067, swap);
+                    feature.setDefaultGeometry(geometry3067);
+                } catch (TransformException ex) {
+                    LOGGER.error("Swap transformation error:", ex);
                 }
+                features3067.add(feature);
             }
             it.close();
 
@@ -265,19 +251,9 @@ public class DownloadServices {
             }
         }
 
-        try {
-            sourceCrs = CRS.decode("EPSG:3067", true);
-            targetCrs = CRS.decode("EPSG:4326", true);
-            if (!targetCrs.getName().equals(sourceCrs.getName())) {
-                transform = CRS.findMathTransform(sourceCrs, targetCrs, true);
-            }
-        } catch (FactoryException ex) {
-            LOGGER.error("Factory error:", ex);
-        }
-
-        fr = new FileReader(gmlFile);
-        s = null;
-        totalStr = "";
+        FileReader fr = new FileReader(gmlFile);
+        String s = null;
+        String totalStr = "";
         try (BufferedReader br = new BufferedReader(fr)) {
             while ((s = br.readLine()) != null) {
                 totalStr += s;
@@ -331,15 +307,17 @@ public class DownloadServices {
                         }
                     }
                 }
-                features3067Boundary.add(featureBoundary);
+                Geometry geometryBoundary = (Geometry) featureBoundary.getDefaultGeometry();
                 if (transform != null) {
-                    Geometry geometryBoundary = (Geometry) featureBoundary.getDefaultGeometry();
                     try {
+                        geometryBoundary = JTS.transform(geometryBoundary, swap);
+                        featureBoundary.setDefaultGeometry(geometryBoundary);
+                        geometryBoundary = (Geometry) featureBoundary.getDefaultGeometry();
                         featureBoundary.setDefaultGeometry(JTS.transform(geometryBoundary, transform));
+                        features4326Boundary.add(featureBoundary);
                     } catch (TransformException ex) {
                         LOGGER.error("Coordinate transformation error:", ex);
                     }
-                    features4326Boundary.add(featureBoundary);
                 }
             }
             itBoundary.close();
