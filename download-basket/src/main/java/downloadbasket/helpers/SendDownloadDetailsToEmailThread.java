@@ -12,10 +12,10 @@ import downloadbasket.data.ErrorReportDetails;
 import fi.nls.oskari.domain.Role;
 import fi.nls.oskari.domain.User;
 import fi.nls.oskari.domain.map.OskariLayer;
+import fi.nls.oskari.geoserver.LayerHelper;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.map.layer.OskariLayerService;
-import fi.nls.oskari.util.JSONHelper;
 import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.util.IOHelper;
 import downloadbasket.data.LoadZipDetails;
@@ -40,6 +40,13 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 	private final String PARAM_CROPPING_LAYER = "croppingLayer";
 	private final String PARAM_LAYER = "layer";
 	private final String PARAM_LAYER_ID = "id";
+	private final String FULL_DETAIL_LAYER = "fullDetailLayer";
+	private final String DOWNLOAD_BASKET_LEVEL = "downloadBasketLevel";
+	private final int ADMIN_LEVEL = 4;
+	private final int HIGH_PRIORITY_LEVEL = 3;
+	private final int MEDIUM_PRIORITY_LEVEL = 2;
+	private final int LOW_PRIORITY_LEVEL = 1;
+	private final int DEFAULT_LEVEL = 0;
 
 	/**
 	 * Constructor.
@@ -70,28 +77,41 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 		for (String download : PropertyUtil.getCommaSeparatedList("oskari.wfs.download.normal.way.downloads")) {
 			normalDownloads.addDownload(download);
 		}
-/*
+
 		String[] lowPriorityRoles = PropertyUtil.getCommaSeparatedList("oskari.wfs.download.low_priority_roles");
 		String[] mediumPriorityRoles = PropertyUtil.getCommaSeparatedList("oskari.wfs.download.medium_priority_roles");
 		String[] highPriorityRoles = PropertyUtil.getCommaSeparatedList("oskari.wfs.download.high_priority_roles");
-		int numPriorityRoles = priorityRoles.length;
-		int downloadBasketRoleLevel = 0;
+		int numLowPriorityRoles = lowPriorityRoles.length;
+		int numMediumPriorityRoles = mediumPriorityRoles.length;
+		int numHighPriorityRoles = highPriorityRoles.length;
+		int downloadBasketRoleLevel = DEFAULT_LEVEL;
 		if (this.user.isAdmin()) {
-			downloadBasketRoleLevel = 5;
+			downloadBasketRoleLevel = ADMIN_LEVEL;
 		} else {
-
 			Set<Role> roles = this.user.getRoles();
 			iterateRoles: for (Role role : roles) {
 				String roleName = role.getName();
-				for (int i = 0; i < numPriorityRoles; i++) {
-					if (roleName.equals(priorityRoles[i])) {
-						downloadBasketRoleLevel = 2;
+				for (int i = 0; i < numHighPriorityRoles; i++) {
+					if (roleName.equals(highPriorityRoles[i])) {
+						downloadBasketRoleLevel = HIGH_PRIORITY_LEVEL;
+						break iterateRoles;
+					}
+				}
+				for (int i = 0; i < numMediumPriorityRoles; i++) {
+					if (roleName.equals(mediumPriorityRoles[i])) {
+						downloadBasketRoleLevel = MEDIUM_PRIORITY_LEVEL;
+						break iterateRoles;
+					}
+				}
+				for (int i = 0; i < numLowPriorityRoles; i++) {
+					if (roleName.equals(lowPriorityRoles[i])) {
+						downloadBasketRoleLevel = LOW_PRIORITY_LEVEL;
 						break iterateRoles;
 					}
 				}
 			}
 		}
-*/
+
 		try {
 			DownloadServices ds = new DownloadServices();
 			for (int i = 0; i < downloadDetails.length(); i++) {
@@ -108,27 +128,35 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 				ldz.setLanguage(this.locale.getLanguage());
 				ldz.setDownloadNormalWay(normalDownloads.isBboxCropping(croppingMode, croppingLayer));
 				OskariLayer oskariLayer = mapLayerService.find(download.getString(PARAM_LAYER_ID));
-/*
+
 				JSONObject attributes = oskariLayer.getAttributes();
-				if ((attributes != null) || (!attributes.has("downloadBasketLevel"))) {
+				if ((attributes == null) || (!attributes.has(DOWNLOAD_BASKET_LEVEL))) {
 					continue;
 				}
-				int downloadBasketLevel = attributes.getInt("downloadBasketLevel");
+				int downloadBasketLevel = attributes.getInt(DOWNLOAD_BASKET_LEVEL);
 				if (downloadBasketRoleLevel < downloadBasketLevel) {
 					continue;
 				}
-*/
-				String url = oskariLayer.getUrl();
+
+				OskariLayer dataLayer;
+				if ((downloadBasketRoleLevel == HIGH_PRIORITY_LEVEL) && (attributes.has(FULL_DETAIL_LAYER))) {
+					String fullDetailLayerName = attributes.getString(FULL_DETAIL_LAYER);
+					dataLayer = LayerHelper.getLayerWithName(fullDetailLayerName);
+				} else {
+					dataLayer = oskariLayer;
+				}
+
+				String url = dataLayer.getUrl();
 				String srs = "EPSG:4326";
-				if (oskariLayer != null) {
-					srs = oskariLayer.getSrs_name();
+				if (dataLayer != null) {
+					srs = dataLayer.getSrs_name();
 				}
 
 				if (ldz.isDownloadNormalWay()) {
-					ldz.setGetFeatureInfoRequest(OGCServices.getFilter(download, true, oskariLayer));
+					ldz.setGetFeatureInfoRequest(OGCServices.getFilter(download, true, dataLayer));
 					ldz.setWFSUrl(OGCServices.doGetFeatureUrl(srs, download, false, url));
 				} else {
-					ldz.setGetFeatureInfoRequest("&filter=" + OGCServices.getPluginFilter(download, oskariLayer));
+					ldz.setGetFeatureInfoRequest("&filter=" + OGCServices.getPluginFilter(download, dataLayer));
 					ldz.setWFSUrl(OGCServices.doGetFeatureUrl(srs, download, true, url));
 				}
 
