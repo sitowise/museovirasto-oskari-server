@@ -188,15 +188,15 @@ public class OGCServices {
 	 *
 	 * @param srs
 	 *            srs name
-	 * @param download
-	 *            download details
+	 * @param oskariLayer
+	 *            Oskari layer
 	 * @param addNameSpace
 	 *            add namespace to layer name
 	 * @param serviceUrl
 	 *            add namespace to layer name
 	 * @return WFS GET feature URL
 	 */
-	public static String doGetFeatureUrl(String srs, JSONObject download, boolean addNameSpace, String serviceUrl) throws JSONException {
+	public static String doGetFeatureUrl(String srs, OskariLayer oskariLayer, boolean addNameSpace, String serviceUrl) throws JSONException {
 		String getFeatureUrl = "";
 		StringBuilder s = new StringBuilder();
 		s.append(serviceUrl);
@@ -205,10 +205,11 @@ public class OGCServices {
 		s.append(srs);
 		s.append("&typeNames=");
 
+		String layerName = oskariLayer.getName();
 		if (addNameSpace) {
-			s.append(download.getString(KEY_LAYER));
+			s.append(layerName);
 		} else {
-			s.append(Helpers.getLayerNameWithoutNameSpace(download.getString(KEY_LAYER)));
+			s.append(Helpers.getLayerNameWithoutNameSpace(layerName));
 		}
 		getFeatureUrl = s.toString();
 		return getFeatureUrl;

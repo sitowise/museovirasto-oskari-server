@@ -93,20 +93,26 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 				String roleName = role.getName();
 				for (int i = 0; i < numHighPriorityRoles; i++) {
 					if (roleName.equals(highPriorityRoles[i])) {
-						downloadBasketRoleLevel = HIGH_PRIORITY_LEVEL;
-						break iterateRoles;
+						if (downloadBasketRoleLevel < HIGH_PRIORITY_LEVEL) {
+							downloadBasketRoleLevel = HIGH_PRIORITY_LEVEL;
+						}
+						continue iterateRoles;
 					}
 				}
 				for (int i = 0; i < numMediumPriorityRoles; i++) {
 					if (roleName.equals(mediumPriorityRoles[i])) {
-						downloadBasketRoleLevel = MEDIUM_PRIORITY_LEVEL;
-						break iterateRoles;
+						if (downloadBasketRoleLevel < MEDIUM_PRIORITY_LEVEL) {
+							downloadBasketRoleLevel = MEDIUM_PRIORITY_LEVEL;
+						}
+						continue iterateRoles;
 					}
 				}
 				for (int i = 0; i < numLowPriorityRoles; i++) {
 					if (roleName.equals(lowPriorityRoles[i])) {
-						downloadBasketRoleLevel = LOW_PRIORITY_LEVEL;
-						break iterateRoles;
+						if (downloadBasketRoleLevel < LOW_PRIORITY_LEVEL) {
+							downloadBasketRoleLevel = LOW_PRIORITY_LEVEL;
+						}
+						continue iterateRoles;
 					}
 				}
 			}
@@ -154,10 +160,10 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 
 				if (ldz.isDownloadNormalWay()) {
 					ldz.setGetFeatureInfoRequest(OGCServices.getFilter(download, true, dataLayer));
-					ldz.setWFSUrl(OGCServices.doGetFeatureUrl(srs, download, false, url));
+					ldz.setWFSUrl(OGCServices.doGetFeatureUrl(srs, dataLayer, false, url));
 				} else {
 					ldz.setGetFeatureInfoRequest("&filter=" + OGCServices.getPluginFilter(download, dataLayer));
-					ldz.setWFSUrl(OGCServices.doGetFeatureUrl(srs, download, true, url));
+					ldz.setWFSUrl(OGCServices.doGetFeatureUrl(srs, dataLayer, true, url));
 				}
 
 				final String fileLocation = ds.loadZip(ldz, this.locale);
@@ -165,7 +171,7 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 				if (fileLocation != null && ds.isValid(new File(fileLocation))) {
 					ZipDownloadDetails zdd = new ZipDownloadDetails();
 					zdd.setFileName(fileLocation);
-					final String sLayer = Helpers.getLayerNameWithoutNameSpace(download.getString(PARAM_LAYER));
+					final String sLayer = Helpers.getLayerNameWithoutNameSpace(dataLayer.getName());
 					zdd.setLayerName(sLayer);
 					mergeThese.add(zdd);
 				} else {
