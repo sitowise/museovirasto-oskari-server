@@ -46,7 +46,7 @@ public class Helpers {
 		urlParams.put("Y", Long.toString(Math.round(Float.parseFloat(y))));
 		urlParams.put("LAYERS", layerName);
 		urlParams.put("FEATURECOUNT", "1");
-		urlParams.put("INFO_FORMAT", "application/json");
+		urlParams.put("INFO_FORMAT", "application/geojson");
 		urlParams.put("EXCEPTIONS", "application/vnd.ogc.se_xml");
 		urlParams.put("BUFFER", "0");
 		urlParams.put("STYLES", "");
