@@ -158,13 +158,8 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 					srs = dataLayer.getSrs_name();
 				}
 
-				if (ldz.isDownloadNormalWay()) {
-					ldz.setGetFeatureInfoRequest(OGCServices.getFilter(download, true, dataLayer));
-					ldz.setWFSUrl(OGCServices.doGetFeatureUrl(srs, dataLayer, false, url));
-				} else {
-					ldz.setGetFeatureInfoRequest("&filter=" + OGCServices.getPluginFilter(download, dataLayer));
-					ldz.setWFSUrl(OGCServices.doGetFeatureUrl(srs, dataLayer, true, url));
-				}
+				ldz.setGetFeatureInfoRequest(OGCServices.getFilter(download, true, dataLayer));
+				ldz.setWFSUrl(OGCServices.doGetFeatureUrl(srs, dataLayer, false, url));
 
 				final String fileLocation = ds.loadZip(ldz, this.locale);
 

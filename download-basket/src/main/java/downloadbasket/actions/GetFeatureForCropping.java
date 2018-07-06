@@ -1,10 +1,9 @@
 package downloadbasket.actions;
 
-import downloadbasket.helpers.Helpers;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import downloadbasket.helpers.OGCServices;
 import org.json.JSONException;
-import org.json.JSONObject;
 import fi.nls.oskari.annotation.OskariActionRoute;
 import fi.nls.oskari.control.ActionException;
 import fi.nls.oskari.control.ActionHandler;
@@ -18,6 +17,7 @@ import fi.nls.oskari.map.layer.OskariLayerServiceIbatisImpl;
 import fi.nls.oskari.util.ResponseHelper;
 import fi.nls.oskari.util.IOHelper;
 import java.net.HttpURLConnection;
+import java.net.URLEncoder;
 
 /**
  * Handles the cropping of the data before adding it to the download basket.
@@ -30,13 +30,8 @@ public class GetFeatureForCropping extends ActionHandler {
 
 	private final Logger LOGGER = LogFactory.getLogger(GetFeatureForCropping.class);
 
-	private static final String PARAM_LAYERS = "layers";
 	private static final String PARAM_X = "x";
 	private static final String PARAM_Y = "y";
-	private static final String PARAM_BBOX = "bbox";
-	private static final String PARAM_WIDTH = "width";
-	private static final String PARAM_HEIGHT = "height";
-	private static final String PARAM_SRS = "srs";
 	private static final String PARAM_ID = "id";
 
 	private OskariLayerService mapLayerService;
@@ -50,23 +45,21 @@ public class GetFeatureForCropping extends ActionHandler {
 		}
 
 		String url = oskariLayer.getUrl();
-
-		String wmsUrl = Helpers.getGetFeatureInfoUrlForProxy(url, params.getHttpParam(PARAM_SRS),
-				params.getHttpParam(PARAM_BBOX), params.getHttpParam(PARAM_WIDTH),
-				params.getHttpParam(PARAM_HEIGHT), params.getHttpParam(PARAM_X), params.getHttpParam(PARAM_Y),
-				params.getHttpParam(PARAM_LAYERS));
+		String srs = oskariLayer.getSrs_name();
+		String data;
 
 		LOGGER.debug("Details of the data cropping feature");
 		try {
-
-			HttpURLConnection con = IOHelper.getConnection(wmsUrl, oskariLayer.getUsername(), oskariLayer.getPassword());
+			StringBuilder s = new StringBuilder();
+			s.append(OGCServices.doGetFeatureUrl(srs, oskariLayer, true, url));
+			s.append("&maxFeatures=1");
+			s.append("&filter=");
+			s.append(URLEncoder.encode("<ogc:Filter><ogc:Contains><ogc:PropertyName>SHAPE</ogc:PropertyName><gml:Point srsName=\"urn:ogc:def:crs:EPSG::3067\"><gml:coordinates>"+params.getHttpParam(PARAM_Y)+","+params.getHttpParam(PARAM_X)+"</gml:coordinates></gml:Point></ogc:Contains></ogc:Filter>", "utf-8"));
+			String featureUrl = s.toString();
+			HttpURLConnection con = IOHelper.getConnection(featureUrl, oskariLayer.getUsername(), oskariLayer.getPassword());
 			con.setRequestProperty("Accept-Charset", "UTF-8");
-			final String data = IOHelper.readString(con, "UTF-8");
-
-			JSONObject json = new JSONObject(data);
-
-			ResponseHelper.writeResponse(params, json);
-
+			data = IOHelper.readString(con, "UTF-8");
+			ResponseHelper.writeResponse(params, data);
 		} catch (JSONException e) {
 			throw new ActionException("Could not get cropping:", e);
 		} catch (MalformedURLException e) {

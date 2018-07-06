@@ -69,16 +69,11 @@ public class OGCServices {
 				final String coordinates = downloadDetails.getString(KEY_COORDINATES);
 				s.append("&filter=");
 				s.append(URLEncoder.encode(getSinglePolygon(coordinates), "utf-8"));
-			} else if (normalDownloads.isBboxCropping(croppingMode, croppingLayer)) {
+			} else  {
 				if (writeParam) {
 					s.append("&filter=");
 				}
 				s.append(URLEncoder.encode(getBbox(downloadDetails.getJSONObject(KEY_BBOX)), "UTF-8"));
-			} else {
-				if (writeParam) {
-					s.append("&filter=");
-				}
-				s.append(URLEncoder.encode(getPluginFilter(downloadDetails, oskariLayer), "UTF-8"));
 			}
 		}
 		return s.toString();
