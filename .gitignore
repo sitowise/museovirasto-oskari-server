@@ -27,4 +27,4 @@ transport.log
 */nb-configuration.xml
 
 /service-search-nls/nbproject/
-/geoserver-ext/OskariMarkFactory/bin/
+geoserver-ext/OskariMarkFactory/bin/

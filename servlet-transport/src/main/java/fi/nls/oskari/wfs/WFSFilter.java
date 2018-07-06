@@ -10,6 +10,7 @@ import fi.nls.oskari.pojo.Location;
 import fi.nls.oskari.pojo.PropertyFilter;
 import fi.nls.oskari.pojo.SessionStore;
 import fi.nls.oskari.service.ServiceRuntimeException;
+import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.wfs.pojo.WFSLayerStore;
 import fi.nls.oskari.work.JobType;
 import org.geotools.factory.CommonFactoryFinder;
@@ -33,6 +34,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.xml.namespace.QName;
+
 /**
  * WFS geotools filter creation
  * 
@@ -52,6 +55,9 @@ public class WFSFilter {
     private static final FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(null);
     private static final GeometryFactory gf = JTSFactoryFinder.getGeometryFactory(null);
     private static final GeometricShapeFactory gsf = new GeometricShapeFactory(gf);
+    
+    private static final boolean ARCGIS_10_5_WORKAROUND = PropertyUtil.getOptional("arcgis.10.5.workaround", false);
+    private static final String ARCGIS_10_5_WORKAROUND_PATTERN = PropertyUtil.getOptional("arcgis.10.5.workaround.pattern");
 
     private WFSLayerStore layer;
     private MathTransform transform;
@@ -199,9 +205,14 @@ public class WFSFilter {
 
         // configuration that makes correct XML elements (v1_1 uses exterior and bbox envelope works)
         Configuration configuration = new org.geotools.filter.v1_1.OGCConfiguration();
+        QName qName = org.geotools.filter.v1_1.OGC.Filter;
+        if (ARCGIS_10_5_WORKAROUND && this.layer.getURL().matches(ARCGIS_10_5_WORKAROUND_PATTERN)) {
+            configuration = new org.geotools.filter.v1_0.OGCConfiguration();
+            qName = org.geotools.filter.v1_0.OGC.Filter;
+        }
         Encoder encoder = new Encoder(configuration);
         try {
-            this.xml = encoder.encodeAsString(filter, org.geotools.filter.v1_1.OGC.Filter);
+            this.xml = encoder.encodeAsString(filter, qName);
         } catch (IOException e) {
             LOG.error(e, "Encoding filter to String (xml) failed");
             throw new ServiceRuntimeException("Encoding filter to String (xml) failed - layer: "+layer.getLayerId(), e.getCause());
