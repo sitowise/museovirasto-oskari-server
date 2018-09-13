@@ -249,8 +249,10 @@ public class DownloadServices {
             } catch (Exception ex) {
                 LOGGER.error("Shapefile conversion error: ", ex);
             }
+            LOGGER.error("Test: 1");
         }
 
+        LOGGER.error("Test: 2");
         FileReader fr = new FileReader(gmlFile);
         String s = null;
         String totalStr = "";
@@ -342,6 +344,7 @@ public class DownloadServices {
         File zipFile = new File(dir0, basketId + ".zip");
         zipFileName = zipFile.getAbsolutePath();
         pack(outputDir.getAbsolutePath(), zipFileName);
+        LOGGER.error("Test: 3");
         return zipFileName;
     }
 
