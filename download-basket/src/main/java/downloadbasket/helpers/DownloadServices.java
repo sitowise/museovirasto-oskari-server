@@ -236,16 +236,25 @@ public class DownloadServices {
 
             // Shapefile
             try {
+                LOGGER.error("=============<TRY>==============");
+                LOGGER.error(typeNames[i]);
+                LOGGER.error(basketId);
                 String shpFileName = typeNames[i] + basketId;
+                LOGGER.error(shpFileName);
+                LOGGER.error(outputDir);
                 File shpFile = new File(outputDir, shpFileName);
+                LOGGER.error(shpFile);
                 Map<String, String> connectionParamsShp = new HashMap<>();
+                LOGGER.error(shpFile.getAbsolutePath());
                 connectionParamsShp.put("DriverName", "ESRI Shapefile");
                 connectionParamsShp.put("DatasourceName", shpFile.getAbsolutePath());
                 OGRDataStoreFactory factoryShp = new BridjOGRDataStoreFactory();
                 OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
+                LOGGER.error(features3067);
                 dataStoreShp.createSchema(features3067, true, new String[]{
                         "ENCODING=UTF-8"
                 });
+                LOGGER.error("=============</TRY>==============");
             } catch (Exception ex) {
                 LOGGER.error("Shapefile conversion error: ", ex);
             }
