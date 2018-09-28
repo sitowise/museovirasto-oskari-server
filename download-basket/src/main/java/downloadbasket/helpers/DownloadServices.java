@@ -249,8 +249,9 @@ public class DownloadServices {
                 connectionParamsShp.put("DriverName", "ESRI Shapefile");
                 connectionParamsShp.put("DatasourceName", shpFile.getAbsolutePath());
                 OGRDataStoreFactory factoryShp = new BridjOGRDataStoreFactory();
-                OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
                 LOGGER.error(features3067);
+                OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
+                LOGGER.error(dataStoreShp);
                 dataStoreShp.createSchema(features3067, true, new String[]{
                         "ENCODING=UTF-8"
                 });
