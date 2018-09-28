@@ -257,7 +257,7 @@ public class DownloadServices {
                 });
                 LOGGER.error("=============</TRY>==============");
             } catch (Exception ex) {
-                LOGGER.error("Shapefile conversion error: ", ex);
+                LOGGER.error(ex, "Shapefile conversion error: ");
             }
             LOGGER.error("Test: 1");
         }
