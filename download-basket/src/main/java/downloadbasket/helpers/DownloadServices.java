@@ -251,6 +251,10 @@ public class DownloadServices {
                 connectionParamsShp.put("DatasourceName", shpFile.getAbsolutePath());
                 LOGGER.error(connectionParamsShp);
                 OGRDataStoreFactory factoryShp = new BridjOGRDataStoreFactory();
+                Set<String> drivers = factoryShp.getAvailableDrivers();
+                for (String driver : drivers) {
+                	LOGGER.error(driver);
+                }
                 LOGGER.error(features3067);
                 OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
                 SimpleFeatureSource asdf = dataStoreShp.getFeatureSource(typeNames[i]);
