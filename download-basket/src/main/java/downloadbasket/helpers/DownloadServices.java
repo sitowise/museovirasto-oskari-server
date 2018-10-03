@@ -193,14 +193,16 @@ public class DownloadServices {
                 // Remove extra quotes
                 for (Property property : feature.getProperties()) {
                     String name = property.getName().toString();
-                	LOGGER.error(name);
                     Object value = feature.getAttribute(name);
-                	LOGGER.error(value.toString());
                     if (value.getClass().equals(java.lang.String.class)) {
+                    	LOGGER.error(name);
+                    	LOGGER.error(value.toString());
                         String newValue = value.toString().trim();
                         int lastIndex = newValue.length() - 1;
                         if ((newValue.charAt(0) == '"') && (newValue.charAt(lastIndex) == '"')) {
                             newValue = newValue.substring(1, lastIndex);
+                            feature.setAttribute(name, newValue);
+                        } else {
                             feature.setAttribute(name, newValue);
                         }
                     }
