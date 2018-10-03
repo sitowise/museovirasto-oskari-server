@@ -251,23 +251,8 @@ public class DownloadServices {
                 connectionParamsShp.put("DatasourceName", shpFile.getAbsolutePath());
                 LOGGER.error(connectionParamsShp);
                 OGRDataStoreFactory factoryShp = new BridjOGRDataStoreFactory();
-                Set<String> drivers = factoryShp.getAvailableDrivers();
-                for (String driver : drivers) {
-                	LOGGER.error(driver);
-                }
                 LOGGER.error(features3067);
                 OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
-                SimpleFeatureSource asdf = dataStoreShp.getFeatureSource(typeNames[i]);
-                SimpleFeatureIterator it2 = asdf.getFeatures().features();
-                try {
-                    while (it2.hasNext()) {
-                        SimpleFeature feature2 = it2.next();
-                        LOGGER.error(feature2.getAttribute("NAME"));
-                        LOGGER.error(((Geometry) feature2.getDefaultGeometry()).getCentroid());
-                    }
-                } finally {
-                   it.close();
-                }
                 LOGGER.error(dataStoreShp);
                 dataStoreShp.createSchema(features3067, true, new String[]{
                         "ENCODING=UTF-8"
