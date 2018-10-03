@@ -249,18 +249,22 @@ public class DownloadServices {
                 LOGGER.error(shpFile.getAbsolutePath());
                 connectionParamsShp.put("DriverName", "ESRI Shapefile");
                 connectionParamsShp.put("DatasourceName", shpFile.getAbsolutePath());
+                LOGGER.error(connectionParamsShp);
                 OGRDataStoreFactory factoryShp = new BridjOGRDataStoreFactory();
                 LOGGER.error(features3067);
                 OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
-                LOGGER.error(dataStoreShp);
-                String[] t = dataStoreShp.getTypeNames();
-                for(int x = 0; x < t.length; ++x) {
-                	LOGGER.error(t[x]);
+                SimpleFeatureSource asdf = dataStoreShp.getFeatureSource(typeNames[i]);
+                SimpleFeatureIterator it2 = asdf.getFeatures().features();
+                try {
+                    while (it2.hasNext()) {
+                        SimpleFeature feature2 = it2.next();
+                        LOGGER.error(feature2.getAttribute("NAME"));
+                        LOGGER.error(((Geometry) feature2.getDefaultGeometry()).getCentroid());
+                    }
+                } finally {
+                   it.close();
                 }
-//                SimpleFeatureSource featureSource = dataStoreShp.getFeatureSource(t);
-//                SimpleFeatureType schema = featureSource.getSchema();
-//                String geomType = schema.getGeometryDescriptor().getType().getBinding().getName();
-//                LOGGER.error(geomType);
+                LOGGER.error(dataStoreShp);
                 dataStoreShp.createSchema(features3067, true, new String[]{
                         "ENCODING=UTF-8"
                 });
