@@ -253,11 +253,14 @@ public class DownloadServices {
                 LOGGER.error(features3067);
                 OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
                 LOGGER.error(dataStoreShp);
-                String t = dataStoreShp.getTypeNames()[0];
-                SimpleFeatureSource featureSource = dataStoreShp.getFeatureSource(t);
-                SimpleFeatureType schema = featureSource.getSchema();
-                String geomType = schema.getGeometryDescriptor().getType().getBinding().getName();
-                LOGGER.error(geomType);
+                String[] t = dataStoreShp.getTypeNames();
+                for(int x = 0; x < t.length; ++x) {
+                	LOGGER.error(t[x]);
+                }
+//                SimpleFeatureSource featureSource = dataStoreShp.getFeatureSource(t);
+//                SimpleFeatureType schema = featureSource.getSchema();
+//                String geomType = schema.getGeometryDescriptor().getType().getBinding().getName();
+//                LOGGER.error(geomType);
                 dataStoreShp.createSchema(features3067, true, new String[]{
                         "ENCODING=UTF-8"
                 });
