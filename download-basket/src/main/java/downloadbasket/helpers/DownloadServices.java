@@ -46,6 +46,7 @@ import org.geotools.referencing.operation.DefaultMathTransformFactory;
 import org.geotools.referencing.operation.matrix.GeneralMatrix;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
@@ -249,10 +250,14 @@ public class DownloadServices {
                 connectionParamsShp.put("DriverName", "ESRI Shapefile");
                 connectionParamsShp.put("DatasourceName", shpFile.getAbsolutePath());
                 OGRDataStoreFactory factoryShp = new BridjOGRDataStoreFactory();
-                features3067.validate();
                 LOGGER.error(features3067);
                 OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
                 LOGGER.error(dataStoreShp);
+                String t = dataStoreShp.getTypeNames()[0];
+                SimpleFeatureSource featureSource = dataStoreShp.getFeatureSource(t);
+                SimpleFeatureType schema = featureSource.getSchema();
+                String geomType = schema.getGeometryDescriptor().getType().getBinding().getName();
+                LOGGER.error(geomType);
                 dataStoreShp.createSchema(features3067, true, new String[]{
                         "ENCODING=UTF-8"
                 });
