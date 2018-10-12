@@ -51,6 +51,14 @@
                 height: 100%;
                 margin-left: 170px;
             }
+            #language {
+                margin-left: 5px;
+                color: #ffff;
+            }
+
+            #langlink {
+                color: #ffff;
+            }
 
             #login {
                 margin-left: 5px;
@@ -140,6 +148,22 @@
                 </c:if>
             </c:otherwise>
         </c:choose>
+    </div>
+    
+    <div id="language">
+            <c:if test="${language == 'fi'}">
+                <a id="langlink" href="./?lang=sv">På svenska</a> -
+                <a id="langlink" href="./?lang=en">In English</a>
+            </c:if>
+            <c:if test="${language == 'sv'}">
+                <a id="langlink" href="./?lang=fi">Suomeksi</a> -
+                <a id="langlink" href="./?lang=en">In English</a>
+            </c:if>
+            <c:if test="${language == 'en'}">
+                <a id="langlink" href="./?lang=fi">Suomeksi</a> -
+                <a id="langlink" href="./?lang=sv">På svenska</a>
+            </c:if>
+
     </div>
 </nav>
 <div id="contentMap" class="oskariui container-fluid">
