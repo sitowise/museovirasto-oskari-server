@@ -151,8 +151,10 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 				} else {
 					dataLayer = oskariLayer;
 				}
+				LOGGER.error(">>>>>>>>>>>>>>>>>>>>>>>");
 				LOGGER.error(dataLayer.getId());
 				LOGGER.error(dataLayer.getAttributes());
+				LOGGER.error("<<<<<<<<<<<<<<<<<<<<<<<");
 
 				String url = dataLayer.getUrl();
 				String srs = "EPSG:4326";
