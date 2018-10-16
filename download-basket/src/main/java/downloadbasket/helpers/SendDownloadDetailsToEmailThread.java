@@ -145,16 +145,12 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 				}
 
 				OskariLayer dataLayer;
-				if ((downloadBasketRoleLevel == HIGH_PRIORITY_LEVEL) && (attributes.has(FULL_DETAIL_LAYER))) {
+				if ((downloadBasketRoleLevel == HIGH_PRIORITY_LEVEL || downloadBasketRoleLevel == ADMIN_LEVEL) && (attributes.has(FULL_DETAIL_LAYER))) {
 					String fullDetailLayerName = attributes.getString(FULL_DETAIL_LAYER);
 					dataLayer = LayerHelper.getLayerWithName(fullDetailLayerName);
 				} else {
 					dataLayer = oskariLayer;
 				}
-				LOGGER.error(">>>>>>>>>>>>>>>>>>>>>>>");
-				LOGGER.error(dataLayer.getId());
-				LOGGER.error(dataLayer.getAttributes());
-				LOGGER.error("<<<<<<<<<<<<<<<<<<<<<<<");
 
 				String url = dataLayer.getUrl();
 				String srs = "EPSG:4326";
