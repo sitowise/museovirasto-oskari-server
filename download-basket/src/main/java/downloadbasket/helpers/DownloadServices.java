@@ -209,8 +209,8 @@ public class DownloadServices {
                         }
                     } else if(value.getClass().equals(com.vividsolutions.jts.geom.Point.class)) {
                     	com.vividsolutions.jts.geom.Point point = (com.vividsolutions.jts.geom.Point) value;
-                    	LOGGER.error(point);
                     	point.setSRID(3067);
+                    	LOGGER.error(point);
                     	feature.setAttribute(name, point);
                     }
                 }
