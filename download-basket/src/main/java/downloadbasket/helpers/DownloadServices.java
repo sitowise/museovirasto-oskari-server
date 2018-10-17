@@ -260,7 +260,13 @@ public class DownloadServices {
                 LOGGER.error(features3067);
                 features3067.forEach(new Consumer<SimpleFeature>() {
                     public void accept(SimpleFeature sfi) {
-                        System.out.println(sfi);
+                    	LOGGER.error("========================");
+                    	sfi.getProperties().forEach(new Consumer<Property>(){
+                    		public void accept(Property prop) {
+                    			LOGGER.error(prop.getValue());
+                    		}
+                    	});
+                    	LOGGER.error("========================");
                     }
                 });
                 OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
