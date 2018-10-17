@@ -197,8 +197,8 @@ public class DownloadServices {
                     String name = property.getName().toString();
                     Object value = feature.getAttribute(name);
                     if (value.getClass().equals(java.lang.String.class)) {
-                    	LOGGER.error(name);
-                    	LOGGER.error(value.toString());
+                    	LOGGER.error(name);//TODO: REMOVE
+                    	LOGGER.error(value.toString());//TODO: REMOVE
                         String newValue = value.toString().trim();
                         int lastIndex = newValue.length() - 1;
                         if ((newValue.charAt(0) == '"') && (newValue.charAt(lastIndex) == '"')) {
@@ -207,7 +207,9 @@ public class DownloadServices {
                         } else {
                             feature.setAttribute(name, newValue);
                         }
-                    } else if(value.getClass().equals(com.vividsolutions.jts.geom.Point.class)) {
+                    } 
+                    //TODO: REMOVE this else if
+                    else if(value.getClass().equals(com.vividsolutions.jts.geom.Point.class)) {
                     	com.vividsolutions.jts.geom.Point point = (com.vividsolutions.jts.geom.Point) value;
                     	point.setSRID(3067);
                     	LOGGER.error(point);
@@ -248,21 +250,22 @@ public class DownloadServices {
 
             // Shapefile
             try {
-                LOGGER.error("=============<TRY>==============");
-                LOGGER.error(typeNames[i]);
-                LOGGER.error(basketId);
+                LOGGER.error("=============<TRY>==============");//TODO: REMOVE
+                LOGGER.error(typeNames[i]);//TODO: REMOVE
+                LOGGER.error(basketId);//TODO: REMOVE
                 String shpFileName = typeNames[i] + basketId;
-                LOGGER.error(shpFileName);
-                LOGGER.error(outputDir);
+                LOGGER.error(shpFileName);//TODO: REMOVE
+                LOGGER.error(outputDir);//TODO: REMOVE
                 File shpFile = new File(outputDir, shpFileName);
-                LOGGER.error(shpFile);
+                LOGGER.error(shpFile);//TODO: REMOVE
                 Map<String, String> connectionParamsShp = new HashMap<>();
-                LOGGER.error(shpFile.getAbsolutePath());
+                LOGGER.error(shpFile.getAbsolutePath());//TODO: REMOVE
                 connectionParamsShp.put("DriverName", "ESRI Shapefile");
                 connectionParamsShp.put("DatasourceName", shpFile.getAbsolutePath());
-                LOGGER.error(connectionParamsShp);
+                LOGGER.error(connectionParamsShp);//TODO: REMOVE
                 OGRDataStoreFactory factoryShp = new BridjOGRDataStoreFactory();
-                LOGGER.error(features3067);
+                LOGGER.error(features3067);//TODO: REMOVE
+                //TODO: REMOVE THIS FOREACH
                 features3067.forEach(new Consumer<SimpleFeature>() {
                     public void accept(SimpleFeature sfi) {
                     	LOGGER.error("========================");
@@ -275,11 +278,11 @@ public class DownloadServices {
                     }
                 });
                 OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
-                LOGGER.error(dataStoreShp);
+                LOGGER.error(dataStoreShp);//TODO: REMOVE
                 dataStoreShp.createSchema(features3067, true, new String[]{
                         "ENCODING=UTF-8"
                 });
-                LOGGER.error("=============</TRY>==============");
+                LOGGER.error("=============</TRY>==============");//TODO: REMOVE
             } catch (Exception ex) {
                 LOGGER.error(ex, "Shapefile conversion error: ");
             }
