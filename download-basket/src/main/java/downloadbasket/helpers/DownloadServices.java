@@ -219,7 +219,7 @@ public class DownloadServices {
                 Geometry geometry3067 = (Geometry) feature.getDefaultGeometry();
                 try {
                     geometry3067 = JTS.transform(geometry3067, swap);
-                    geometry3067.setSRID(3067);
+                    geometry3067.setSRID(3067);//TODO: REMOVE
                     feature.setDefaultGeometry(geometry3067);
                 } catch (TransformException ex) {
                     LOGGER.error("Swap transformation error:", ex);
