@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -185,6 +186,7 @@ public class DownloadServices {
             SimpleFeatureSource source = store.getFeatureSource(typeNames[i]);
             SimpleFeatureCollection features = source.getFeatures();
             DefaultFeatureCollection features3067 = new DefaultFeatureCollection();
+            DefaultFeatureCollection features3067Corrected = new DefaultFeatureCollection();
             DefaultFeatureCollection features4326 = new DefaultFeatureCollection();
             // Coordinate transformation
             it = features.features();
@@ -256,6 +258,11 @@ public class DownloadServices {
                 LOGGER.error(connectionParamsShp);
                 OGRDataStoreFactory factoryShp = new BridjOGRDataStoreFactory();
                 LOGGER.error(features3067);
+                features3067.forEach(new Consumer<SimpleFeature>() {
+                    public void accept(SimpleFeature sfi) {
+                        System.out.println(sfi);
+                    }
+                });
                 OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
                 LOGGER.error(dataStoreShp);
                 dataStoreShp.createSchema(features3067, true, new String[]{
