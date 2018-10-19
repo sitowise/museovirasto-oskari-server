@@ -28,3 +28,5 @@ transport.log
 
 /service-search-nls/nbproject/
 geoserver-ext/OskariMarkFactory/bin/
+
+build.sh

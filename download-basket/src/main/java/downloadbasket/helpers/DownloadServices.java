@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -185,6 +186,7 @@ public class DownloadServices {
             SimpleFeatureSource source = store.getFeatureSource(typeNames[i]);
             SimpleFeatureCollection features = source.getFeatures();
             DefaultFeatureCollection features3067 = new DefaultFeatureCollection();
+            DefaultFeatureCollection features3067Corrected = new DefaultFeatureCollection();
             DefaultFeatureCollection features4326 = new DefaultFeatureCollection();
             // Coordinate transformation
             it = features.features();
@@ -195,8 +197,8 @@ public class DownloadServices {
                     String name = property.getName().toString();
                     Object value = feature.getAttribute(name);
                     if (value.getClass().equals(java.lang.String.class)) {
-                    	LOGGER.error(name);
-                    	LOGGER.error(value.toString());
+                    	LOGGER.error(name);//TODO: REMOVE
+                    	LOGGER.error(value.toString());//TODO: REMOVE
                         String newValue = value.toString().trim();
                         int lastIndex = newValue.length() - 1;
                         if ((newValue.charAt(0) == '"') && (newValue.charAt(lastIndex) == '"')) {
@@ -205,11 +207,19 @@ public class DownloadServices {
                         } else {
                             feature.setAttribute(name, newValue);
                         }
+                    } 
+                    //TODO: REMOVE this else if
+                    else if(value.getClass().equals(com.vividsolutions.jts.geom.Point.class)) {
+                    	com.vividsolutions.jts.geom.Point point = (com.vividsolutions.jts.geom.Point) value;
+                    	point.setSRID(3067);
+                    	LOGGER.error(point);
+                    	feature.setAttribute(name, point);
                     }
                 }
                 Geometry geometry3067 = (Geometry) feature.getDefaultGeometry();
                 try {
                     geometry3067 = JTS.transform(geometry3067, swap);
+                    geometry3067.setSRID(3067);//TODO: REMOVE
                     feature.setDefaultGeometry(geometry3067);
                 } catch (TransformException ex) {
                     LOGGER.error("Swap transformation error:", ex);
@@ -241,27 +251,39 @@ public class DownloadServices {
 
             // Shapefile
             try {
-                LOGGER.error("=============<TRY>==============");
-                LOGGER.error(typeNames[i]);
-                LOGGER.error(basketId);
+                LOGGER.error("=============<TRY>==============");//TODO: REMOVE
+                LOGGER.error(typeNames[i]);//TODO: REMOVE
+                LOGGER.error(basketId);//TODO: REMOVE
                 String shpFileName = typeNames[i] + basketId;
-                LOGGER.error(shpFileName);
-                LOGGER.error(outputDir);
+                LOGGER.error(shpFileName);//TODO: REMOVE
+                LOGGER.error(outputDir);//TODO: REMOVE
                 File shpFile = new File(outputDir, shpFileName);
-                LOGGER.error(shpFile);
+                LOGGER.error(shpFile);//TODO: REMOVE
                 Map<String, String> connectionParamsShp = new HashMap<>();
-                LOGGER.error(shpFile.getAbsolutePath());
+                LOGGER.error(shpFile.getAbsolutePath());//TODO: REMOVE
                 connectionParamsShp.put("DriverName", "ESRI Shapefile");
                 connectionParamsShp.put("DatasourceName", shpFile.getAbsolutePath());
-                LOGGER.error(connectionParamsShp);
+                LOGGER.error(connectionParamsShp);//TODO: REMOVE
                 OGRDataStoreFactory factoryShp = new BridjOGRDataStoreFactory();
-                LOGGER.error(features3067);
+                LOGGER.error(features3067);//TODO: REMOVE
+                //TODO: REMOVE THIS FOREACH
+                features3067.forEach(new Consumer<SimpleFeature>() {
+                    public void accept(SimpleFeature sfi) {
+                    	LOGGER.error("========================");
+                    	sfi.getProperties().forEach(new Consumer<Property>(){
+                    		public void accept(Property prop) {
+                    			LOGGER.error(prop.getValue());
+                    		}
+                    	});
+                    	LOGGER.error("========================");
+                    }
+                });
                 OGRDataStore dataStoreShp = (OGRDataStore) factoryShp.createNewDataStore(connectionParamsShp);
-                LOGGER.error(dataStoreShp);
+                LOGGER.error(dataStoreShp);//TODO: REMOVE
                 dataStoreShp.createSchema(features3067, true, new String[]{
                         "ENCODING=UTF-8"
                 });
-                LOGGER.error("=============</TRY>==============");
+                LOGGER.error("=============</TRY>==============");//TODO: REMOVE
             } catch (Exception ex) {
                 LOGGER.error(ex, "Shapefile conversion error: ");
             }
