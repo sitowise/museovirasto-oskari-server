@@ -86,6 +86,8 @@ public class DownloadServices {
         MathTransform swap = null;
         SimpleFeatureIterator it;
         SimpleFeature feature;
+        LOGGER.debug("!!!!!!!!!!!IS AT LOAD ZIP!!!!!!!!!");
+        LOGGER.error("!!!!!!!!!!!IS AT LOAD ZIP!!!!!!!!!");
 
         LOGGER.debug("WFS URL: " + ldz.getWFSUrl());
 
@@ -230,6 +232,8 @@ public class DownloadServices {
 
             try {
                 // CSV
+                LOGGER.debug("!!!!!!!!!!!IS AT TRY CSV!!!!!!!!!");
+                LOGGER.error("!!!!!!!!!!!IS AT TRY CSV!!!!!!!!!");
                 String csvFileName = typeNames[i] + basketId + ".csv";
                 File csvFile = new File(dir0, csvFileName);
                 Map<String, String> connectionParamsCsv = new HashMap<>();
@@ -251,6 +255,7 @@ public class DownloadServices {
 
             // Shapefile
             try {
+                LOGGER.debug("!!!!!!!!!!!IS AT TRY Shapefile!!!!!!!!!");
                 LOGGER.error("=============<TRY>==============");//TODO: REMOVE
                 LOGGER.error(typeNames[i]);//TODO: REMOVE
                 LOGGER.error(basketId);//TODO: REMOVE
