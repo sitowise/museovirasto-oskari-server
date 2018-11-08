@@ -125,6 +125,7 @@ public class DownloadServices {
 
         DefaultMathTransformFactory mathFactory = new DefaultMathTransformFactory();
         try {
+            LOGGER.error("??????????");
             double[][] matrix = {{0, 1, 0}, {1, 0, 0}, {0, 0, 1}};
             swap = mathFactory.createAffineTransform(new GeneralMatrix(matrix));
             sourceCrs = CRS.decode("EPSG:3067");
@@ -141,6 +142,7 @@ public class DownloadServices {
             IOHelper.copy(istream, ostream);
             try {
                 LOGGER.debug("!!!!!!!!!!!!!!!!!!!!");
+                LOGGER.error("!!!!!!!!!!!!!!!!!!!!");
                 FileReader fr = new FileReader(gmlOrigFile);
                 String s;
                 String totalStr = "";
@@ -187,6 +189,7 @@ public class DownloadServices {
         String[] typeNames = store.getTypeNames();
 
         for (int i = 0; i < typeNames.length; i++) {
+            LOGGER.error("??????????");
             SimpleFeatureSource source = store.getFeatureSource(typeNames[i]);
             SimpleFeatureCollection features = source.getFeatures();
             DefaultFeatureCollection features3067 = new DefaultFeatureCollection();
@@ -202,6 +205,7 @@ public class DownloadServices {
                     Object value = feature.getAttribute(name);
                     if (value.getClass().equals(java.lang.String.class)) {
                         LOGGER.debug("??????????");
+                        LOGGER.error("??????????");
                     	LOGGER.error(name);//TODO: REMOVE
                     	LOGGER.error(value.toString());//TODO: REMOVE
                         String newValue = value.toString().trim();
