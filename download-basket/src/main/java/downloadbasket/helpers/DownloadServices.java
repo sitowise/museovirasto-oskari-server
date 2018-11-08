@@ -140,6 +140,7 @@ public class DownloadServices {
              OutputStream ostream = new FileOutputStream(gmlOrigFile)) {
             IOHelper.copy(istream, ostream);
             try {
+                LOGGER.debug("!!!!!!!!!!!!!!!!!!!!");
                 FileReader fr = new FileReader(gmlOrigFile);
                 String s;
                 String totalStr = "";
@@ -178,6 +179,7 @@ public class DownloadServices {
         connectionParams.put("DatasourceName", new File(dir0, gmlFileName).getAbsolutePath());
         OGRDataStoreFactory factory = new BridjOGRDataStoreFactory();
         if (!factory.isAvailable()) {
+            LOGGER.debug("!!!!!!!!!!!!!!!!!!!!");
             LOGGER.error("GDAL library is not found for data export -- http://www.gdal.org/");
             return null;
         }
@@ -199,6 +201,7 @@ public class DownloadServices {
                     String name = property.getName().toString();
                     Object value = feature.getAttribute(name);
                     if (value.getClass().equals(java.lang.String.class)) {
+                        LOGGER.debug("??????????");
                     	LOGGER.error(name);//TODO: REMOVE
                     	LOGGER.error(value.toString());//TODO: REMOVE
                         String newValue = value.toString().trim();
@@ -213,7 +216,8 @@ public class DownloadServices {
                     //TODO: REMOVE this else if
                     else if(value.getClass().equals(com.vividsolutions.jts.geom.Point.class)) {
                     	com.vividsolutions.jts.geom.Point point = (com.vividsolutions.jts.geom.Point) value;
-                    	point.setSRID(3067);
+                        point.setSRID(3067);
+                        LOGGER.debug("??????????");
                     	LOGGER.error(point);
                     	feature.setAttribute(name, point);
                     }
@@ -222,9 +226,11 @@ public class DownloadServices {
                 try {
                     geometry3067 = JTS.transform(geometry3067, swap);
                     geometry3067.setSRID(3067);//TODO: REMOVE
+                    LOGGER.debug("??????????");
                     feature.setDefaultGeometry(geometry3067);
                 } catch (TransformException ex) {
                     LOGGER.error("Swap transformation error:", ex);
+                    LOGGER.debug("??????????");
                 }
                 features3067.add(feature);
             }
