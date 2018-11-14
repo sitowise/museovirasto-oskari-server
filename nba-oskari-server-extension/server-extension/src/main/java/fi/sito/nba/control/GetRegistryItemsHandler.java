@@ -49,6 +49,14 @@ import fi.sito.nba.registry.models.KYSItem;
 import fi.sito.nba.registry.models.ProvincialMuseum;
 import fi.sito.nba.registry.models.Municipality250;
 import fi.sito.nba.registry.models.Region;
+import fi.sito.nba.registry.models.AncientMonumentArea;
+import fi.sito.nba.registry.models.AncientMonumentSubItem;
+import fi.sito.nba.registry.models.BuildingHeritageItemPoint;
+import fi.sito.nba.registry.models.BuildingHeritageItemArea;
+import fi.sito.nba.registry.models.RKY1993Geometry;
+import fi.sito.nba.registry.models.RKY2000Geometry;
+import fi.sito.nba.registry.models.ProjectItemPoint;
+import fi.sito.nba.registry.models.ProjectItemArea;
 import fi.sito.nba.registry.services.AncientMonumentMaintenanceItemService;
 import fi.sito.nba.registry.services.AncientMonumentService;
 import fi.sito.nba.registry.services.BuildingHeritageItemService;
@@ -377,13 +385,6 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					mapper.convertValue(registryObject, JSONObject.class),
 					registryObject.getClass().getSimpleName(), user);
 			item.put("id", registryObject.getObjectId());
-
-			Point centroid = registryObject.calculateCentroid();
-			if (centroid != null) {
-				item.put("coordinateX", centroid.getX());
-				item.put("coordinateY", centroid.getY());
-			}
-
 			item.put("nbaUrl", registryObject.generateNbaUrl(hasNbaGuestLink));
 			item.put("itemClassName", registryObject.getClass().getSimpleName());
 
@@ -508,12 +509,31 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("editable", true);
 					item.put("registryIdentifier", registryIdentifier);
 
-					Point centroid = monument.calculateCentroid();
+					JSONArray markersCoordinates = new JSONArray();
 
-					if (centroid != null) {
-						item.put("coordinateX", centroid.getX());
-						item.put("coordinateY", centroid.getY());
+					Geometry pointGeometry = monument.getPointGeometry();
+					if (pointGeometry != null){
+						JSONObject pointCoordinates = new JSONObject();
+						Point pointCentroid = monument.getPointGeometry().getCentroid();
+						if (pointCentroid != null) {
+							pointCoordinates.put("coordinateX", pointCentroid.getX());
+							pointCoordinates.put("coordinateY", pointCentroid.getY());
+						}
+						markersCoordinates.put(pointCoordinates);
 					}
+
+					Geometry areaGeometry = monument.getAreaGeometry();
+					if (areaGeometry != null){
+						JSONObject areaCoordinates = new JSONObject();
+						Point areaCentroid = areaGeometry.getCentroid();
+						if (areaCentroid != null) {
+							areaCoordinates.put("coordinateX", areaCentroid.getX());
+							areaCoordinates.put("coordinateY", areaCentroid.getY());
+						}
+						markersCoordinates.put(areaCoordinates);
+					}
+
+					item.put("markersCoordinates", markersCoordinates);
 
 					item.put("nbaUrl", monument.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
@@ -582,12 +602,48 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("editable", true);
 					item.put("registryIdentifier", registryIdentifier);
 
-					Point centroid = monument.calculateCentroid();
+					JSONArray markersCoordinates = new JSONArray();
 
-					if (centroid != null) {
-						item.put("coordinateX", centroid.getX());
-						item.put("coordinateY", centroid.getY());
+					List<AncientMonumentArea> areas = monument.getAreas();
+					for(AncientMonumentArea area : areas){
+						Geometry areaGeometry = area.getGeometry();
+						if (areaGeometry != null){
+							JSONObject areaCoordinates = new JSONObject();
+							Point centroid = areaGeometry.getCentroid();
+							if (centroid != null) {
+								areaCoordinates.put("coordinateX", centroid.getX());
+								areaCoordinates.put("coordinateY", centroid.getY());
+							}
+							markersCoordinates.put(areaCoordinates);
+						}
 					}
+
+					List<AncientMonumentSubItem> subItems = monument.getSubItems();
+					for(AncientMonumentSubItem subItem : subItems){
+						Geometry subItemGeometry = subItem.getGeometry();
+						if (subItemGeometry != null){
+							JSONObject subItemCoordinates = new JSONObject();
+							Point centroid = subItemGeometry.getCentroid();
+							if (centroid != null) {
+								subItemCoordinates.put("coordinateX", centroid.getX());
+								subItemCoordinates.put("coordinateY", centroid.getY());
+							}
+							markersCoordinates.put(subItemCoordinates);
+						}
+					}
+
+					Geometry itemGeometry = monument.getGeometry();
+					if (itemGeometry != null){
+						JSONObject itemGeometryCoordinates = new JSONObject();
+						Point itemGeometryCentroid = itemGeometry.getCentroid();
+						if (itemGeometryCentroid != null) {
+							itemGeometryCoordinates.put("coordinateX", itemGeometryCentroid.getX());
+							itemGeometryCoordinates.put("coordinateY", itemGeometryCentroid.getY());
+						}
+						markersCoordinates.put(itemGeometryCoordinates);
+					}
+
+					item.put("markersCoordinates", markersCoordinates);
 
 					item.put("nbaUrl", monument.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
@@ -656,11 +712,34 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("editable", true);
 					item.put("registryIdentifier", registryIdentifier);
 
-					Point centroid = monument.calculateCentroid();
+					JSONArray markersCoordinates = new JSONArray();
 
-					if (centroid != null) {
-						item.put("coordinateX", centroid.getX());
-						item.put("coordinateY", centroid.getY());
+					List<BuildingHeritageItemPoint> points = monument.getPoints();
+					for(BuildingHeritageItemPoint point : points){
+						Geometry pointGeometry = point.getGeometry();
+						if (pointGeometry != null){
+							JSONObject pointCoordinates = new JSONObject();
+							Point centroid = pointGeometry.getCentroid();
+							if (centroid != null) {
+								pointCoordinates.put("coordinateX", centroid.getX());
+								pointCoordinates.put("coordinateY", centroid.getY());
+							}
+							markersCoordinates.put(pointCoordinates);
+						}
+					}
+
+					List<BuildingHeritageItemArea> areas = monument.getAreas();
+					for(BuildingHeritageItemArea area : areas){
+						Geometry areaGeometry = area.getGeometry();
+						if (areaGeometry != null){
+							JSONObject areaCoordinates = new JSONObject();
+							Point centroid = areaGeometry.getCentroid();
+							if (centroid != null) {
+								areaCoordinates.put("coordinateX", centroid.getX());
+								areaCoordinates.put("coordinateY", centroid.getY());
+							}
+							markersCoordinates.put(areaCoordinates);
+						}
 					}
 
 					item.put("nbaUrl", monument.generateNbaUrl(hasNbaGuestLink));
@@ -729,12 +808,51 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("editable", false);
 					item.put("registryIdentifier", registryIdentifier);
 
-					Point centroid = monument.calculateCentroid();
+					JSONArray markersCoordinates = new JSONArray();
 
-					if (centroid != null) {
-						item.put("coordinateX", centroid.getX());
-						item.put("coordinateY", centroid.getY());
+					List<RKY1993Geometry> points = monument.getPoints();
+					for(RKY1993Geometry point : points){
+						Geometry pointGeometry = point.getGeometry();
+						if (pointGeometry != null){
+							JSONObject pointCoordinates = new JSONObject();
+							Point centroid = pointGeometry.getCentroid();
+							if (centroid != null) {
+								pointCoordinates.put("coordinateX", centroid.getX());
+								pointCoordinates.put("coordinateY", centroid.getY());
+							}
+							markersCoordinates.put(pointCoordinates);
+						}
 					}
+
+					List<RKY1993Geometry> lines = monument.getLines();
+					for(RKY1993Geometry line : lines){
+						Geometry lineGeometry = line.getGeometry();
+						if (lineGeometry != null){
+							JSONObject lineCoordinates = new JSONObject();
+							Point centroid = lineGeometry.getCentroid();
+							if (centroid != null) {
+								lineCoordinates.put("coordinateX", centroid.getX());
+								lineCoordinates.put("coordinateY", centroid.getY());
+							}
+							markersCoordinates.put(lineCoordinates);
+						}
+					}
+
+					List<RKY1993Geometry> areas = monument.getAreas();
+					for(RKY1993Geometry area : areas){
+						Geometry areaGeometry = area.getGeometry();
+						if (areaGeometry != null){
+							JSONObject areaCoordinates = new JSONObject();
+							Point centroid = areaGeometry.getCentroid();
+							if (centroid != null) {
+								areaCoordinates.put("coordinateX", centroid.getX());
+								areaCoordinates.put("coordinateY", centroid.getY());
+							}
+							markersCoordinates.put(areaCoordinates);
+						}
+					}
+
+					item.put("markersCoordinates", markersCoordinates);
 
 					item.put("nbaUrl", monument.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
@@ -812,11 +930,51 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					}
 					item.put("municipality", monument.getMunicipalityName());
 
-					Point centroid = monument.calculateCentroid();
-					if (centroid != null) {
-						item.put("coordinateX", centroid.getX());
-						item.put("coordinateY", centroid.getY());
+					JSONArray markersCoordinates = new JSONArray();
+
+					List<RKY2000Geometry> points = monument.getPoints();
+					for(RKY2000Geometry point : points){
+						Geometry pointGeometry = point.getGeometry();
+						if (pointGeometry != null){
+							JSONObject pointCoordinates = new JSONObject();
+							Point centroid = pointGeometry.getCentroid();
+							if (centroid != null) {
+								pointCoordinates.put("coordinateX", centroid.getX());
+								pointCoordinates.put("coordinateY", centroid.getY());
+							}
+							markersCoordinates.put(pointCoordinates);
+						}
 					}
+
+					List<RKY2000Geometry> lines = monument.getLines();
+					for(RKY2000Geometry line : lines){
+						Geometry lineGeometry = line.getGeometry();
+						if (lineGeometry != null){
+							JSONObject lineCoordinates = new JSONObject();
+							Point centroid = lineGeometry.getCentroid();
+							if (centroid != null) {
+								lineCoordinates.put("coordinateX", centroid.getX());
+								lineCoordinates.put("coordinateY", centroid.getY());
+							}
+							markersCoordinates.put(lineCoordinates);
+						}
+					}
+
+					List<RKY2000Geometry> areas = monument.getAreas();
+					for(RKY2000Geometry area : areas){
+						JSONObject areaCoordinates = new JSONObject();
+						Geometry areaGeometry = area.getGeometry();
+						if (areaGeometry != null){
+							Point centroid = areaGeometry.getCentroid();
+							if (centroid != null) {
+								areaCoordinates.put("coordinateX", centroid.getX());
+								areaCoordinates.put("coordinateY", centroid.getY());
+							}
+							markersCoordinates.put(areaCoordinates);
+						}
+					}
+
+					item.put("markersCoordinates", markersCoordinates);
 
 					item.put("nbaUrl", monument.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
@@ -887,12 +1045,6 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("editable", false);
 					item.put("registryIdentifier", registryIdentifier);
 
-					Point centroid = monument.calculateCentroid();
-					if (centroid != null) {
-						item.put("coordinateX", centroid.getX());
-						item.put("coordinateY", centroid.getY());
-					}
-
 					item.put("nbaUrl", monument.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
@@ -942,13 +1094,6 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					item.put("desc", monument.getObjectName());
 					item.put("editable", false);
 					item.put("registryIdentifier", registryIdentifier);
-
-					Point centroid = monument.calculateCentroid();
-					if (centroid != null) {
-						item.put("coordinateX", centroid.getX());
-						item.put("coordinateY", centroid.getY());
-					}
-
 					item.put("nbaUrl", monument.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
 					for (NbaRegistryLayer registryLayer : filteredLayers) {
@@ -1016,11 +1161,35 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					resultItem.put("editable", true);
 					resultItem.put("registryIdentifier", registryIdentifier);
 
-					Point centroid = item.calculateCentroid();
-					if (centroid != null) {
-						resultItem.put("coordinateX", centroid.getX());
-						resultItem.put("coordinateY", centroid.getY());
+					JSONArray markersCoordinates = new JSONArray();
+
+					List<ProjectItemArea> areas = item.getAreas();
+					for(ProjectItemArea area : areas){
+						Geometry areaGeometry = area.getGeometry();
+						if (areaGeometry != null){
+							JSONObject areaCoordinates = new JSONObject();
+							Point centroid = areaGeometry.getCentroid();
+							if (centroid != null) {
+								areaCoordinates.put("coordinateX", centroid.getX());
+								areaCoordinates.put("coordinateY", centroid.getY());
+							}
+							markersCoordinates.put(areaCoordinates);
+						}
 					}
+
+					ProjectItemPoint point = item.getPoint();
+					if (point != null){
+						Geometry pointGeometry = point.getGeometry();
+						if (pointGeometry != null){
+							JSONObject pointCoordinates = new JSONObject();
+							Point pointCentroid = pointGeometry.getCentroid();
+							pointCoordinates.put("coordinateX", pointCentroid.getX());
+							pointCoordinates.put("coordinateY", pointCentroid.getY());
+							markersCoordinates.put(pointCoordinates);
+						}
+					}
+
+					resultItem.put("markersCoordinates", markersCoordinates);
 
 					resultItem.put("nbaUrl", item.generateNbaUrl(hasNbaGuestLink));
 					JSONArray mapLayersArray = new JSONArray();
