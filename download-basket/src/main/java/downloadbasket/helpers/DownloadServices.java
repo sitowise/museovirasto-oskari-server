@@ -86,8 +86,6 @@ public class DownloadServices {
         MathTransform swap = null;
         SimpleFeatureIterator it;
         SimpleFeature feature;
-        LOGGER.debug("!!!!!!!!!!!IS AT LOAD ZIP!!!!!!!!!");
-        LOGGER.error("!!!!!!!!!!!IS AT LOAD ZIP!!!!!!!!!");
 
         LOGGER.debug("WFS URL: " + ldz.getWFSUrl());
 
@@ -125,7 +123,6 @@ public class DownloadServices {
 
         DefaultMathTransformFactory mathFactory = new DefaultMathTransformFactory();
         try {
-            LOGGER.error("??????????");
             double[][] matrix = {{0, 1, 0}, {1, 0, 0}, {0, 0, 1}};
             swap = mathFactory.createAffineTransform(new GeneralMatrix(matrix));
             sourceCrs = CRS.decode("EPSG:3067");
@@ -141,8 +138,6 @@ public class DownloadServices {
              OutputStream ostream = new FileOutputStream(gmlOrigFile)) {
             IOHelper.copy(istream, ostream);
             try {
-                LOGGER.debug("!!!!!!!!!!!!!!!!!!!!");
-                LOGGER.error("!!!!!!!!!!!!!!!!!!!!");
                 FileReader fr = new FileReader(gmlOrigFile);
                 String s;
                 String totalStr = "";
@@ -181,7 +176,6 @@ public class DownloadServices {
         connectionParams.put("DatasourceName", new File(dir0, gmlFileName).getAbsolutePath());
         OGRDataStoreFactory factory = new BridjOGRDataStoreFactory();
         if (!factory.isAvailable()) {
-            LOGGER.debug("!!!!!!!!!!!!!!!!!!!!");
             LOGGER.error("GDAL library is not found for data export -- http://www.gdal.org/");
             return null;
         }
@@ -189,7 +183,6 @@ public class DownloadServices {
         String[] typeNames = store.getTypeNames();
 
         for (int i = 0; i < typeNames.length; i++) {
-            LOGGER.error("??????????");
             SimpleFeatureSource source = store.getFeatureSource(typeNames[i]);
             SimpleFeatureCollection features = source.getFeatures();
             DefaultFeatureCollection features3067 = new DefaultFeatureCollection();
@@ -204,8 +197,6 @@ public class DownloadServices {
                     String name = property.getName().toString();
                     Object value = feature.getAttribute(name);
                     if (value.getClass().equals(java.lang.String.class)) {
-                        LOGGER.debug("??????????");
-                        LOGGER.error("??????????");
                     	LOGGER.error(name);//TODO: REMOVE
                     	LOGGER.error(value.toString());//TODO: REMOVE
                         String newValue = value.toString().trim();
@@ -221,7 +212,6 @@ public class DownloadServices {
                     else if(value.getClass().equals(com.vividsolutions.jts.geom.Point.class)) {
                     	com.vividsolutions.jts.geom.Point point = (com.vividsolutions.jts.geom.Point) value;
                         point.setSRID(3067);
-                        LOGGER.debug("??????????");
                     	LOGGER.error(point);
                     	feature.setAttribute(name, point);
                     }
@@ -230,11 +220,9 @@ public class DownloadServices {
                 try {
                     geometry3067 = JTS.transform(geometry3067, swap);
                     geometry3067.setSRID(3067);//TODO: REMOVE
-                    LOGGER.debug("??????????");
                     feature.setDefaultGeometry(geometry3067);
                 } catch (TransformException ex) {
                     LOGGER.error("Swap transformation error:", ex);
-                    LOGGER.debug("??????????");
                 }
                 features3067.add(feature);
             }
@@ -242,8 +230,6 @@ public class DownloadServices {
 
             try {
                 // CSV
-                LOGGER.debug("!!!!!!!!!!!IS AT TRY CSV!!!!!!!!!");
-                LOGGER.error("!!!!!!!!!!!IS AT TRY CSV!!!!!!!!!");
                 String csvFileName = typeNames[i] + basketId + ".csv";
                 File csvFile = new File(dir0, csvFileName);
                 Map<String, String> connectionParamsCsv = new HashMap<>();
@@ -265,7 +251,6 @@ public class DownloadServices {
 
             // Shapefile
             try {
-                LOGGER.debug("!!!!!!!!!!!IS AT TRY Shapefile!!!!!!!!!");
                 LOGGER.error("=============<TRY>==============");//TODO: REMOVE
                 LOGGER.error(typeNames[i]);//TODO: REMOVE
                 LOGGER.error(basketId);//TODO: REMOVE
