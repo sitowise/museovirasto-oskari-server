@@ -201,7 +201,7 @@ public class DownloadServices {
                     	LOGGER.error(value.toString());//TODO: REMOVE
                         String newValue = value.toString().trim();
                         int lastIndex = newValue.length() - 1;
-                        if ((newValue.charAt(0) == '"') && (newValue.charAt(lastIndex) == '"')) {
+                        if ((lastIndex > 0) && (newValue.charAt(0) == '"') && (newValue.charAt(lastIndex) == '"')) {
                             newValue = newValue.substring(1, lastIndex);
                             feature.setAttribute(name, newValue);
                         } else {
@@ -341,7 +341,7 @@ public class DownloadServices {
                     if (valueBoundary.getClass().equals(java.lang.String.class)) {
                         String newValueBoundary = valueBoundary.toString().trim();
                         int lastIndexBoundary = newValueBoundary.length() - 1;
-                        if ((newValueBoundary.charAt(0) == '"') && (newValueBoundary.charAt(lastIndexBoundary) == '"')) {
+                        if ((lastIndexBoundary > 0) && (newValueBoundary.charAt(0) == '"') && (newValueBoundary.charAt(lastIndexBoundary) == '"')) {
                             newValueBoundary = newValueBoundary.substring(1, lastIndexBoundary);
                             featureBoundary.setAttribute(nameBoundary, newValueBoundary);
                         }
