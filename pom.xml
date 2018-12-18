@@ -47,6 +47,7 @@
         <jdk.version>1.8</jdk.version>
         <fi.nls.oskari.version>${project.version}</fi.nls.oskari.version>
         <fi.nls.oskari.service.version>${project.version}</fi.nls.oskari.service.version>
+        <fi.nls.oskari.extras.version>1.1</fi.nls.oskari.extras.version>
 
         <spring.version>4.1.7.RELEASE</spring.version>
         <!-- saml 1.0.1.RELEASE uses security 3.1.2, check saml-extension for upgrades before updating security
@@ -272,6 +273,11 @@
                 <groupId>fi.nls.oskari.service</groupId>
                 <artifactId>oskari-feedback-open311</artifactId>
                 <version>${fi.nls.oskari.service.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fi.nls.oskari.extras</groupId>
+                <artifactId>nlsfi-projections</artifactId>
+                <version>${fi.nls.oskari.extras.version}</version>
             </dependency>
 
             <dependency>
