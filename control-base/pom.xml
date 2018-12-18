@@ -37,6 +37,10 @@
             <artifactId>oskari-feedback</artifactId>
         </dependency>
         <dependency>
+            <groupId>fi.nls.oskari.extras</groupId>
+            <artifactId>nlsfi-projections</artifactId>
+        </dependency>
+        <dependency>
             <groupId>fi.nls.oskari.service</groupId>
             <artifactId>oskari-feedback-open311</artifactId>
         </dependency>
