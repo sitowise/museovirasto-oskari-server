@@ -5,6 +5,7 @@ import fi.nls.oskari.log.Logger;
 import java.util.HashMap;
 import java.util.Map;
 import fi.nls.oskari.util.IOHelper;
+import java.text.Normalizer;
 
 public class Helpers {
 
@@ -68,5 +69,23 @@ public class Helpers {
 			layerNameWithoutNameSpace = temp[1];
 		}
 		return layerNameWithoutNameSpace;
+	}
+
+	/**
+	 * Get normalized layer name without namespace.
+	 *
+	 * @param layerName
+	 *            layer name
+	 * @return normalized layer name without namespace
+	 */
+	public static String getNormalizedLayerNameWithoutNameSpace(String layerName) {
+		String[] temp = layerName.split(":");
+		String layerNameWithoutNameSpace = layerName;
+		if (temp.length == 2) {
+			layerNameWithoutNameSpace = temp[1];
+		}
+		return Normalizer
+				.normalize(layerNameWithoutNameSpace, Normalizer.Form.NFD)
+				.replaceAll("[^\\p{ASCII}]", "");
 	}
 }
