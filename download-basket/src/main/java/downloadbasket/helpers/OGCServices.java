@@ -204,7 +204,7 @@ public class OGCServices {
 		if (addNameSpace) {
 			s.append(layerName);
 		} else {
-			s.append(Helpers.getLayerNameWithoutNameSpace(layerName));
+			s.append(Helpers.getNormalizedLayerNameWithoutNameSpace(layerName));
 		}
 		getFeatureUrl = s.toString();
 		return getFeatureUrl;

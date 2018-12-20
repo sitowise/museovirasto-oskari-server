@@ -196,6 +196,10 @@ public class DownloadServices {
                 for (Property property : feature.getProperties()) {
                     String name = property.getName().toString();
                     Object value = feature.getAttribute(name);
+                    //Quick fix to handle null values. It should be an empty string at this point (GDAL version problem?)
+                    if (value == null){
+                        value = "";
+                    }
                     if (value.getClass().equals(java.lang.String.class)) {
                     	LOGGER.error(name);//TODO: REMOVE
                     	LOGGER.error(value.toString());//TODO: REMOVE
