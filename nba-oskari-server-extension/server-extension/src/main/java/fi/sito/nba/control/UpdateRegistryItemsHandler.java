@@ -238,7 +238,7 @@ public class UpdateRegistryItemsHandler extends RestActionHandler {
 				.getArrayAsList(deleteInfo.getJSONArray("areas"));
 
 		AncientMonument original = service
-				.getAncientMonumentById(monument.getId(), user.isGuest());
+				.getAncientMonumentById(monument.getId());
 
 		Map<Integer, AncientMonumentArea> originalAreas = new HashMap<Integer, AncientMonumentArea>();
 		for (AncientMonumentArea areaItem : original.getAreas()) {

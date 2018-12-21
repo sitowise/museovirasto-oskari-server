@@ -151,7 +151,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 					case "ancientMonument":
 						service = new AncientMonumentService(connection);
 						registryItem = ((AncientMonumentService) service)
-								.getAncientMonumentById(itemId, params.getUser().isGuest());
+								.getAncientMonumentById(itemId);
 						itemObj = getItemObject(registryItem,
 								filteredLayerList, params.getUser());
 						itemObj.put("editable", true);
@@ -288,7 +288,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 							case "ancientMonument":
 								resultArrays.add(getAncientMonumentItems(
 										connection, keywordParam,
-										geometryParam, registryLayers, params.getUser()));
+										geometryParam, registryLayers));
 								break;
 							case "ancientMaintenance":
 								resultArrays
@@ -330,7 +330,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 						}
 					} else {
 						resultArrays.add(getAncientMonumentItems(connection,
-								keywordParam, geometryParam, registryLayers, params.getUser()));
+								keywordParam, geometryParam, registryLayers));
 						resultArrays.add(getAncientMonumentMaintenanceItems(
 								connection, keywordParam, geometryParam,
 								registryLayers));
@@ -573,7 +573,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 	}
 
 	private JSONArray getAncientMonumentItems(Connection con, String keyword,
-			Geometry geometry, List<NbaRegistryLayer> registryLayers, User user) {
+			Geometry geometry, List<NbaRegistryLayer> registryLayers) {
 
 		String registryIdentifier = "ancientMonument";
 		JSONArray resultArray = new JSONArray();
@@ -581,7 +581,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 		AncientMonumentService svc = new AncientMonumentService(con);
 
 		RegistryObjectCollection<AncientMonument> monuments = (RegistryObjectCollection<AncientMonument>) svc
-				.findAncientMonuments(keyword, geometry, user.isGuest());
+				.findAncientMonuments(keyword, geometry);
 		if (monuments != null) {
 
 			List<NbaRegistryLayer> filteredLayers = getRegistryLayers(
