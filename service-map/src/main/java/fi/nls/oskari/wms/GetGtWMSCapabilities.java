@@ -9,7 +9,6 @@ import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.map.layer.formatters.LayerJSONFormatterWMS;
 import fi.nls.oskari.service.ServiceException;
 import fi.nls.oskari.service.capabilities.CapabilitiesCacheService;
-import fi.nls.oskari.service.capabilities.CapabilitiesCacheServiceMybatisImpl;
 import fi.nls.oskari.service.capabilities.OskariLayerCapabilities;
 import fi.nls.oskari.util.JSONHelper;
 import fi.nls.oskari.util.PropertyUtil;
@@ -21,6 +20,7 @@ import org.geotools.xml.DocumentFactory;
 import org.geotools.xml.handlers.DocumentHandler;
 import org.json.JSONArray;
 import org.json.JSONObject;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
@@ -46,17 +46,14 @@ public class GetGtWMSCapabilities {
     }
 
     // based on https://github.com/geotools/geotools/blob/master/modules/extension/wms/src/test/java/org/geotools/data/wms/test/WMS1_0_0_OnlineTest.java#L253-L276
-    public static WMSCapabilities createCapabilities(String xml, String encoding) {
+    public static WMSCapabilities createCapabilities(String xml) {
         if(xml == null || xml.isEmpty()) {
             return null;
-        }
-        if (encoding == null) {
-            encoding = StandardCharsets.UTF_8.toString();
         }
         final Map hints = new HashMap();
         hints.put(DocumentHandler.DEFAULT_NAMESPACE_HINT_KEY, WMSSchema.getInstance());
         hints.put(DocumentFactory.VALIDATION_HINT, false);
-        try(InputStream stream = new ByteArrayInputStream(xml.getBytes(encoding))) {
+        try(InputStream stream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
             final Object object = DocumentFactory.getInstance(stream, hints, Level.WARNING);
             if(object instanceof WMSCapabilities) {
                 return (WMSCapabilities) object;
@@ -74,24 +71,22 @@ public class GetGtWMSCapabilities {
      * @return
      * @throws ServiceException
      */
-    public static JSONObject getWMSCapabilities(final String rurl, final String user, final String pwd,
-                                                final String version, final String currentCrs)
-            throws ServiceException {
+    public static JSONObject getWMSCapabilities(final CapabilitiesCacheService service,
+            final String rurl, final String user, final String pwd,
+            final String version, final String currentCrs) throws ServiceException {
         try {
             /*check url validity*/
             new URL(rurl);
-            CapabilitiesCacheService service = new CapabilitiesCacheServiceMybatisImpl();
-            OskariLayerCapabilities capabilities = service.getCapabilities(rurl, OskariLayer.TYPE_WMS, user, pwd, version);
-            String capabilitiesXML = capabilities.getData();
-            if(capabilitiesXML == null || capabilitiesXML.trim().isEmpty()) {
-                // retry from service - might get empty xml from db
-                capabilities = service.getCapabilities(rurl, "wmslayer", user, pwd, version, true);
-                capabilitiesXML = capabilities.getData();
-            }
-            String encoding = CapabilitiesCacheService.getEncodingFromXml(capabilitiesXML);
-            WMSCapabilities caps = createCapabilities(capabilitiesXML, encoding);
+            final String type = OskariLayer.TYPE_WMS;
+            final OskariLayerCapabilities capabilities = service.getCapabilities(rurl, type, version, user, pwd);
+            final String data = capabilities.getData();
+            WMSCapabilities caps = createCapabilities(data);
             // caps to json
-            return parseLayer(caps.getLayer(), rurl, caps, capabilitiesXML, currentCrs, false);
+            JSONObject toReturn = parseLayer(caps.getLayer(), rurl, caps, data, currentCrs, false);
+            if (capabilities.getId() == null) {
+                service.save(capabilities);
+            }
+            return toReturn;
         } catch (Exception ex) {
             throw new ServiceException("Couldn't read/get wms capabilities response from url.", ex);
         }
@@ -268,7 +263,7 @@ OnlineResource xlink:type="simple" xlink:href="http://www.paikkatietohakemisto.f
             oskariLayerCapabilities.put("styles", styles);
             oskariLayer.setCapabilities(oskariLayerCapabilities);
 
-            JSONObject json = FORMATTER.getJSON(oskariLayer, PropertyUtil.getDefaultLanguage(), false);
+            JSONObject json = FORMATTER.getJSON(oskariLayer, PropertyUtil.getDefaultLanguage(), false, currentCrs);
 
             // add/modify admin specific fields
             OskariLayerWorker.modifyCommonFieldsForEditing(json, oskariLayer);
@@ -353,4 +348,5 @@ OnlineResource xlink:type="simple" xlink:href="http://www.paikkatietohakemisto.f
         }
         return null;
     }
+
 }

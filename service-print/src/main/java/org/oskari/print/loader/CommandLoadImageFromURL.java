@@ -1,63 +1,63 @@
 package org.oskari.print.loader;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.net.URL;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 
 import javax.imageio.ImageIO;
 
-import com.netflix.hystrix.HystrixCommand;
-import com.netflix.hystrix.HystrixCommandGroupKey;
-import com.netflix.hystrix.HystrixCommandProperties;
-import com.netflix.hystrix.HystrixThreadPoolProperties;
-
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
-import fi.nls.oskari.util.PropertyUtil;
+import fi.nls.oskari.util.IOHelper;
 
 /**
  * HystrixCommand that loads BufferedImage from URL
  * Retries up to 3 times
  */
-public class CommandLoadImageFromURL extends HystrixCommand<BufferedImage> {
-
-    private static final String GROUP_KEY = "LoadImageFromURL";
+public class CommandLoadImageFromURL extends CommandLoadImageBase {
 
     private static final Logger LOG = LogFactory.getLogger(CommandLoadImageFromURL.class);
     private static final int RETRY_COUNT = 3;
-
-    private static final Setter SETTER = Setter.withGroupKey(HystrixCommandGroupKey.Factory.asKey(AsyncImageLoader.GROUP_KEY))
-            .andThreadPoolPropertiesDefaults(
-                    HystrixThreadPoolProperties.Setter()
-                            .withCoreSize(PropertyUtil.getOptional("oskari." + GROUP_KEY + ".job.pool.size", 10))
-                            .withMaxQueueSize(PropertyUtil.getOptional("oskari." + GROUP_KEY + ".job.pool.limit", 200))
-                            .withQueueSizeRejectionThreshold(PropertyUtil.getOptional("oskari." + GROUP_KEY + ".job.pool.queue", 200)))
-            .andCommandPropertiesDefaults(
-                    HystrixCommandProperties.Setter()
-                            .withExecutionTimeoutInMilliseconds(PropertyUtil.getOptional("oskari." + GROUP_KEY + ".job.timeoutms", 15000)));
+    private static final int SLEEP_BETWEEN_RETRIES_MS = 50;
 
     private final String uri;
+    private final String user;
+    private final String pass;
 
-    protected CommandLoadImageFromURL(String uri) {
-        super(SETTER);
+    protected CommandLoadImageFromURL(String commandName, String uri, String user, String pass) {
+        super(commandName);
         this.uri = uri;
+        this.user = user;
+        this.pass = pass;
     }
 
     @Override
     public BufferedImage run() throws Exception {
-        return loadImageFromURL(new URL(uri));
+        return load(uri, user, pass);
     }
 
-    protected static BufferedImage loadImageFromURL(URL url) {
-        LOG.debug(url.toString());
+    public static BufferedImage load(String uri, String user, String pass) throws InterruptedException, IOException {
+        LOG.info("Loading image from:", uri);
         for (int i = 0; i < RETRY_COUNT; i++) {
             try {
-                return ImageIO.read(url);
+                HttpURLConnection conn = IOHelper.getConnection(uri, user, pass);
+                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
+                    return ImageIO.read(in);
+                }
             } catch (IOException e) {
-                LOG.warn(e);
+                LOG.warn(e, "Failed to load image from:", uri);
+                // Sleep for a moment between retries
+                Thread.sleep(SLEEP_BETWEEN_RETRIES_MS);
             }
         }
-        throw new RuntimeException("Failed to read image from: " + url.toString());
+        return null;
+    }
+
+    @Override
+    public BufferedImage getFallback() {
+        return null;
     }
 
 }

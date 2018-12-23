@@ -1,25 +1,25 @@
 package fi.nls.oskari.control.data;
 
-import fi.nls.oskari.service.ServiceException;
-
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
+
 import javax.imageio.ImageIO;
+
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.oskari.print.PrintService;
 import org.oskari.print.request.PrintFormat;
 import org.oskari.print.request.PrintLayer;
 import org.oskari.print.request.PrintRequest;
 import org.oskari.print.request.PrintTile;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.oskari.service.util.ServiceFactory;
+
 import fi.mml.portti.service.db.permissions.PermissionsService;
 import fi.nls.oskari.annotation.OskariActionRoute;
 import fi.nls.oskari.control.ActionException;
@@ -32,25 +32,27 @@ import fi.nls.oskari.domain.map.OskariLayer;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.map.layer.OskariLayerService;
+import fi.nls.oskari.service.ServiceException;
 import fi.nls.oskari.util.ConversionHelper;
 import fi.nls.oskari.util.ResponseHelper;
-import fi.nls.oskari.util.ServiceFactory;
 
 @OskariActionRoute("GetPrint")
 public class GetPrintHandler extends ActionHandler {
 
     private static final Logger LOG = LogFactory.getLogger(GetPrintHandler.class);
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     private static final String PARM_COORD = "coord";
     private static final String PARM_RESOLUTION = "resolution";
-    private static final String PARM_ZOOMLEVEL = "zoomLevel";
     private static final String PARM_PAGE_SIZE = "pageSize";
     private static final String PARM_MAPLAYERS = "mapLayers";
     private static final String PARM_FORMAT = "format";
     private static final String PARM_SRSNAME = "srs";
     private static final String PARM_TILES = "tiles";
+    private static final String PARM_TITLE = "pageTitle";
+    private static final String PARM_SCALE = "pageScale";
+    private static final String PARM_LOGO = "pageLogo";
+    private static final String PARM_DATE = "pageDate";
+    private static final String PARM_SCALE_TEXT = "scaleText";
 
     private static final String ALLOWED_FORMATS = Arrays.toString(new String[] {
             PrintFormat.PDF.contentType, PrintFormat.PNG.contentType
@@ -111,20 +113,38 @@ public class GetPrintHandler extends ActionHandler {
             throws ActionException {
         PrintRequest request = new PrintRequest();
 
+        request.setUser(params.getUser());
         request.setSrsName(params.getRequiredParam(PARM_SRSNAME));
-        request.setZoomLevel(params.getRequiredParamInt(PARM_ZOOMLEVEL));
         request.setResolution(params.getRequiredParamDouble(PARM_RESOLUTION));
-
+        request.setTitle(params.getHttpParam(PARM_TITLE));
+        request.setShowLogo(params.getHttpParam(PARM_LOGO, false));
+        request.setShowScale(params.getHttpParam(PARM_SCALE, false));
+        request.setShowDate(params.getHttpParam(PARM_DATE, false));
+        request.setScaleText(params.getHttpParam(PARM_SCALE_TEXT, ""));
         setPagesize(params, request);
         setCoordinates(params.getRequiredParam(PARM_COORD), request);
         setFormat(params.getRequiredParam(PARM_FORMAT), request);
 
         List<PrintLayer> layers = getLayers(params.getRequiredParam(PARM_MAPLAYERS),
                 params.getUser());
+        if(request.isScaleText()) {
+            layers = filterLayersWithSupportOwnScale(layers);
+        }
         request.setLayers(layers);
-        setTiles(params, layers);
+        setTiles(layers, params.getHttpParam(PARM_TILES));
 
         return request;
+    }
+
+
+    private List<PrintLayer> filterLayersWithSupportOwnScale(List<PrintLayer> layers) {
+        List<PrintLayer> filtered = new ArrayList<>();
+        for (PrintLayer layer : layers) {
+            if (!layer.getType().equals(OskariLayer.TYPE_WMTS)) {
+                filtered.add(layer);
+            }
+        }
+        return filtered;
     }
 
     private void setPagesize(ActionParameters params, PrintRequest request)
@@ -207,8 +227,20 @@ public class GetPrintHandler extends ActionHandler {
 
         List<PrintLayer> printLayers = new ArrayList<>(requestedLayers.length);
         for (LayerProperties requestedLayer : requestedLayers) {
-            OskariLayer oskariLayer = permissionHelper.getLayer(requestedLayer.getId(), user);
-            PrintLayer printLayer = createPrintLayer(oskariLayer, requestedLayer);
+            String layerId = requestedLayer.getId();
+            int id = ConversionHelper.getInt(layerId, -1);
+            PrintLayer printLayer = null;
+            if (id != -1) {
+                OskariLayer oskariLayer = permissionHelper.getLayer(id, user);
+                printLayer = createPrintLayer(oskariLayer, requestedLayer);
+            } else {
+                for (ProxyPrintLayer p : ProxyPrintLayer.values()) {
+                    if (layerId.startsWith(p.prefix)) {
+                        printLayer = createProxyLayer(p, requestedLayer);
+                        break;
+                    }
+                }
+            }
             if (printLayer != null) {
                 printLayers.add(printLayer);
             }
@@ -249,7 +281,7 @@ public class GetPrintHandler extends ActionHandler {
         }
 
         PrintLayer layer = new PrintLayer();
-        layer.setId(oskariLayer.getExternalId());
+        layer.setId(oskariLayer.getId());
         layer.setType(oskariLayer.getType());
         layer.setUrl(oskariLayer.getUrl());
         layer.setVersion(oskariLayer.getVersion());
@@ -257,6 +289,9 @@ public class GetPrintHandler extends ActionHandler {
         layer.setUsername(oskariLayer.getUsername());
         layer.setPassword(oskariLayer.getPassword());
         layer.setOpacity(opacity);
+        if (requestedLayer.getStyle() != null && !requestedLayer.getStyle().isEmpty()) {
+            layer.setStyle(requestedLayer.getStyle());
+        }
         return layer;
     }
 
@@ -272,86 +307,100 @@ public class GetPrintHandler extends ActionHandler {
             // If that's missing just use 100 (full opacity)
             opacity = 100;
         }
-        return opacity > 100 ? 100 : opacity;
+        return Math.min(opacity, 100);
     }
 
-    private void setTiles(ActionParameters params, List<PrintLayer> layers)
+    private void setTiles(List<PrintLayer> layers, String tilesJson)
             throws ActionException {
-        String tilesJson = params.getHttpParam(PARM_TILES);
         if (tilesJson == null || tilesJson.isEmpty()) {
             return;
         }
         try {
-            JsonNode root = OBJECT_MAPPER.readTree(tilesJson);
-            if (!root.isArray()) {
-                throw new ActionParamsException(String.format(
-                        "Invalid value for key '%s'. root object not JSON array",
-                        PARM_TILES));
+            JSONArray tiles = new JSONArray(tilesJson);
+            for (int i = 0; i < tiles.length(); i++) {
+                JSONObject layersTiles = tiles.getJSONObject(i);
+                setTiles(layers, layersTiles);
             }
-
-            Iterator<String> it = root.fieldNames();
-            while (it.hasNext()) {
-                String layerId = it.next();
-                Optional<PrintLayer> printLayer = layers.stream()
-                        .filter(l -> layerId.equals(l.getName()))
-                        .findAny();
-                if (!printLayer.isPresent()) {
-                    LOG.info("Could not find layerId:", layerId);
-                    continue;
-                }
-
-                JsonNode layerNode = root.get(layerId);
-                int n = layerNode.size();
-                if (n != 1) {
-                    throw new ActionParamsException(String.format(
-                            "Invalid value for key '%s'", PARM_TILES));
-                }
-
-                JsonNode tilesNode = layerNode.get(0);
-                if (!tilesNode.isArray()) {
-                    throw new ActionParamsException(String.format(
-                            "Invalid value for key '%s'", PARM_TILES));
-                }
-
-                int m = tilesNode.size();
-                PrintTile[] tiles = new PrintTile[m];
-
-                for (int j = 0; j < m; j++) {
-                    JsonNode tileNode = tilesNode.get(j);
-
-                    JsonNode bboxNode = tileNode.get("bbox");
-                    if (bboxNode == null
-                            || !bboxNode.isArray()
-                            || bboxNode.size() != 4) {
-                        throw new ActionParamsException(String.format(
-                                "Invalid value for key '%s'. Invalid or missing 'bbox'",
-                                PARM_TILES));
-                    }
-
-                    JsonNode urlNode = tileNode.get("url");
-                    if (urlNode == null || !urlNode.isTextual()) {
-                        throw new ActionParamsException(String.format(
-                                "Invalid value for key '%s'. Missing or invalid 'url'",
-                                PARM_TILES));
-                    }
-                    double[] bbox = new double[4];
-                    for (int k = 0; k < 4; k++) {
-                        bbox[k] = bboxNode.get(k).asDouble();
-                    }
-                    String url = urlNode.asText();
-
-                    tiles[j] = new PrintTile(bbox, url);
-                }
-
-                // This is safe because we've check for the presence earlier
-                printLayer.get().setTiles(tiles);
-            }
-        } catch (JsonParseException e) {
+        } catch (JSONException e) {
             throw new ActionParamsException(String.format(
                     "Invalid value for key '%s'", PARM_TILES), e);
-        } catch (IOException e) {
-            throw new ActionException("Failed to parse tiles", e);
         }
+    }
+
+    private void setTiles(List<PrintLayer> layers, JSONObject layersTiles)
+            throws JSONException, ActionParamsException {
+        String key = (String) layersTiles.keys().next();
+        int layerId = ConversionHelper.getInt(key, -1);
+        if (layerId == -1) {
+            LOG.info("Could not parse integer layerId from:", key);
+            return;
+        }
+
+        final PrintLayer layer = findById(layers, layerId);
+        if (layer == null) {
+            LOG.info("Could not find layerId:", layerId);
+            return;
+        }
+
+        final JSONArray tilesArray = layersTiles.getJSONArray(key);
+        layer.setTiles(parseTiles(tilesArray));
+    }
+
+    private PrintTile[] parseTiles(JSONArray tilesArray) throws JSONException, ActionParamsException {
+        final int n = tilesArray.length();
+        final PrintTile[] tiles = new PrintTile[n];
+        for (int i = 0; i < n; i++) {
+            JSONObject tile = tilesArray.getJSONObject(i);
+            JSONArray bboxArray = tile.getJSONArray("bbox");
+            double[] bbox = toDoubleArray(bboxArray);
+            String url = tile.getString("url");
+            tiles[i] = new PrintTile(bbox, url);
+        }
+        return tiles;
+    }
+
+    private PrintLayer findById(List<PrintLayer> layers, int id) {
+        for (PrintLayer l : layers) {
+            if (l.getId() == id) {
+                return l;
+            }
+        }
+        return null;
+    }
+
+    private double[] toDoubleArray(JSONArray array) throws JSONException {
+        final int n = array.length();
+        final double[] arr = new double[n];
+        for (int i = 0; i < n; i++) {
+            arr[i] = array.getDouble(i);
+        }
+        return arr;
+    }
+
+    private PrintLayer createProxyLayer(ProxyPrintLayer p, LayerProperties requestedLayer) {
+        int opacity = requestedLayer.getOpacity() != null ? requestedLayer.getOpacity() : 100;
+        if (opacity <= 0) {
+            // Ignore fully transparent layers
+            LOG.info("Ignoring zero opacity layer:", requestedLayer.getId());
+            return null;
+        }
+
+        int lastUnderscore = requestedLayer.getId().lastIndexOf('_');
+        String layerId = requestedLayer.getId().substring(lastUnderscore + 1);
+        int id = ConversionHelper.getInt(layerId, -1);
+        if (id < 0) {
+            // Ignore layers with negative id
+            LOG.info("Failed to parse integer id from:", requestedLayer.getId());
+            return null;
+        }
+
+        PrintLayer layer = new PrintLayer();
+        layer.setId(id);
+        layer.setType(p.type);
+        layer.setVersion("1.3.0");
+        layer.setName(p.layerName);
+        layer.setOpacity(opacity);
+        return layer;
     }
 
     private void handlePNG(PrintRequest pr, ActionParameters params) throws ActionException {
@@ -398,6 +447,24 @@ public class GetPrintHandler extends ActionHandler {
 
         public String getStyle() {
             return style;
+        }
+
+    }
+    
+    private enum ProxyPrintLayer {
+        
+        MyPlaces("myplaces_", "myplaces", "oskari:my_places_categories"),
+        UserLayer("userlayer_", OskariLayer.TYPE_USERLAYER, "oskari:user_layer_data_style"),
+        Analysis("analysis_", OskariLayer.TYPE_ANALYSIS, "oskari:analysis_data_style");
+        
+        private final String prefix;
+        private final String type;
+        private final String layerName;
+        
+        private ProxyPrintLayer(String prefix, String type, String layerName) {
+            this.prefix = prefix;
+            this.type = type;
+            this.layerName = layerName;
         }
 
     }

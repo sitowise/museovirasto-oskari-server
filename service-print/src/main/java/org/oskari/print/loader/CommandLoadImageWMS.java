@@ -1,7 +1,6 @@
 package org.oskari.print.loader;
 
 import java.awt.image.BufferedImage;
-import java.net.URL;
 
 import org.oskari.print.request.PrintLayer;
 import org.oskari.print.util.GetMapBuilder;
@@ -20,10 +19,11 @@ public class CommandLoadImageWMS extends CommandLoadImageBase {
     private final String srsName;
 
     public CommandLoadImageWMS(PrintLayer layer,
-                               int width,
-                               int height,
-                               double[] bbox,
-                               String srsName) {
+            int width,
+            int height,
+            double[] bbox,
+            String srsName) {
+        super(Integer.toString(layer.getId()));
         this.layer = layer;
         this.width = width;
         this.height = height;
@@ -43,7 +43,13 @@ public class CommandLoadImageWMS extends CommandLoadImageBase {
                 .format(FORMAT)
                 .transparent(true)
                 .toKVP();
-        return CommandLoadImageFromURL.loadImageFromURL(new URL(request));
+
+        return CommandLoadImageFromURL.load(request, layer.getUsername(), layer.getPassword());
+    }
+
+    @Override
+    public BufferedImage getFallback() {
+        return null;
     }
 
 }

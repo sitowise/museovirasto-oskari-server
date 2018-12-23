@@ -12,9 +12,10 @@ import fi.nls.oskari.map.layer.formatters.LayerJSONFormatterWMS;
 import fi.nls.oskari.util.IOHelper;
 import fi.nls.oskari.util.JSONHelper;
 import fi.nls.oskari.util.PropertyUtil;
-import fi.nls.oskari.util.ServiceFactory;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.oskari.service.util.ServiceFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -59,7 +60,7 @@ public class GetLayerTileHandler extends ActionHandler {
             throws ActionException {
 
         // Resolve layer
-        final String layerId = params.getRequiredParam(KEY_ID);
+        final int layerId = params.getRequiredParamInt(KEY_ID);
         final OskariLayer layer = permissionHelper.getLayer(layerId, params.getUser());
 
         final MetricRegistry metrics = ActionControl.getMetrics();

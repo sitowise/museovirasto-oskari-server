@@ -2,12 +2,16 @@ package org.oskari.print.util;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * WMS GetMap Request (KVP) Builder
  */
 public class GetMapBuilder {
+
+    private static final String DEFAULT_VERSION = "1.1.1";
 
     private String endPoint;
     private String version;
@@ -27,6 +31,9 @@ public class GetMapBuilder {
     }
 
     public GetMapBuilder version(String version) {
+        if (version == null || version.isEmpty()) {
+            version = DEFAULT_VERSION;
+        }
         this.version = version;
         return this;
     }
@@ -99,7 +106,13 @@ public class GetMapBuilder {
     public String toKVP() {
         StringBuilder sb = new StringBuilder();
         sb.append(endPoint);
-        sb.append("?SERVICE=WMS");
+        int j = endPoint.indexOf('?');
+        if (j < 0) {
+            sb.append('?');
+        } else if (j != (endPoint.length() - 1)) {
+            sb.append('&');
+        }
+        sb.append("SERVICE=WMS");
         sb.append("&REQUEST=GetMap");
         sb.append("&VERSION=").append(version);
         sb.append("&BBOX=").append(bbox);
@@ -135,6 +148,29 @@ public class GetMapBuilder {
         }
 
         return sb.toString();
+    }
+
+    public Map<String, String> toParamMap() {
+        Map<String, String> params = new HashMap<>();
+        params.put("SERVICE", "WMS");
+        params.put("REQUEST", "GetMap");
+        params.put("VERSION", version);
+        params.put("BBOX", bbox);
+        if ("1.3.0".equals(version)) {
+            params.put("CRS", crs);
+        } else {
+            params.put("SRS", crs);
+        }
+        params.put("WIDTH", Integer.toString(width));
+        params.put("HEIGHT", Integer.toString(height));
+        params.put("FORMAT", format);
+        params.put("LAYERS", String.join(",", layers));
+        params.put("STYLES", String.join(",", styles));
+        params.put("TRANSPARENT", Boolean.toString(transparent));
+        if (bgColor != null) {
+            params.put("BGCOLOR", colorToHex(bgColor));
+        }
+        return params;
     }
 
     public static String colorToHex(Color color) {

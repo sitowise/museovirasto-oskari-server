@@ -105,11 +105,12 @@ public class GeoserverPopulator {
             baseLayer.setType(OskariLayer.TYPE_WFS);
             baseLayer.setVersion("1.1.0");
             baseLayer.setName(name);
+            baseLayer.setInternal(true);
             baseLayer.setLocale(JSONHelper.createJSONObject("{ fi:{name:\"Omat paikat\"},sv:{name:\"My places\"},en:{name:\"My places\"}}"));
             baseLayer.setOpacity(50);
         }
         // setup data producer/layergroup since original doesn't have one
-        baseLayer.addGroup(LayerHelper.getGroup());
+        baseLayer.addDataprovider(LayerHelper.getDataprovider());
         setupGeoserverConf(baseLayer, MyplacesHelper.MODULE_NAME);
         baseLayer.setSrs_name(srs);
         if (!doInsert) {
@@ -122,7 +123,8 @@ public class GeoserverPopulator {
         // setup WFS conf with defaults
         WFSLayerConfiguration conf = LayerHelper.getConfig(baseLayer, NAMESPACE);
         conf.setFeatureElement("my_places");
-        conf.setFeatureParamsLocales("{\"default\": [\"name\", \"place_desc\",\"link\", \"image_url\"],\"fi\": [\"name\", \"place_desc\",\"link\", \"image_url\"]}");
+        conf.setSelectedFeatureParams("{\"default\": [\"name\", \"place_desc\",\"link\", \"image_url\"],\"fi\": [\"name\", \"place_desc\",\"link\", \"image_url\"]}");
+        conf.setFeatureParamsLocales("{\"default\": [\"name\", \"description\",\"link\", \"image\"],\"fi\": [\"nimi\", \"kuvaus\",\"linkki\", \"kuva-linkki\"]}");
         WFS_SERVICE.insert(conf);
         return baseLayer.getId();
     }
@@ -136,11 +138,12 @@ public class GeoserverPopulator {
             baseLayer.setType(OskariLayer.TYPE_WFS);
             baseLayer.setVersion("1.1.0");
             baseLayer.setName(name);
+            baseLayer.setInternal(true);
             baseLayer.setLocale(JSONHelper.createJSONObject("{ fi:{name:\"Analyysitaso\"},sv:{name:\"Analys\"},en:{name:\"Analyse\"}}"));
             baseLayer.setOpacity(50);
         }
         // setup data producer/layergroup since original doesn't have one
-        baseLayer.addGroup(LayerHelper.getGroup());
+        baseLayer.addDataprovider(LayerHelper.getDataprovider());
         setupGeoserverConf(baseLayer, AnalysisHelper.MODULE_NAME);
         baseLayer.setSrs_name(srs);
         if (!doInsert) {
@@ -167,12 +170,13 @@ public class GeoserverPopulator {
             baseLayer.setType(OskariLayer.TYPE_WFS);
             baseLayer.setVersion("1.1.0");
             baseLayer.setName(name);
+            baseLayer.setInternal(true);
             baseLayer.setLocale(JSONHelper.createJSONObject("{ fi:{name:\"Omat aineistot\"},sv:{name:\"User layers\"},en:{name:\"User layers\"}}"));
             baseLayer.setOpacity(80);
         }
         // setup data producer/layergroup since original doesn't have one
-        baseLayer.addGroup(LayerHelper.getGroup());
-        setupGeoserverConf(baseLayer, AnalysisHelper.MODULE_NAME);
+        baseLayer.addDataprovider(LayerHelper.getDataprovider());
+        setupGeoserverConf(baseLayer, UserlayerHelper.MODULE_NAME);
         baseLayer.setSrs_name(srs);
         if (!doInsert) {
             LayerHelper.update(baseLayer);

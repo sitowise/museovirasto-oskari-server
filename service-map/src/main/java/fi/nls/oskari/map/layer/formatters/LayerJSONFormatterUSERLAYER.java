@@ -9,7 +9,6 @@ import fi.nls.oskari.util.PropertyUtil;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-
 /**
  * User layer to oskari layer json
  */
@@ -34,9 +33,10 @@ public class LayerJSONFormatterUSERLAYER extends LayerJSONFormatter {
     public JSONObject getJSON(OskariLayer layer,
                                      final String lang,
                                      final boolean isSecure,
+                                     final String crs,
                                      UserLayer ulayer) {
 
-        final JSONObject layerJson = getBaseJSON(layer, lang, isSecure);
+        final JSONObject layerJson = getBaseJSON(layer, lang, isSecure, crs);
 
         JSONHelper.putValue(layerJson, "isQueryable", true);
         JSONHelper.putValue(layerJson, "name",ulayer.getLayer_name());

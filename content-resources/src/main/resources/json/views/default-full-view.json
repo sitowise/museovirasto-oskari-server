@@ -14,7 +14,6 @@
         "wmslayer-openstreetmap-demo-landsat.json"
     ],
     "bundles" : [
-        { "id" : "openlayers-default-theme" },
         {
             "id" : "mapfull",
             "config" : {
@@ -30,7 +29,6 @@
 					"projection": "EPSG:4326",
 					"resolutions": [0.500, 0.250, 0.125, 0.063, 0.032, 0.016, 0.010, 0.007, 0.003]
 				},
-                "globalMapAjaxUrl": "[REPLACED BY HANDLER]",
 				"projectionDefs" : {
 					"EPSG:4326" : "+title=WGS 84 +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
 				},
@@ -49,7 +47,6 @@
                     { "id" : "Oskari.mapframework.bundle.mapmodule.plugin.Portti2Zoombar" },
                     { "id" : "Oskari.mapframework.bundle.mapmodule.plugin.PanButtons" },
                     { "id" : "Oskari.mapframework.bundle.mapmodule.plugin.FullScreenPlugin" },
-                    { "id" : "Oskari.mapframework.bundle.mapstats.plugin.StatsLayerPlugin" },
                     { "id" : "Oskari.mapframework.bundle.myplacesimport.plugin.UserLayersLayerPlugin" },
                     { "id" : "Oskari.mapframework.bundle.mapmyplaces.plugin.MyPlacesLayerPlugin" },
                     { "id" : "Oskari.mapframework.bundle.mapanalysis.plugin.AnalysisLayerPlugin" },
@@ -64,6 +61,7 @@
                 "zoom": 1
             }
         },
+        { "id" : "drawtools" },
         { "id" : "divmanazer" },
         {
             "id" : "toolbar",
@@ -87,10 +85,10 @@
 		},
         { "id" : "metadataflyout" },
         { "id" : "personaldata" },
-        { "id" : "publisher" },
+        { "id" : "publisher2" },
         { "id" : "maplegend" },
         { "id" : "userguide" },
-        { "id" : "myplaces2" },
+        { "id" : "myplaces3" },
         { "id" : "printout" },
         { "id" : "analyse" },
         { "id" : "myplacesimport" },

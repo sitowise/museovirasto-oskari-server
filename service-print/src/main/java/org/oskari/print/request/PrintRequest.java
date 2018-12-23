@@ -2,25 +2,34 @@ package org.oskari.print.request;
 
 import java.util.List;
 
+import fi.nls.oskari.domain.User;
+
 public class PrintRequest {
 
+    private User user;
     private double east;
     private double north;
     private String srsName;
-    private int zoomLevel;
     private double resolution;
-    private double metersPerUnit;
-    private String units;
     private int width;
     private int height;
     private int targetWidth;
     private int targetHeight;
     private PrintFormat format;
+    private boolean showLogo;
     private boolean showScale;
     private boolean showDate;
-    private String logo;
     private String title;
     private List<PrintLayer> layers;
+    private String scaleText;
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 
     public double getEast() {
         return east;
@@ -46,36 +55,12 @@ public class PrintRequest {
         this.srsName = srsName;
     }
 
-    public int getZoomLevel() {
-        return zoomLevel;
-    }
-
-    public void setZoomLevel(int zoomLevel) {
-        this.zoomLevel = zoomLevel;
-    }
-
     public double getResolution() {
         return resolution;
     }
 
     public void setResolution(double resolution) {
         this.resolution = resolution;
-    }
-
-    public double getMetersPerUnit() {
-        return metersPerUnit;
-    }
-
-    public void setMetersPerUnit(double metersPerUnit) {
-        this.metersPerUnit = metersPerUnit;
-    }
-
-    public void setUnits(String units) {
-        this.units = units;
-    }
-
-    public String getUnits() {
-        return units;
     }
 
     public int getWidth() {
@@ -134,14 +119,6 @@ public class PrintRequest {
         this.showDate = showDate;
     }
 
-    public String getLogo() {
-        return logo;
-    }
-
-    public void setLogo(String logo) {
-        this.logo = logo;
-    }
-
     public String getTitle() {
         return title;
     }
@@ -156,6 +133,26 @@ public class PrintRequest {
 
     public void setLayers(List<PrintLayer> layers) {
         this.layers = layers;
+    }
+
+    public boolean isShowLogo() {
+        return showLogo;
+    }
+
+    public void setShowLogo(boolean showLogo) {
+        this.showLogo = showLogo;
+    }
+
+    public String getScaleText() {
+        return scaleText;
+    }
+
+    public void setScaleText(String scaleText) {
+        this.scaleText = scaleText;
+    }
+
+    public boolean isScaleText(){
+        return (this.scaleText != null && !this.scaleText.isEmpty());
     }
 
 }

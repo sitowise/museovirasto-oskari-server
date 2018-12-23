@@ -28,6 +28,7 @@ import fi.nls.oskari.permission.domain.Permission;
 import fi.nls.oskari.permission.domain.Resource;
 import fi.nls.oskari.service.ServiceException;
 import fi.nls.oskari.service.UserService;
+import fi.nls.oskari.util.ConversionHelper;
 import fi.nls.oskari.util.JSONHelper;
 import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.util.ResponseHelper;
@@ -38,7 +39,7 @@ import java.net.URL;
 import java.util.*;
 
 @OskariActionRoute("CreateAnalysisLayer")
-public class CreateAnalysisLayerHandler extends ActionHandler {
+public class CreateAnalysisLayerHandler extends RestActionHandler {
 
     private static final Logger log = LogFactory
             .getLogger(CreateAnalysisLayerHandler.class);
@@ -72,6 +73,7 @@ public class CreateAnalysisLayerHandler extends ActionHandler {
     private static final String ERROR_UNABLE_TO_GET_WPS_FEATURES = "Unable_to_get_WPS_features";
     private static final String ERROR_WPS_EXECUTE_RETURNS_EXCEPTION = "WPS_execute_returns_Exception";
     private static final String ERROR_WPS_EXECUTE_RETURNS_NO_FEATURES = "WPS_execute_returns_no_features";
+    private static final String ERROR_UNABLE_TO_MERGE_ANALYSIS_DATA = "Unable_to_merge_analysis_data";
     private static final String ERROR_UNABLE_TO_PROCESS_AGGREGATE_UNION = "Unable_to_process_aggregate_union";
     private static final String ERROR_UNABLE_TO_GET_FEATURES_FOR_UNION = "Unable_to_get_features_for_union";
     private static final String ERROR_UNABLE_TO_STORE_ANALYSIS_DATA = "Unable_to_store_analysis_data";
@@ -80,17 +82,23 @@ public class CreateAnalysisLayerHandler extends ActionHandler {
 
     final private static String GEOSERVER_PROXY_BASE_URL = PropertyUtil.getOptional("analysis.baseproxy.url");
 
+    private AnalysisLayer getAggregateLayer(String analyse, String filter1, String filter2,
+                                      String baseUrl, AnalysisLayer analysisLayer, String outputFormat) throws ActionParamsException {
+        try {
+            return analysisParser.parseSwitch2UnionLayer(analysisLayer, analyse, filter1, filter2, baseUrl, outputFormat);
+        } catch (ServiceException e) {
+            throw new ActionParamsException(ERROR_UNABLE_TO_PROCESS_AGGREGATE_UNION, e.getMessage());
+        }
+    }
+
     /**
      * Handles action_route CreateAnalysisLayer
      *
      * @param params Ajax request parameters
      *               **********************************************************************
      */
-    public void handleAction(ActionParameters params) throws ActionException {
-
-        if (params.getUser().isGuest()) {
-            throw new ActionDeniedException("Session expired");
-        }
+    public void handlePost(ActionParameters params) throws ActionException {
+        params.requireLoggedInUser();
 
         final String analyse = params.getRequiredParam(PARAM_ANALYSE, ERROR_ANALYSE_PARAMETER_MISSING);
         JSONObject analyseJson = JSONHelper.createJSONObject(analyse);
@@ -114,8 +122,12 @@ public class CreateAnalysisLayerHandler extends ActionHandler {
 
         if (analysisLayer.getMethod().equals(AnalysisParser.LAYER_UNION)) {
             // no WPS for merge analysis
-            analysis = analysisDataService.mergeAnalysisData(
-                    analysisLayer, analyse, params.getUser());
+            try {
+                analysis = analysisDataService.mergeAnalysisData(
+                        analysisLayer, analyse, params.getUser());
+            } catch (ServiceException e) {
+                throw new ActionException(ERROR_UNABLE_TO_MERGE_ANALYSIS_DATA, e);
+            }
         } else {
             // Generate WPS XML
             String featureSet = executeWPSprocess(analysisLayer);
@@ -134,7 +146,7 @@ public class CreateAnalysisLayerHandler extends ActionHandler {
                 analysisLayer.setWpsLayerId(-1);
                 final String aggregateResult = this.localiseAggregateResult(
                         analysisParser.parseAggregateResults(featureSet, analysisLayer), analyseJson);
-                log.debug("\nAggregate results:\n", aggregateResult, "\n");
+                log.debug("Aggregate results:", aggregateResult);
 
                 analysisLayer.setResult(aggregateResult);
 
@@ -179,8 +191,12 @@ public class CreateAnalysisLayerHandler extends ActionHandler {
             // Fix property names for WFST (property names might be renamed in Wps method )
             featureSet = fixPropertyNames(featureSet, analysisLayer);
 
-            analysis = analysisDataService.storeAnalysisData(
-                    featureSet, analysisLayer, analyse, params.getUser());
+            try {
+                analysis = analysisDataService.storeAnalysisData(
+                        featureSet, analysisLayer, analyse, params.getUser());
+            } catch (ServiceException e) {
+                throw new ActionException(ERROR_UNABLE_TO_STORE_ANALYSIS_DATA, e);
+            }
         }
 
         if (analysis == null) {
@@ -236,15 +252,6 @@ public class CreateAnalysisLayerHandler extends ActionHandler {
         ResponseHelper.writeResponse(params, analysisLayerJSON);
     }
 
-    private AnalysisLayer getAggregateLayer(String analyse, String filter1, String filter2,
-                                      String baseUrl, AnalysisLayer analysisLayer, String outputFormat) throws ActionParamsException {
-        try {
-            return analysisParser.parseSwitch2UnionLayer(analysisLayer, analyse, filter1, filter2, baseUrl, outputFormat);
-        } catch (ServiceException e) {
-            throw new ActionParamsException(ERROR_UNABLE_TO_PROCESS_AGGREGATE_UNION, e.getMessage());
-        }
-    }
-
     private AnalysisLayer getAnalysisLayer(JSONObject analyseJson, String filter1, String filter2, String baseUrl,
                                            String uuid) throws ActionParamsException {
         try {
@@ -273,9 +280,9 @@ public class CreateAnalysisLayerHandler extends ActionHandler {
         return featureSet;
     }
 
-    private Resource getSourcePermission(final String layerId, final User user) {
+    private Resource getSourcePermission(final String layerId, final User user) throws ActionParamsException {
         if(layerId == null) {
-            return null;
+            throw new ActionParamsException("Missing source layer id");
         }
 
         if (layerId.startsWith(AnalysisParser.ANALYSIS_LAYER_PREFIX)) {
@@ -310,7 +317,11 @@ public class CreateAnalysisLayerHandler extends ActionHandler {
             return resource;
         }
         // default to usual layer
-        final OskariLayer layer = mapLayerService.find(layerId);
+        int id = ConversionHelper.getInt(layerId, -1);
+        if (id == -1) {
+            throw new ActionParamsException("Invalid id: " + layerId);
+        }
+        final OskariLayer layer = mapLayerService.find(id);
         // copy permissions from source layer to new analysis
         return permissionsService.getResource(Permissions.RESOURCE_TYPE_MAP_LAYER, new OskariLayerResource(layer).getMapping());
     }

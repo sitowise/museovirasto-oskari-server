@@ -9,13 +9,13 @@ import fi.nls.oskari.control.view.modifier.bundle.MapfullHandler;
 import fi.nls.oskari.control.view.modifier.param.CoordinateParamHandler;
 import fi.nls.oskari.control.view.modifier.param.WFSHighlightParamHandler;
 import fi.nls.oskari.domain.User;
-import fi.nls.oskari.domain.map.LayerGroup;
+import fi.nls.oskari.domain.map.DataProvider;
 import fi.nls.oskari.domain.map.view.View;
 import fi.nls.oskari.domain.map.view.ViewTypes;
 import fi.nls.oskari.map.data.service.PublishedMapRestrictionService;
 import fi.nls.oskari.map.data.service.PublishedMapRestrictionServiceImpl;
-import fi.nls.oskari.map.layer.LayerGroupService;
-import fi.nls.oskari.map.layer.LayerGroupServiceIbatisImpl;
+import fi.nls.oskari.map.layer.DataProviderService;
+import fi.nls.oskari.map.layer.DataProviderServiceIbatisImpl;
 import fi.nls.oskari.map.layer.OskariLayerServiceIbatisImpl;
 import fi.nls.oskari.map.view.BundleService;
 import fi.nls.oskari.map.view.BundleServiceIbatisImpl;
@@ -28,6 +28,7 @@ import fi.nls.test.control.JSONActionRouteTest;
 import fi.nls.test.util.ResourceHelper;
 import fi.nls.test.view.BundleTestHelper;
 import fi.nls.test.view.ViewTestHelper;
+import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -104,38 +105,33 @@ public class GetAppSetupHandlerTest extends JSONActionRouteTest {
         PropertyUtil.clearProperties();
     }
 
+    @Test
+    public void testURLsWithRegistrationAllowed() throws Exception {
+        PropertyUtil.addProperty("allow.registration", "true");
+        final ActionParameters params = createActionParams();
+        handler.handleAction(params);
+
+        JSONObject responseUrls = getResponseJSON().optJSONObject("env").optJSONObject("urls");
+        assertEquals("Should have default register url", "/user", responseUrls.opt("register"));
+        assertEquals("Should have default profile url", "/user", responseUrls.opt("profile"));
+
+        teardown();
+        addLocales();
+    }
 
     @Test
-    public void testIsSecure() {
-        // no params test
-        assertFalse("isSecure should be false with default params", GetAppSetupHandler.isSecure(createActionParams()));
+    public void testLoginUrl() throws Exception {
+        PropertyUtil.addProperty("auth.login.url", "/login");
+        final ActionParameters params = createActionParams();
+        handler.handleAction(params);
 
-        // TRUE CASES
-        Map<String, String> parameters = new HashMap<String, String>();
-        parameters.put(ActionConstants.PARAM_SECURE, "true");
-        assertTrue("isSecure should be true for request with param '" + ActionConstants.PARAM_SECURE  + "' with value 'true'", GetAppSetupHandler.isSecure(createActionParams(parameters)));
-
-        parameters.clear();
-        parameters.put(ActionConstants.PARAM_SECURE, "True");
-        assertTrue("isSecure should be true for request with param '" + ActionConstants.PARAM_SECURE  + "' with value 'True'", GetAppSetupHandler.isSecure(createActionParams(parameters)));
-
-        parameters.clear();
-        parameters.put(ActionConstants.PARAM_SECURE, "TRUE");
-        assertTrue("isSecure should be true for request with param '" + ActionConstants.PARAM_SECURE  + "' with value 'TRUE'", GetAppSetupHandler.isSecure(createActionParams(parameters)));
-
-        // FALSE CASES
-        parameters.clear();
-        parameters.put(ActionConstants.PARAM_SECURE, "false");
-        assertFalse("isSecure should be false for request with param '" + ActionConstants.PARAM_SECURE  + "' with value 'false'", GetAppSetupHandler.isSecure(createActionParams(parameters)));
-
-        parameters.clear();
-        parameters.put(ActionConstants.PARAM_SECURE, "1");
-        assertFalse("isSecure should be false for request with param '" + ActionConstants.PARAM_SECURE  + "' with value '1'", GetAppSetupHandler.isSecure(createActionParams(parameters)));
-
-        parameters.clear();
-        parameters.put(ActionConstants.PARAM_SECURE, "yes");
-        assertFalse("isSecure should be false for request with param '" + ActionConstants.PARAM_SECURE  + "' with value 'yes'", GetAppSetupHandler.isSecure(createActionParams(parameters)));
+        JSONObject responseUrls = getResponseJSON().optJSONObject("env").optJSONObject("urls");
+        assertEquals("Should have login url", "/login", responseUrls.opt("login"));
+        assertNull("Should NOT have register url as allow.registration not set", responseUrls.opt("register"));
+        teardown();
+        addLocales();
     }
+
 
     @Test
     public void testWithNoViewIdAndGuestUser() throws Exception {
@@ -260,7 +256,7 @@ public class GetAppSetupHandlerTest extends JSONActionRouteTest {
 
         final PermissionsService service = mock(PermissionsServiceIbatisImpl.class);
         doReturn(
-                Collections.emptyList()
+                Collections.emptySet()
         ).when(service).getResourcesWithGrantedPermissions(anyString(), any(User.class), anyString());
 
         // return mocked  bundle service if a new one is created (in paramhandlers for example)
@@ -305,16 +301,16 @@ public class GetAppSetupHandlerTest extends JSONActionRouteTest {
                     }
                 });
 
-        //Whitebox.newInstance(LayerGroupServiceIbatisImpl.class);
-        final LayerGroupService groupService = mock(LayerGroupServiceIbatisImpl.class);
-        LayerGroup group = mock(LayerGroup.class);
+        //Whitebox.newInstance(DataProviderServiceIbatisImpl.class);
+        final DataProviderService groupService = mock(DataProviderServiceIbatisImpl.class);
+        DataProvider group = mock(DataProvider.class);
         group.setName("en", "Testing");
         doReturn(group).when(groupService).find(anyInt());
         doReturn(Collections.emptyList()).when(groupService).findAll();
 
         // return mocked  bundle service if a new one is created (in paramhandlers for example)
         // classes doing this must be listed in PrepareForTest annotation
-        whenNew(LayerGroupServiceIbatisImpl.class).withNoArguments().
+        whenNew(DataProviderServiceIbatisImpl.class).withNoArguments().
                 thenAnswer(new Answer<Object>() {
                     public Object answer(InvocationOnMock invocation) throws Throwable {
                         return groupService;

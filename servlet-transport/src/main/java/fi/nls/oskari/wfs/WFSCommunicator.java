@@ -29,6 +29,18 @@ import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.wfs.pojo.WFSLayerStore;
 import fi.nls.oskari.wfs.util.XMLHelper;
 import fi.nls.oskari.work.JobType;
+import org.apache.axiom.om.*;
+import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import org.geotools.feature.FeatureCollection;
+import org.geotools.xml.Parser;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.referencing.operation.MathTransform;
+
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * WFS request creators and response parsers
@@ -194,7 +206,7 @@ public class WFSCommunicator {
 	 */
 	@SuppressWarnings("unchecked")
 	public static FeatureCollection<SimpleFeatureType, SimpleFeature> parseSimpleFeatures(
-            BufferedReader response,
+	        Reader response,
             final WFSLayerStore layer) {
 		Parser parser = null;
 		if(Character.getNumericValue(layer.getGMLVersion().charAt(2)) == 2) { // 3.2

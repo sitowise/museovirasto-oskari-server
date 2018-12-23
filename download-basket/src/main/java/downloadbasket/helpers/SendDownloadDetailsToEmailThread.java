@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+<<<<<<< HEAD
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -16,6 +17,23 @@ import fi.nls.oskari.geoserver.LayerHelper;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.map.layer.OskariLayerService;
+=======
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.UUID;
+import java.util.Locale;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
+import downloadbasket.data.ErrorReportDetails;
+import fi.nls.oskari.domain.map.OskariLayer;
+import fi.nls.oskari.log.LogFactory;
+import fi.nls.oskari.log.Logger;
+import fi.nls.oskari.map.layer.OskariLayerService;
+import fi.nls.oskari.service.ServiceRuntimeException;
+import fi.nls.oskari.util.ConversionHelper;
+>>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.util.IOHelper;
 import downloadbasket.data.LoadZipDetails;
@@ -33,13 +51,17 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 	private final JSONArray downloadDetails;
 	private final JSONObject userDetails;
 	private final Locale locale;
+<<<<<<< HEAD
 	private final User user;
+=======
+>>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 
 	private final Logger LOGGER = LogFactory.getLogger(SendDownloadDetailsToEmailThread.class);
 	private final String PARAM_CROPPING_MODE = "croppingMode";
 	private final String PARAM_CROPPING_LAYER = "croppingLayer";
 	private final String PARAM_LAYER = "layer";
 	private final String PARAM_LAYER_ID = "id";
+<<<<<<< HEAD
 	private final String FULL_DETAIL_LAYER = "fullDetailLayer";
 	private final String DOWNLOAD_BASKET_LEVEL = "downloadBasketLevel";
 	private final int ADMIN_LEVEL = 4;
@@ -47,6 +69,8 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 	private final int MEDIUM_PRIORITY_LEVEL = 2;
 	private final int LOW_PRIORITY_LEVEL = 1;
 	private final int DEFAULT_LEVEL = 0;
+=======
+>>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 
 	/**
 	 * Constructor.
@@ -58,16 +82,26 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 	 * @param userDetails
 	 *            user details
 	 * @param locale locale
+<<<<<<< HEAD
 	 * @param user user
 	 */
 
 	public SendDownloadDetailsToEmailThread(OskariLayerService mapLayerService, JSONArray downloadDetails,
 											JSONObject userDetails, Locale locale, User user) {
+=======
+	 */
+
+	public SendDownloadDetailsToEmailThread(OskariLayerService mapLayerService, JSONArray downloadDetails,
+			JSONObject userDetails, Locale locale) {
+>>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 		this.downloadDetails = downloadDetails;
 		this.userDetails = userDetails;
 		this.locale = locale;
 		this.mapLayerService = mapLayerService;
+<<<<<<< HEAD
 		this.user = user;
+=======
+>>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 	}
 
 	private ArrayList<ZipDownloadDetails> downloadFromService() {
@@ -77,6 +111,7 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 		for (String download : PropertyUtil.getCommaSeparatedList("oskari.wfs.download.normal.way.downloads")) {
 			normalDownloads.addDownload(download);
 		}
+<<<<<<< HEAD
 
 		String[] lowPriorityRoles = PropertyUtil.getCommaSeparatedList("oskari.wfs.download.low_priority_roles");
 		String[] mediumPriorityRoles = PropertyUtil.getCommaSeparatedList("oskari.wfs.download.medium_priority_roles");
@@ -118,6 +153,8 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 			}
 		}
 
+=======
+>>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 		try {
 			DownloadServices ds = new DownloadServices();
 			for (int i = 0; i < downloadDetails.length(); i++) {
@@ -133,6 +170,7 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 				ldz.setUserEmail(userDetails.getString("email"));
 				ldz.setLanguage(this.locale.getLanguage());
 				ldz.setDownloadNormalWay(normalDownloads.isBboxCropping(croppingMode, croppingLayer));
+<<<<<<< HEAD
 				OskariLayer oskariLayer = mapLayerService.find(download.getString(PARAM_LAYER_ID));
 
 				JSONObject attributes = oskariLayer.getAttributes();
@@ -161,12 +199,36 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 				ldz.setGetFeatureInfoRequest(OGCServices.getFilter(download, true, dataLayer));
 				ldz.setWFSUrl(OGCServices.doGetFeatureUrl(srs, dataLayer, false, url));
 
+=======
+				int layerId = ConversionHelper.getInt(download.getString(PARAM_LAYER_ID), -1);
+				if (layerId == -1) {
+					throw new ServiceRuntimeException("Invalid layer id: " + download.getString(PARAM_LAYER_ID));
+				}
+				OskariLayer oskariLayer = mapLayerService.find(layerId);
+				String srs = "EPSG:4326";
+				if (oskariLayer != null) {
+					srs = oskariLayer.getSrs_name();
+				}
+
+				if (ldz.isDownloadNormalWay()) {
+					ldz.setGetFeatureInfoRequest(OGCServices.getFilter(download, true, oskariLayer));
+					ldz.setWFSUrl(OGCServices.doGetFeatureUrl(srs, download, false));
+				} else {
+					ldz.setGetFeatureInfoRequest("&filter=" + OGCServices.getPluginFilter(download, oskariLayer));
+					ldz.setWFSUrl(OGCServices.doGetFeatureUrl(srs, download, true));
+				}
+
+>>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 				final String fileLocation = ds.loadZip(ldz, this.locale);
 
 				if (fileLocation != null && ds.isValid(new File(fileLocation))) {
 					ZipDownloadDetails zdd = new ZipDownloadDetails();
 					zdd.setFileName(fileLocation);
+<<<<<<< HEAD
 					final String sLayer = Helpers.getLayerNameWithoutNameSpace(dataLayer.getName());
+=======
+					final String sLayer = Helpers.getLayerNameWithoutNameSpace(download.getString(PARAM_LAYER));
+>>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 					zdd.setLayerName(sLayer);
 					mergeThese.add(zdd);
 				} else {

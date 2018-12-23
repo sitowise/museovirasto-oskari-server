@@ -4,15 +4,17 @@ import fi.nls.oskari.annotation.OskariActionRoute;
 import fi.nls.oskari.control.ActionException;
 import fi.nls.oskari.control.ActionHandler;
 import fi.nls.oskari.control.ActionParameters;
+import fi.nls.oskari.control.RestActionHandler;
 import fi.nls.oskari.service.ServiceException;
 import fi.nls.oskari.service.styles.SldStyle;
 import fi.nls.oskari.service.styles.SldStylesService;
 import fi.nls.oskari.service.styles.SldStylesServiceMybatisImpl;
 import fi.nls.oskari.util.JSONHelper;
 import fi.nls.oskari.util.ResponseHelper;
-import fi.nls.oskari.util.ServiceFactory;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.oskari.service.util.ServiceFactory;
 
 import java.net.URLDecoder;
 import java.util.List;
@@ -22,17 +24,12 @@ import java.util.List;
  * Returns available sld styles for wfs layers
  */
 @OskariActionRoute("SldStyles")
-public class SldStylesHandler extends ActionHandler {
+public class SldStylesHandler extends RestActionHandler {
 
     private final SldStylesService service = new SldStylesServiceMybatisImpl();
     private static final String PARAM_SLD_NAME = "name";
     private static final String PARAM_SLD_XML = "xml";
     private static final String PARAM_SLD_ID = "id";
-
-    public void init() {
-
-    }
-
 
     /**
      * Action handler
@@ -41,7 +38,7 @@ public class SldStylesHandler extends ActionHandler {
      * @throws ActionException
      */
     @Override
-    public void handleAction(final ActionParameters params)
+    public void handlePost(final ActionParameters params)
             throws ActionException {
         final String name = params.getHttpParam(PARAM_SLD_NAME);
         final String id = params.getHttpParam(PARAM_SLD_ID);

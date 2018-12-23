@@ -4,14 +4,13 @@
     <parent>
         <groupId>fi.nls.oskari</groupId>
         <artifactId>oskari-parent</artifactId>
-        <version>1.44.1</version>
+        <version>1.49.0</version>
     </parent>
     <groupId>org.oskari</groupId>
     <artifactId>service-print</artifactId>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <pdfbox.version>2.0.6</pdfbox.version>
         <hystrix.version>1.5.12</hystrix.version>
     </properties>
 
@@ -21,13 +20,16 @@
             <artifactId>oskari-map</artifactId>
         </dependency>
         <dependency>
+            <groupId>fi.nls.oskari.service</groupId>
+            <artifactId>oskari-control</artifactId>
+        </dependency>
+        <dependency>
             <groupId>fi.nls.oskari</groupId>
             <artifactId>service-logging</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>pdfbox</artifactId>
-            <version>${pdfbox.version}</version>
         </dependency>
         <dependency>
             <groupId>com.netflix.hystrix</groupId>
@@ -35,9 +37,8 @@
             <version>${hystrix.version}</version>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
+            <groupId>fi.nls.oskari</groupId>
+            <artifactId>shared-test-resources</artifactId>
         </dependency>
     </dependencies>
 

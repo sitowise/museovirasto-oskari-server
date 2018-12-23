@@ -1,34 +1,73 @@
 package fi.nls.oskari.control.statistics.plugins.user;
 
-import fi.mml.map.mapwindow.service.db.UserIndicatorService;
-import fi.mml.map.mapwindow.service.db.UserIndicatorServiceImpl;
 import fi.nls.oskari.control.statistics.data.*;
 import fi.nls.oskari.control.statistics.plugins.StatisticalDatasourcePlugin;
+import fi.nls.oskari.control.statistics.plugins.db.StatisticalDatasource;
 import fi.nls.oskari.domain.User;
-import fi.nls.oskari.domain.map.indicator.UserIndicator;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
-import fi.nls.oskari.util.PropertyUtil;
-import org.json.JSONArray;
+import fi.nls.oskari.service.OskariComponentManager;
+import fi.nls.oskari.service.ServiceRuntimeException;
+import fi.nls.oskari.util.ConversionHelper;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.oskari.statistics.user.StatisticalIndicatorService;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class UserIndicatorsStatisticalDatasourcePlugin extends StatisticalDatasourcePlugin {
     private final static Logger LOG = LogFactory.getLogger(UserIndicatorsStatisticalDatasourcePlugin.class);
-    private static UserIndicatorService userIndicatorService = new UserIndicatorServiceImpl();
+    private StatisticalIndicatorService service;
 
     public UserIndicatorsStatisticalDatasourcePlugin() {
     }
 
     @Override
+    public void init(StatisticalDatasource source) {
+        super.init(source);
+        service = OskariComponentManager.getComponentOfType(StatisticalIndicatorService.class);
+    }
+
+    @Override
+    public boolean canModify(User user) {
+        return true;
+    }
+
+    @Override
+    public StatisticalIndicator saveIndicator(StatisticalIndicator indicator, User user) {
+        return service.saveIndicator(indicator, user.getId());
+    }
+
+    @Override
+    public void saveIndicatorData(StatisticalIndicator indicator, long regionsetId, Map<String, IndicatorValue> data, User user) {
+        int id = ConversionHelper.getInt(indicator.getId(), -1);
+        if (id == -1) {
+            throw new ServiceRuntimeException("No indicator id to save data to");
+        }
+        StatisticalIndicator existing = service.findById(id, user.getId());
+        if (existing == null) {
+            throw new ServiceRuntimeException("Referenced indicator (id:" + id + ") not found. Unable to save data.");
+        }
+        try {
+            int year = Integer.parseInt(indicator.getDataModel().getDimension("year").getValue());
+            JSONObject json = new JSONObject();
+            for (Map.Entry<String, IndicatorValue> entry : data.entrySet()) {
+                entry.getValue().putToJSONObject(json, entry.getKey());
+            }
+            service.saveIndicatorData(id, regionsetId, year, json.toString());
+        } catch (JSONException e) {
+            throw new ServiceRuntimeException("Values not valid for JSON.", e);
+        } catch (Exception e) {
+            throw new ServiceRuntimeException("Unable to save the data.", e);
+        }
+    }
+
+    @Override
     public IndicatorSet getIndicatorSet(User user) {
         IndicatorSet set = new IndicatorSet();
-        if(user != null) {
+        if (user != null) {
             set.setIndicators(getIndicators(user));
             set.setComplete(true);
         }
@@ -45,31 +84,7 @@ public class UserIndicatorsStatisticalDatasourcePlugin extends StatisticalDataso
             return new ArrayList<>();
         }
         long uid = user.getId();
-        List<UserIndicator> userIndicators = userIndicatorService.findAllOfUser(uid);
-        return toUserStatisticalIndicators(userIndicators);
-    }
-
-    private List<StatisticalIndicator> toUserStatisticalIndicators(List<UserIndicator> userIndicators) {
-        List<StatisticalIndicator> indicators = new ArrayList<>();
-        final String language = PropertyUtil.getDefaultLanguage();
-        for (UserIndicator userIndicator : userIndicators) {
-            StatisticalIndicator ind = new StatisticalIndicator();
-            ind.setId(String.valueOf(userIndicator.getId()));
-            ind.addName(language, userIndicator.getTitle());
-            ind.addSource(language, userIndicator.getSource());
-            ind.addDescription(language, userIndicator.getDescription());
-            ind.setPublic(userIndicator.isPublished());
-            ind.addLayer(new StatisticalIndicatorLayer(userIndicator.getMaterial(), ind.getId()));
-
-            /*
-            // If we want to provide year, need to do it like this. But there's always just one choice so what's the point?
-            StatisticalIndicatorDataDimension dim = new StatisticalIndicatorDataDimension("year");
-            dim.addAllowedValue(String.valueOf(userIndicator.getYear()));
-            getDataModel().addDimension(dim);
-            */
-            indicators.add(ind);
-        }
-        return indicators;
+        return service.findByUser(uid);
     }
 
     @Override
@@ -78,24 +93,29 @@ public class UserIndicatorsStatisticalDatasourcePlugin extends StatisticalDataso
         return false;
     }
 
+    /**
+     * Override as default impl expects indicators are stored in redis
+     *
+     * @param user
+     * @param indicatorId
+     * @return
+     */
+    @Override
+    public StatisticalIndicator getIndicator(User user, String indicatorId) {
+        try {
+            return service.findById(ConversionHelper.getInt(indicatorId, -1), user.getId());
+        } catch (ServiceRuntimeException ex) {
+            LOG.warn("Indicator not found:", ex.getMessage());
+        }
+        return null;
+    }
+
     @Override
     public Map<String, IndicatorValue> getIndicatorValues(StatisticalIndicator indicator,
                                                           StatisticalIndicatorDataModel params,
                                                           StatisticalIndicatorLayer regionset) {
-        // Data is a serialized JSON for legacy and backwards compatibility reasons:
-        // "data":[{"region":"727","primary value":"15"},{"region":"728","primary value":"20"}]
-        UserIndicator userIndicator = userIndicatorService.find(indicator.getId());
-        Map<String, IndicatorValue> valueMap = new HashMap<>();
-        try {
-            JSONArray jsonData = new JSONArray(userIndicator.getData());
-            for (int i = 0; i < jsonData.length(); i++) {
-                JSONObject value = jsonData.getJSONObject(i);
-                IndicatorValueFloat indicatorValue = new IndicatorValueFloat(value.getDouble("primary value"));
-                valueMap.put(value.getString("region"), indicatorValue);
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return valueMap;
+        return service.getData(ConversionHelper.getInt(indicator.getId(), -1),
+                regionset.getOskariLayerId(),
+                ConversionHelper.getInt(params.getDimension("year").getValue(), -1));
     }
 }

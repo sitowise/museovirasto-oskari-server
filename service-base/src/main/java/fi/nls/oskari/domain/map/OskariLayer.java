@@ -1,7 +1,5 @@
 package fi.nls.oskari.domain.map;
 
-import fi.nls.oskari.log.LogFactory;
-import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.util.IOHelper;
 import fi.nls.oskari.util.PropertyUtil;
 import org.json.JSONObject;
@@ -10,7 +8,6 @@ import java.util.*;
 
 public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable<OskariLayer> {
 
-    private static Logger log = LogFactory.getLogger(OskariLayer.class);
     public static final String PROPERTY_AJAXURL = "oskari.ajax.url.prefix";
 
     private static final String TYPE_COLLECTION = "collection";
@@ -21,14 +18,16 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
     public static final String TYPE_ANALYSIS = "analysislayer";
     public static final String TYPE_USERLAYER = "userlayer";
     public static final String TYPE_ARCGIS93 = "arcgis93layer";
+    public static final String TYPE_3DTILES = "tiles3dlayer";
+    public static final String TYPE_VECTOR_TILE = "vectortilelayer";
 
     private int id = -1;
     private int parentId = -1;
-    private String externalId;
 	private String type;
 
     private boolean isBaseMap = false;
-    private int groupId;
+    private boolean isInternal = false;
+    private int dataproviderId;
 
     private String name;
     private String url;
@@ -45,8 +44,6 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
 
     private String legendImage;
     private String metadataId;
-
-    private String tileMatrixSetId;
 
     private JSONObject params = new JSONObject();
     private JSONObject options = new JSONObject();
@@ -67,63 +64,33 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
     private String version = "";
     private String srs_name;
 
-    private Set<String> supportedCRSs = null;
-
     private Date created = null;
     private Date updated = null;
     
     private Integer order_number = null;
 
-    private Set<InspireTheme> inspireThemes = new HashSet<InspireTheme>();
-    private Set<LayerGroup> groups = new HashSet<LayerGroup>();
+    private Set<DataProvider> dataProviders = new HashSet<DataProvider>();
     private List<OskariLayer> sublayers = new ArrayList<OskariLayer>();
 
+    private Date capabilitiesLastUpdated;
+    private int capabilitiesUpdateRateSec;
 
     public boolean isCollection() {
         return TYPE_COLLECTION.equals(type);
     }
 
-    // we only link one theme at the moment so get the first one
-	public InspireTheme getInspireTheme() {
-        if(inspireThemes == null || inspireThemes.isEmpty()) {
-            return null;
-        }
-        if(inspireThemes.size() > 1) {
-            // TODO: remove this when we support more than one theme
-            log.warn("More than one inspire theme, this shouldn't happen!! layerId:", getId(), "- Themes:" , inspireThemes);
-        }
-		return inspireThemes.iterator().next();
-	}
-    public Set<InspireTheme> getInspireThemes() {
-        return inspireThemes;
-    }
-    public void addInspireThemes(final List<InspireTheme> themes) {
-        if(themes != null && !themes.isEmpty()) {
-            addInspireTheme(themes.iterator().next());
-            // TODO: use addAll when we support more than one theme
-            //inspireThemes.addAll(themes);
-        }
-    }
-    public void addInspireTheme(final InspireTheme theme) {
-        if(theme != null) {
-            // TODO: remove the clearing when we support more than one theme
-            inspireThemes.clear();
-            inspireThemes.add(theme);
-        }
-    }
-
     // we only link one group at the moment so get the first one
-    public LayerGroup getGroup() {
-        if(groups == null || groups.isEmpty()) {
+    public DataProvider getGroup() {
+        if(dataProviders == null || dataProviders.isEmpty()) {
             return null;
         }
-        return groups.iterator().next();
+        return dataProviders.iterator().next();
     }
 
-    public void addGroup(final LayerGroup group) {
-        if(group != null) {
-            groups.add(group);
-            setGroupId(group.getId());
+    public void addDataprovider(final DataProvider dataProvider) {
+        if(dataProvider != null) {
+            dataProviders.add(dataProvider);
+            setDataproviderId(dataProvider.getId());
         }
     }
 
@@ -248,13 +215,6 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
 	public void setLegendImage(String legendImage) {
 		this.legendImage = legendImage;
 	}
-	public String getTileMatrixSetId() {
-		return tileMatrixSetId;
-	}
-
-	public void setTileMatrixSetId(String value) {
-		tileMatrixSetId = value;
-	}
 
     public int getParentId() {
         return parentId;
@@ -264,12 +224,8 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
         this.parentId = parentId;
     }
 
-    public String getExternalId() {
-        return externalId;
-    }
-
-    public void setExternalId(String externalId) {
-        this.externalId = externalId;
+    public boolean isSublayer() {
+        return parentId != -1;
     }
 
     public boolean isBaseMap() {
@@ -280,12 +236,20 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
         isBaseMap = baseMap;
     }
 
-    public int getGroupId() {
-        return groupId;
+    public boolean isInternal() {
+        return isInternal;
     }
 
-    public void setGroupId(int groupId) {
-        this.groupId = groupId;
+    public void setInternal(boolean internal) {
+        isInternal = internal;
+    }
+
+    public int getDataproviderId() {
+        return dataproviderId;
+    }
+
+    public void setDataproviderId(int dataproviderId) {
+        this.dataproviderId = dataproviderId;
     }
 
     public String getName() {
@@ -394,6 +358,10 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
     }
 
     public String getGeometry() {
+        if(geometry == null) {
+            // geometry is from a CSW service. Capabilities "geom" is the coverage from layer capabilities
+            return getCapabilities().optString("geom");
+        }
         return geometry;
     }
 
@@ -447,13 +415,16 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
         this.srs_name = srs_name;
     }
 
-   // Only available for savelayer handler
-    public Set<String> getSupportedCRSs() {
-        return supportedCRSs;
+    public Date getCapabilitiesLastUpdated() {
+        return capabilitiesLastUpdated;
     }
 
-    public void setSupportedCRSs(Set<String> supportedCrss) {
-        this.supportedCRSs = supportedCrss;
+    public void setCapabilitiesLastUpdated(Date capabilitiesLastUpdated) {
+        this.capabilitiesLastUpdated = capabilitiesLastUpdated;
+    }
+
+    public int getCapabilitiesUpdateRateSec() {
+        return capabilitiesUpdateRateSec;
     }
 
     public Integer getOrder_number() {
@@ -463,4 +434,8 @@ public class OskariLayer extends JSONLocalizedNameAndTitle implements Comparable
     public void setOrder_number(Integer layerOrderNumber) {
         this.order_number = layerOrderNumber;
     }
+    public void setCapabilitiesUpdateRateSec(int capabilitiesUpdateRateSec) {
+        this.capabilitiesUpdateRateSec = capabilitiesUpdateRateSec;
+    }
+
 }

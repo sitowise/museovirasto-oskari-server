@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /*
 Methods using HttpRequest were moved from a class called wmshelper and are
@@ -260,6 +261,10 @@ public class IOHelper {
 
         final ByteArrayInputStream debug = new ByteArrayInputStream(response);
         return debug;
+    }
+
+    public static String getCharset(final HttpURLConnection con) {
+        return getCharset(con, null);
     }
 
     public static String getCharset(final HttpURLConnection con, final String defaultCharset) {
@@ -614,16 +619,58 @@ public class IOHelper {
                 requestBody.getBytes(StandardCharsets.UTF_8));
     }
 
-    public static HttpURLConnection post(String url, String contentType, byte[] body)
+    public static HttpURLConnection post(String url, String contentType,
+            byte[] body) throws IOException {
+        return send(getConnection(url), "POST", contentType, body);
+    }
+
+    public static HttpURLConnection post(String url, String contentType,
+            ByteArrayOutputStream baos) throws IOException {
+        return send(getConnection(url), "POST", contentType, baos);
+    }
+
+    public static HttpURLConnection post(HttpURLConnection conn, String contentType,
+            byte[] body) throws IOException {
+        return send(conn, "POST", contentType, body);
+    }
+
+    public static HttpURLConnection post(HttpURLConnection conn, String contentType,
+            ByteArrayOutputStream baos) throws IOException {
+        return send(conn, "POST", contentType, baos);
+    }
+
+    public static HttpURLConnection put(String url, String contentType, byte[] body)
             throws IOException {
-        HttpURLConnection conn = getConnection(url);
-        conn.setRequestMethod("POST");
+        return put(getConnection(url), contentType, body);
+    }
+
+    public static HttpURLConnection put(HttpURLConnection conn, String contentType, byte[] body)
+            throws IOException {
+        return send(conn, "PUT", contentType, body);
+    }
+
+    private static HttpURLConnection send(HttpURLConnection conn, String method,
+            String contentType, byte[] body) throws IOException {
+        conn.setRequestMethod(method);
         conn.setDoOutput(true);
         conn.setDoInput(true);
         setContentType(conn, contentType);
         conn.setRequestProperty("Content-Length", Integer.toString(body.length));
         try (OutputStream out = conn.getOutputStream()) {
             out.write(body);
+        }
+        return conn;
+    }
+
+    private static HttpURLConnection send(HttpURLConnection conn, String method,
+            String contentType, ByteArrayOutputStream baos) throws IOException {
+        conn.setRequestMethod(method);
+        conn.setDoOutput(true);
+        conn.setDoInput(true);
+        setContentType(conn, contentType);
+        conn.setRequestProperty("Content-Length", Integer.toString(baos.size()));
+        try (OutputStream out = conn.getOutputStream()) {
+            baos.writeTo(out);
         }
         return conn;
     }
@@ -846,22 +893,62 @@ public class IOHelper {
         for (Map.Entry<String, String> entry : kvps.entrySet()) {
             final String key = entry.getKey();
             final String value = entry.getValue();
-            if (key == null || key.isEmpty() || value == null || value.isEmpty()) {
+            if (key == null || key.isEmpty()) {
                 continue;
             }
-            try {
-                final String keyEnc = URLEncoder.encode(key, DEFAULT_CHARSET);
-                final String valueEnc = URLEncoder.encode(value, DEFAULT_CHARSET);
+            final String keyEnc = urlEncode(key);
+            final String valueEnc = urlEncode(value);
+            if (!first) {
+                sb.append('&');
+            }
+            sb.append(keyEnc).append('=').append(valueEnc);
+            first = false;
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Same as {@link #getParams(Map) getParams} but this allows
+     * the map and the generated query string to have multiple instances
+     * with the same key e.g. ?foo=bar&foo=baz
+     */
+    public static String getParamsMultiValue(Map<String, String[]> kvps) {
+        if (kvps == null || kvps.isEmpty()) {
+            return "";
+        }
+
+        final StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (Map.Entry<String, String[]> entry : kvps.entrySet()) {
+            final String key = entry.getKey();
+            final String[] values = entry.getValue();
+            if (key == null || key.isEmpty() || values == null || values.length == 0) {
+                continue;
+            }
+            String keyEnc = urlEncode(key);
+            for (String value : values) {
+                if (value == null || value.isEmpty()) {
+                    continue;
+                }
+                String valueEnc = urlEncode(value);
                 if (!first) {
                     sb.append('&');
                 }
                 sb.append(keyEnc).append('=').append(valueEnc);
                 first = false;
-            } catch (UnsupportedEncodingException ignore) {
-                // Ignore the exception, UTF-8 _IS_ supported
             }
         }
         return sb.toString();
+    }
+
+    public static String urlEncode(String s) {
+        try {
+            return URLEncoder.encode(s, CHARSET_UTF8);
+        } catch (UnsupportedEncodingException ignore) {
+            // Ignore the exception, 'UTF-8' is supported
+        }
+        // return something, this code is unreachable
+        return s;
     }
 
     public static InputStream getInputStream(HttpURLConnection conn) {
@@ -870,6 +957,46 @@ public class IOHelper {
         } catch (IOException e) {
             return conn.getErrorStream();
         }
+    }
+
+    /**
+     * Ignore HttpURLConnection response fully 
+     * Useful for example when the status code or the content type
+     * wasn't what was expected. Allows HttpURLConnection
+     * pooling method to keep the underlying TCP connection alive 
+     */
+    public static void closeSilently(HttpURLConnection c) {
+        try (InputStream in = getInputStream(c)) {
+            readFullyIgnoring(in);
+        } catch (IOException ignore) {
+            // Ignore
+        }
+    }
+
+    /**
+     * Read InputStream fully and totally ignoring whatever is read
+     * @throws IOException if something goes wrong
+     */
+    public static void readFullyIgnoring(InputStream in) throws IOException {
+        byte[] b = new byte[8192];
+        while ((in.read(b, 0, 8192)) != -1) {
+            // Keep reading
+        }
+    }
+    public static ByteArrayOutputStream gzip(byte[] bytes) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzip = new GZIPOutputStream(baos)) {
+            gzip.write(bytes);
+        }
+        return baos;
+    }
+    public static ByteArrayOutputStream ungzip(byte[] cached) throws IOException {
+        ByteArrayInputStream bais = new ByteArrayInputStream(cached);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (GZIPInputStream gzip = new GZIPInputStream(bais)) {
+            copy(gzip, baos);
+        }
+        return baos;
     }
 
 }

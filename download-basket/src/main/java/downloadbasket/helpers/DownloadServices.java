@@ -10,6 +10,8 @@ import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.geometry.jts.JTS;
 import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.mail.MultiPartEmail;
+import org.apache.commons.mail.MultiPartEmail;
+
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
 import javax.activation.FileDataSource;
@@ -52,6 +54,10 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
+import java.util.UUID;
+import java.util.Locale;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
 import org.springframework.context.MessageSource;
 import fi.nls.oskari.spring.SpringContextHolder;
 

@@ -1,24 +1,19 @@
 package fi.nls.oskari.map.layer.formatters;
 
-import fi.mml.map.mapwindow.service.db.InspireThemeService;
-import fi.mml.map.mapwindow.service.db.InspireThemeServiceIbatisImpl;
-import fi.nls.oskari.domain.map.InspireTheme;
-import fi.nls.oskari.domain.map.LayerGroup;
 import fi.nls.oskari.domain.map.OskariLayer;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
-import fi.nls.oskari.map.layer.LayerGroupService;
-import fi.nls.oskari.map.layer.LayerGroupServiceIbatisImpl;
 import fi.nls.oskari.util.IOHelper;
 import fi.nls.oskari.util.JSONHelper;
 import fi.nls.oskari.util.PropertyUtil;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
+import org.oskari.utils.common.Sets;
 
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created with IntelliJ IDEA.
@@ -31,9 +26,8 @@ public class LayerJSONFormatter {
 
     public static final String PROPERTY_AJAXURL = "oskari.ajax.url.prefix";
     public static final String KEY_STYLES = "styles";
-
-    private static final InspireThemeService inspireThemeService = new InspireThemeServiceIbatisImpl();
-    private static final LayerGroupService groupService = new LayerGroupServiceIbatisImpl();
+    public static final String KEY_SRS = "srs";
+    public static final String KEY_ATTRIBUTE_FORCED_SRS = "forcedSRS";
 
     private static final String KEY_ID = "id";
     private static final String KEY_TYPE = "type";
@@ -47,7 +41,6 @@ public class LayerJSONFormatter {
         typeMapping.put(OskariLayer.TYPE_WMS, new LayerJSONFormatterWMS());
         typeMapping.put(OskariLayer.TYPE_WFS, new LayerJSONFormatterWFS());
         typeMapping.put(OskariLayer.TYPE_WMTS, new LayerJSONFormatterWMTS());
-        typeMapping.put(OskariLayer.TYPE_STATS, new LayerJSONFormatterStats());
     }
 
     private static LayerJSONFormatter getFormatter(final String type) {
@@ -72,27 +65,23 @@ public class LayerJSONFormatter {
 
     public JSONObject getJSON(final OskariLayer layer,
                                      final String lang,
-                                     final boolean isSecure) {
+                                     final boolean isSecure,
+                                     final String crs) {
         LayerJSONFormatter formatter = getFormatter(layer.getType());
         // to prevent nullpointer and infinite loop
         if(formatter != null && !formatter.getClass().equals(LayerJSONFormatter.class)) {
-            return formatter.getJSON(layer, lang, isSecure);
+            return formatter.getJSON(layer, lang, isSecure, crs);
         }
-        return getBaseJSON(layer, lang, isSecure);
+        return getBaseJSON(layer, lang, isSecure, crs);
     }
 
     public JSONObject getBaseJSON(final OskariLayer layer,
                                      final String lang,
-                                     final boolean isSecure) {
+                                     final boolean isSecure,
+                                     final String crs) {
         JSONObject layerJson = new JSONObject();
 
-        final String externalId = layer.getExternalId();
-        if(externalId != null && !externalId.isEmpty()) {
-            JSONHelper.putValue(layerJson, KEY_ID, externalId);
-        }
-        else {
-            JSONHelper.putValue(layerJson, KEY_ID, layer.getId());
-        }
+        JSONHelper.putValue(layerJson, KEY_ID, layer.getId());
 
         //log.debug("Type", layer.getType());
         if(layer.isCollection()) {
@@ -121,9 +110,6 @@ public class LayerJSONFormatter {
         JSONHelper.putValue(layerJson, "subtitle", layer.getTitle(lang));
         if(layer.getGroup() != null) {
             JSONHelper.putValue(layerJson, "orgName", layer.getGroup().getName(lang));
-        }
-        if(layer.getInspireTheme() != null) {
-            JSONHelper.putValue(layerJson, "inspire", layer.getInspireTheme().getName(lang));
         }
 
         if(layer.getOpacity() != null && layer.getOpacity() > -1 && layer.getOpacity() <= 100) {
@@ -163,13 +149,14 @@ public class LayerJSONFormatter {
         if(layer.getSublayers() != null && !layer.getSublayers().isEmpty()) {
             JSONArray sublayers = new JSONArray();
             for(OskariLayer sub : layer.getSublayers()) {
-                JSONObject subJSON = getJSON(sub, lang, isSecure);
+                JSONObject subJSON = getJSON(sub, lang, isSecure, crs);
                 sublayers.put(subJSON);
             }
             JSONHelper.putValue(layerJson, "subLayer", sublayers);
         }
         return layerJson;
     }
+
     public void removeAdminInfo(final JSONObject layer) {
         if(layer == null) {
             return;
@@ -253,69 +240,12 @@ public class LayerJSONFormatter {
         return metadataId;
     }
 
-    /**
-     * Minimal implementation for parsing layer in json format.
-     * @param json
-     * @return
-     */
-    public OskariLayer parseLayer (final JSONObject json) throws JSONException {
-        OskariLayer layer = new OskariLayer();
-
-        // read mandatory values, an JSONException is thrown if these are missing
-        layer.setType(json.getString("type"));
-        layer.setUrl(json.getString("url"));
-        layer.setName(json.getString("name"));
-        final String orgName = json.getString("organization");
-        final String themeName = json.getString("inspiretheme");
-        layer.setLocale(json.getJSONObject("locale"));
-
-        // read optional values
-        layer.setBaseMap(json.optBoolean("base_map", layer.isBaseMap()));
-        layer.setOpacity(json.optInt("opacity", layer.getOpacity()));
-        layer.setStyle(json.optString("style", layer.getStyle()));
-        layer.setMinScale(json.optDouble("minscale", layer.getMinScale()));
-        layer.setMaxScale(json.optDouble("maxscale", layer.getMaxScale()));
-        layer.setLegendImage(json.optString("legend_image", layer.getLegendImage()));
-        layer.setMetadataId(json.optString("metadataid", layer.getMetadataId()));
-        layer.setTileMatrixSetId(json.optString("tile_matrix_set_id", layer.getTileMatrixSetId()));
-        layer.setGfiType(json.optString("gfi_type", layer.getGfiType()));
-        layer.setGfiXslt(json.optString("gfi_xslt", layer.getGfiXslt()));
-        layer.setGfiContent(json.optString("gfi_content", layer.getGfiContent()));
-        layer.setGeometry(json.optString("geometry", layer.getGeometry()));
-        layer.setRealtime(json.optBoolean("realtime", layer.getRealtime()));
-        layer.setRefreshRate(json.optInt("refresh_rate", layer.getRefreshRate()));
-        layer.setSrs_name(json.optString("srs_name", layer.getSrs_name()));
-        layer.setVersion(json.optString("version", layer.getVersion()));
-        // omit permissions, these are handled by LayerHelper
-
-        // handle params, check for null to avoid overwriting empty JS Object Literal
-        final JSONObject params = json.optJSONObject("params");
-        if (params != null) {
-            layer.setParams(params);
+    public static Set<String> getCRSsToStore(Set<String> systemCRSs,
+            Set<String> capabilitiesCRSs) {
+        if (systemCRSs == null) {
+            return capabilitiesCRSs;
         }
-
-        // handle options, check for null to avoid overwriting empty JS Object Literal
-        final JSONObject options = json.optJSONObject("options");
-        if (options != null) {
-            layer.setOptions(options);
-        }
-
-        // handle inspiretheme
-        final InspireTheme theme = inspireThemeService.findByName(themeName);
-        if (theme == null) {
-            log.warn("Didn't find match for theme:", themeName);
-        } else {
-            layer.addInspireTheme(theme);
-        }
-
-        // setup data producer/layergroup
-        final LayerGroup group = groupService.findByName(orgName);
-        if(group == null) {
-            log.warn("Didn't find match for layergroup:", orgName);
-        } else {
-            layer.addGroup(group);
-        }
-
-        return layer;
+        return Sets.intersection(systemCRSs, capabilitiesCRSs);
     }
+
 }
