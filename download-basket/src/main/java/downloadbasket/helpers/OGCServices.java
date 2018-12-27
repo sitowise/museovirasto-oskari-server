@@ -37,7 +37,6 @@ public class OGCServices {
 	private static final String KEY_UNIQUE_COLUMN= "uniqueColumn";
 	private static final String KEY_UNIQUE_VALUE = "uniqueValue";
 	private static final String KEY_CROP_GEOMETRY_NAME = "geometryName";
-<<<<<<< HEAD
 	private static final String KEY_FREE_CROPPING = "free";
 	private static final String KEY_ALL_CROPPING = "all";
 	private static final String KEY_COORDINATES = "coordinates";
@@ -45,12 +44,6 @@ public class OGCServices {
 	/**
 	 * Get filter
 	 *
-=======
-
-	/**
-	 * Get filter
-	 * 
->>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 	 * @param downloadDetails
 	 *            download details
 	 * @param writeParam
@@ -76,7 +69,6 @@ public class OGCServices {
 		if (downloadDetails.has(KEY_CROPPING_LAYER)) {
 			croppingLayer = downloadDetails.getString(KEY_CROPPING_LAYER);
 		}
-<<<<<<< HEAD
 		if (!croppingMode.equals(KEY_ALL_CROPPING)) {
 			if (croppingMode.equals(KEY_FREE_CROPPING)) {
 				final String coordinates = downloadDetails.getString(KEY_COORDINATES);
@@ -89,37 +81,17 @@ public class OGCServices {
 				s.append(URLEncoder.encode(getBbox(downloadDetails.getJSONObject(KEY_BBOX)), "UTF-8"));
 			}
 		}
-=======
-
-		if (normalDownloads.isBboxCropping(croppingMode, croppingLayer)) {
-			if (writeParam) {
-				s.append("&bbox=");
-			}
-			s.append(getBbox(downloadDetails.getJSONObject(KEY_BBOX)));
-		} else {
-			if (writeParam) {
-				s.append("&filter=");
-			}
-			s.append(URLEncoder.encode(getPluginFilter(downloadDetails, oskariLayer), "UTF-8"));
-		}
-
->>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 		return s.toString();
 	}
 
 	/**
 	 * Get bbox
-<<<<<<< HEAD
 	 *
-=======
-	 * 
->>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 	 * @param bbox
 	 * @return
 	 * @throws JSONException
 	 */
 	private static String getBbox(JSONObject bbox) throws JSONException {
-<<<<<<< HEAD
 		String coordinates = bbox.getString(KEY_BBOX_BOTTOM) + "," + bbox.getString(KEY_BBOX_LEFT) + " "
 				+ bbox.getString(KEY_BBOX_BOTTOM) + "," + bbox.getString(KEY_BBOX_RIGHT) + " "
 				+ bbox.getString(KEY_BBOX_TOP) + "," + bbox.getString(KEY_BBOX_RIGHT) + " "
@@ -136,28 +108,16 @@ public class OGCServices {
 	 */
 	private static String getSinglePolygon(String coordinates) {
 		return "<ogc:Filter><ogc:Within><ogc:PropertyName>SHAPE</ogc:PropertyName><gml:Polygon srsName=\"urn:ogc:def:crs:EPSG::3067\"><gml:outerBoundaryIs><gml:LinearRing><gml:coordinates>" + coordinates + "</gml:coordinates></gml:LinearRing></gml:outerBoundaryIs></gml:Polygon></ogc:Within></ogc:Filter>";
-=======
-		return bbox.getString(KEY_BBOX_LEFT) + "," + bbox.getString(KEY_BBOX_BOTTOM) + ","
-				+ bbox.getString(KEY_BBOX_RIGHT) + "," + bbox.getString(KEY_BBOX_TOP);
->>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 	}
 
 	/**
 	 * Get WFS Query layer WFS request by using GeoServer Cross-layer filtering
 	 * plugin.
-<<<<<<< HEAD
 	 *
 	 * @param download
 	 *            download details
 	 * @param oskariLayer oskari layer
 	 *
-=======
-	 * 
-	 * @param download
-	 *            download details
-	 * @param oskariLayer oskari layer
-	 *            
->>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 	 */
 
 	public static String getPluginFilter(JSONObject download, OskariLayer oskariLayer) throws JSONException {
@@ -228,7 +188,6 @@ public class OGCServices {
 	 *
 	 * @param srs
 	 *            srs name
-<<<<<<< HEAD
 	 * @param oskariLayer
 	 *            Oskari layer
 	 * @param addNameSpace
@@ -251,33 +210,8 @@ public class OGCServices {
 			s.append(layerName);
 		} else {
 			s.append(Helpers.getNormalizedLayerNameWithoutNameSpace(layerName));
-=======
-	 * @param download
-	 *            download details
-	 * @param addNameSpace
-	 *            add namespace to layer name
-	 * @return WFS GET feature URL
-	 */
-	public static String doGetFeatureUrl(String srs, JSONObject download, boolean addNameSpace) throws JSONException {
-		String getFeatureUrl = "";
-		StringBuilder s = new StringBuilder();
-		s.append(PropertyUtil.get("oskari.wfs.service.url"));
-
-		s.append("?SERVICE=wfs&version=1.0.0&request=GetFeature&srsName=");
-		s.append(srs);
-		s.append("&outputFormat=SHAPE-ZIP&typeNames=");
-
-		if (addNameSpace) {
-			s.append(download.getString(KEY_LAYER));
-		} else {
-			s.append(Helpers.getLayerNameWithoutNameSpace(download.getString(KEY_LAYER)));
->>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 		}
 		getFeatureUrl = s.toString();
 		return getFeatureUrl;
 	}
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
