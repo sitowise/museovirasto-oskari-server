@@ -1,4 +1,3 @@
-/*
 package fi.nls.oskari.control.data;
 
 import java.io.File;
@@ -11,13 +10,13 @@ import fi.nls.oskari.annotation.OskariActionRoute;
 import fi.nls.oskari.control.ActionException;
 import fi.nls.oskari.control.ActionHandler;
 import fi.nls.oskari.control.ActionParameters;
-import fi.nls.oskari.domain.User;
 import fi.nls.oskari.domain.map.userlayer.UserLayer;
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
-import fi.nls.oskari.map.userlayer.service.UserLayerDataService;
-import fi.nls.oskari.map.userlayer.service.UserLayerDbService;
-import fi.nls.oskari.map.userlayer.service.UserLayerDbServiceMybatisImpl;
+import org.oskari.control.userlayer.CreateUserLayerHandler;
+import org.oskari.map.userlayer.service.UserLayerDataService;
+import org.oskari.map.userlayer.service.UserLayerDbService;
+import org.oskari.map.userlayer.service.UserLayerDbServiceMybatisImpl;
 import fi.nls.oskari.util.ConversionHelper;
 import fi.nls.oskari.util.JSONHelper;
 import fi.nls.oskari.util.ResponseHelper;
@@ -72,4 +71,3 @@ public class UpdateUserLayerHandler extends ActionHandler {
 
     }
 }
-*/

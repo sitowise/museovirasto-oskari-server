@@ -43,13 +43,15 @@ public class GetFeatureForCropping extends ActionHandler {
 
 	private final Logger LOGGER = LogFactory.getLogger(GetFeatureForCropping.class);
 
+/*
 	private static final String PARAM_LAYERS = "layers";
+*/
 	private static final String PARAM_X = "x";
 	private static final String PARAM_Y = "y";
-	private static final String PARAM_BBOX = "bbox";
+/*	private static final String PARAM_BBOX = "bbox";
 	private static final String PARAM_WIDTH = "width";
 	private static final String PARAM_HEIGHT = "height";
-	private static final String PARAM_SRS = "srs";
+	private static final String PARAM_SRS = "srs";*/
 	private static final String PARAM_ID = "id";
 
 	private OskariLayerService mapLayerService;
