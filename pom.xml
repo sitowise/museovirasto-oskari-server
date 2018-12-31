@@ -303,10 +303,10 @@
             </dependency>
 
             <dependency>
-                <groupId>fi.nls.oskari.service</groupId>
-                <artifactId>oskari-search-nls</artifactId>
-                <version>${fi.nls.oskari.service.version}</version>
-            </dependency>
+				<groupId>fi.nls.oskari.extras</groupId>
+				<artifactId>oskari-search-nls</artifactId>
+				<version>2.1</version>
+			</dependency>
 
             <dependency>
                 <groupId>fi.nls.oskari.service</groupId>
