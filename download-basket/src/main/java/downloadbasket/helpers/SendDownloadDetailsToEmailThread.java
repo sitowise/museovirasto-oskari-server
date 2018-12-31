@@ -133,7 +133,10 @@ public class SendDownloadDetailsToEmailThread implements Runnable {
 				ldz.setUserEmail(userDetails.getString("email"));
 				ldz.setLanguage(this.locale.getLanguage());
 				ldz.setDownloadNormalWay(normalDownloads.isBboxCropping(croppingMode, croppingLayer));
+/*
 				OskariLayer oskariLayer = mapLayerService.find(download.getString(PARAM_LAYER_ID));
+*/
+				OskariLayer oskariLayer = mapLayerService.find((download.getInt(PARAM_LAYER_ID)));
 
 				JSONObject attributes = oskariLayer.getAttributes();
 				if ((attributes == null) || (!attributes.has(DOWNLOAD_BASKET_LEVEL))) {

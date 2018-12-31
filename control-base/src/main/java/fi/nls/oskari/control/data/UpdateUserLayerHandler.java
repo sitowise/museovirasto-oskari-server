@@ -1,3 +1,4 @@
+/*
 package fi.nls.oskari.control.data;
 
 import java.io.File;
@@ -71,3 +72,4 @@ public class UpdateUserLayerHandler extends ActionHandler {
 
     }
 }
+*/

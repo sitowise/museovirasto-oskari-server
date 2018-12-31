@@ -1,3 +1,4 @@
+/*
 package fi.nls.oskari.map.userlayer.service;
 
 import fi.nls.oskari.domain.User;
@@ -44,12 +45,14 @@ public class UserLayerDataService {
     static final int USERLAYER_BASE_LAYER_ID = PropertyUtil.getOptional(USERLAYER_BASELAYER_ID, -1);
     static final int USERLAYER_MAX_FEATURES_COUNT = PropertyUtil.getOptional(USERLAYER_MAXFEATURES_COUNT, -1);
 
-    /**
+    */
+/**
      * @param gjsWorker geoJSON and featurecollection items
      * @param user      oskari user
      * @param fparams   user given attributes for layer
      * @return user layer data in user_layer table
-     */
+     *//*
+
 
     public UserLayer storeUserData(GeoJsonWorker gjsWorker, User user, Map<String, String> fparams) throws ServiceException {
 
@@ -102,12 +105,14 @@ public class UserLayerDataService {
     }
 
 
-    /**
+    */
+/**
      * @param geoJson import data in geojson format
      * @param user    oskari user
      * @param userLayer      user layer id in user_layer table
      * @return
-     */
+     *//*
+
     public List <UserLayerData> getUserLayerData(JSONObject geoJson, User user, UserLayer userLayer) throws ServiceException{
 
 
@@ -154,10 +159,12 @@ public class UserLayerDataService {
         return userLayerDataList;
     }
 
-    /**
+    */
+/**
      * Returns the base WFS-layer for userlayers
      * @return
-     */
+     *//*
+
     public OskariLayer getBaseLayer() {
         if (USERLAYER_BASE_LAYER_ID == -1) {
             log.error("Userlayer baseId not defined. Please define", USERLAYER_BASELAYER_ID,
@@ -167,21 +174,25 @@ public class UserLayerDataService {
         return mapLayerService.find(USERLAYER_BASE_LAYER_ID);
     }
 
-    /**
+    */
+/**
      * Creates the layer JSON for userlayer. When creating a bunch of layer JSONs prefer the overloaded version
      * with baselayer as parameter.
      * @param ulayer
      * @return
-     */
+     *//*
+
     public JSONObject parseUserLayer2JSON(UserLayer ulayer) {
         return parseUserLayer2JSON(ulayer, getBaseLayer());
     }
-    /**
+    */
+/**
      * @param ulayer data in user_layer table
      * @param baseLayer base WFS-layer for userlayers
      * @return
      * @throws ServiceException
-     */
+     *//*
+
     public JSONObject parseUserLayer2JSON(final UserLayer ulayer, final OskariLayer baseLayer) {
 
         try {
@@ -225,3 +236,4 @@ public class UserLayerDataService {
         return JSONHelper.getStringFromJSON(jsfields, "[]");
     }
 }
+*/

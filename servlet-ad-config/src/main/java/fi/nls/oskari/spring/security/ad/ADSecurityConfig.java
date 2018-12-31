@@ -12,11 +12,11 @@ import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
 
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
-import fi.nls.oskari.spring.EnvHelper;
+import fi.nls.oskari.spring.SpringEnvHelper;
 import fi.nls.oskari.spring.security.OskariLoginFailureHandler;
 import fi.nls.oskari.util.PropertyUtil;
 
-@Profile(EnvHelper.PROFILE_LOGIN_AD)
+@Profile(SpringEnvHelper.PROFILE_LOGIN_AD)
 @Configuration
 @EnableWebSecurity
 public class ADSecurityConfig extends WebSecurityConfigurerAdapter {
@@ -26,7 +26,7 @@ public class ADSecurityConfig extends WebSecurityConfigurerAdapter {
     private String url;
 
     @Autowired
-    private EnvHelper env;
+    private SpringEnvHelper env;
 
     public ADSecurityConfig() {
         this.domain = PropertyUtil.get("oskari.ad.domain");

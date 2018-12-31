@@ -1,12 +1,10 @@
 package downloadbasket.actions;
 
-<<<<<<< HEAD
 import java.io.IOException;
 import java.net.MalformedURLException;
 import downloadbasket.helpers.OGCServices;
 import org.json.JSONException;
-=======
-import downloadbasket.helpers.Helpers;
+/*import downloadbasket.helpers.Helpers;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,9 +15,8 @@ import java.net.URLConnection;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.JSONObject;*/
 
->>>>>>> dfa181558111da7e70e20a52cc2a3ad086869b8f
 import fi.nls.oskari.annotation.OskariActionRoute;
 import fi.nls.oskari.control.ActionException;
 import fi.nls.oskari.control.ActionHandler;

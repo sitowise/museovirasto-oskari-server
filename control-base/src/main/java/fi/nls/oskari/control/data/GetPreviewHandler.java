@@ -256,10 +256,11 @@ public class GetPreviewHandler extends ActionHandler {
             // printservice uses direct urls to myplaces instead of servletfilter/actionroute proxy
             final boolean useDirectURLForMyplaces = true;
             // populate layer details
-            final JSONArray fullLayersConfigJson = MapfullHandler
+            final JSONArray fullLayersConfigJson = new JSONArray();
+/*            final JSONArray fullLayersConfigJson = MapfullHandler
                     .getFullLayerConfig(configLayers, params.getUser(), params
                             .getLocale().getLanguage(), crs,
-                            PRINT_VIEW, ViewTypes.PRINT, Collections.EMPTY_SET, useDirectURLForMyplaces);
+                            PRINT_VIEW, ViewTypes.PRINT, Collections.EMPTY_SET, useDirectURLForMyplaces);*/
 
             // GeoJson graphics layers + styles
             if (geojs != null) {

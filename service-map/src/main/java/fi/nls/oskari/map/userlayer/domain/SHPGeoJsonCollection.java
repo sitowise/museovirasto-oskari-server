@@ -1,3 +1,4 @@
+/*
 package fi.nls.oskari.map.userlayer.domain;
 
 import com.vividsolutions.jts.geom.Geometry;
@@ -43,7 +44,8 @@ public class SHPGeoJsonCollection extends GeoJsonCollection implements GeoJsonWo
     GeometryJSON gjson = new GeometryJSON(GJSON_DECIMALS);
     final FeatureJSON io = new FeatureJSON(gjson);
 
-    /**
+    */
+/**
      * Parse ESRI shape file set to geojson features
      * Coordinate transformation is executed, if shape .prj file is within
      *
@@ -51,7 +53,8 @@ public class SHPGeoJsonCollection extends GeoJsonCollection implements GeoJsonWo
      * @param source_epsg source CRS (is used, if crs in not available in source data)
      * @param target_epsg target CRS
      * @return null --> ok   error message --> import failed
-     */
+     *//*
+
     public String parseGeoJSON(File file, String source_epsg, String target_epsg) {
         ShapefileDataStore dataStore = null;
         try {
@@ -161,3 +164,4 @@ public class SHPGeoJsonCollection extends GeoJsonCollection implements GeoJsonWo
         return (Charset) ShapefileDataStoreFactory.DBFCHARSET.getDefaultValue();
     }
 }
+*/
