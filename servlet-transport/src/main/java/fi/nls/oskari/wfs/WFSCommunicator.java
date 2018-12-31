@@ -29,18 +29,7 @@ import fi.nls.oskari.util.PropertyUtil;
 import fi.nls.oskari.wfs.pojo.WFSLayerStore;
 import fi.nls.oskari.wfs.util.XMLHelper;
 import fi.nls.oskari.work.JobType;
-import org.apache.axiom.om.*;
-import org.apache.axiom.om.impl.builder.StAXOMBuilder;
-import org.geotools.feature.FeatureCollection;
-import org.geotools.xml.Parser;
-import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.referencing.operation.MathTransform;
-
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * WFS request creators and response parsers
@@ -221,10 +210,10 @@ public class WFSCommunicator {
 		try {
             //ArcGis Server 10.5 added support for numberOfFeatures attribute in WFS response
             //however, the value always seems to be "unknown", which can't be parsed as nonNegativeInteger and we get an exception
-            if (ARCGIS_10_5_WORKAROUND && layer.getURL().matches(ARCGIS_10_5_WORKAROUND_PATTERN)) {
+            if (ARCGIS_10_5_WORKAROUND && layer.getURL().matches(ARCGIS_10_5_WORKAROUND_PATTERN) && response instanceof BufferedReader) {
                 String line = "";
                 StringBuffer fixedResponse = new StringBuffer();
-                while ((line = response.readLine()) != null) {
+                while ((line = ((BufferedReader)response).readLine()) != null) {
                     fixedResponse.append(line.replace("numberOfFeatures=\"unknown\"", ""));
                 }
                 IOHelper.close(response);
