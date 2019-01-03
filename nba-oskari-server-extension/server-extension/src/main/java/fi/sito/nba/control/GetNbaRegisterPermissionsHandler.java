@@ -1,6 +1,7 @@
 package fi.sito.nba.control;
 
 import java.util.List;
+import java.util.Set;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -35,7 +36,7 @@ public class GetNbaRegisterPermissionsHandler extends ActionHandler {
 
 		List<Resource> resources = permissionsService.findResourcesWithType("attribute");
 
-		List<String> permissions = permissionsService
+		Set<String> permissions = permissionsService
 				.getResourcesWithGrantedPermissions("attribute", externalId,
 						externalType, "VIEW_ATTRIBUTE");
 

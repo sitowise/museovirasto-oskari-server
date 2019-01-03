@@ -44,9 +44,9 @@
         </dependency>
 
         <dependency>
-            <groupId>fi.nls.oskari.service</groupId>
+            <groupId>fi.nls.oskari.extras</groupId>
             <artifactId>oskari-search-nls</artifactId>
-            <version>${oskari.version}</version>
+            <version>2.1</version>
         </dependency>
 
         <dependency>

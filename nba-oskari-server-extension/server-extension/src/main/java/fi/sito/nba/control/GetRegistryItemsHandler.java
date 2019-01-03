@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Arrays;
 import java.text.SimpleDateFormat;
+import java.util.Set;
 
 import fi.nls.oskari.domain.Role;
 import org.json.JSONArray;
@@ -436,7 +437,7 @@ public class GetRegistryItemsHandler extends RestActionHandler {
 	private JSONObject filterAttributes(JSONObject item, String registry,
 			User user) throws JSONException {
 		JSONObject ret = new JSONObject();
-		List<String> permissions = permissionsService
+		Set<String> permissions = permissionsService
 				.getResourcesWithGrantedPermissions("attribute", user,
 						"VIEW_ATTRIBUTE");
 		@SuppressWarnings("unchecked")

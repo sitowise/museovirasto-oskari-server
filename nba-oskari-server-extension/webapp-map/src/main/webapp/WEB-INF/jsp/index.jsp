@@ -7,17 +7,7 @@
 <head>
     <title>Museovirasto</title>
 
-    <script type="text/javascript" src="//code.jquery.com/jquery-1.7.2.min.js">
-    </script>
     <!-- ############# css ################# -->
-    <link
-        rel="stylesheet"
-        type="text/css"
-        href="/Oskari/resources/css/forms.css"/>
-    <link
-        rel="stylesheet"
-        type="text/css"
-        href="/Oskari/resources/css/portal.css"/>
     <link
         rel="stylesheet"
         type="text/css"
@@ -25,7 +15,7 @@
     <link
         rel="stylesheet"
         type="text/css"
-        href="/Oskari${path}/css/overwritten.css"/>
+        href="/Oskari${path}/oskari.min.css"/>
 
     <style type="text/css">
         @media screen {
@@ -149,7 +139,7 @@
             </c:otherwise>
         </c:choose>
     </div>
-    
+
     <div id="language">
             <c:if test="${language == 'fi'}">
                 <a id="langlink" href="./?lang=sv">På svenska</a> -
@@ -190,28 +180,13 @@
 </script>
 
 <script type="text/javascript"
-        src="/Oskari/bundles/bundle.js">
+        src="/Oskari${path}/oskari.min.js">
 </script>
 
-<c:if test="${preloaded}">
-    <!-- Pre-compiled application JS, empty unless created by build job -->
-    <script type="text/javascript"
-            src="/Oskari${path}/oskari.min.js">
-    </script>
-    <!-- Minified CSS for preload -->
-    <link
-            rel="stylesheet"
-            type="text/css"
-            href="/Oskari${path}/oskari.min.css"
-            />
-    <%--language files --%>
-    <script type="text/javascript"
-            src="/Oskari${path}/oskari_lang_all.js">
-    </script>
-    <script type="text/javascript"
-            src="/Oskari${path}/oskari_lang_${language}.js">
-    </script>
-</c:if>
+<%--language files --%>
+<script type="text/javascript"
+        src="/Oskari${path}/oskari_lang_${language}.js">
+</script>
 
 <script type="text/javascript"
         src="/Oskari${path}/index.js">
