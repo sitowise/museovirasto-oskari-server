@@ -43,6 +43,13 @@ import fi.nls.oskari.util.JSONHelper;
  *
  * @see https://github.com/oskariorg/oskari-frontend/blob/master/bundles/statistics/statsgrid/plugin/ManageClassificationPlugin.js
  */
+/**
+ * Migration is skipped by default!
+ * Thematic maps are currently not used in Museovirasto.
+ * Added possibility to skip thematic maps migration in order to avoid Flyway execution problems.
+ * Add "flyway.oskari.1_45_4.skip=false" in oskari-ext.properties to enable migration.
+ *
+ */
 @SuppressWarnings("JavadocReference")
 public class V1_45_4__migrate_thematic_maps implements JdbcMigration {
 
@@ -58,6 +65,9 @@ public class V1_45_4__migrate_thematic_maps implements JdbcMigration {
     private long userIndicatorsId;
 
     public void migrate(Connection conn) throws SQLException, JSONException {
+        if (PropertyUtil.getOptional("flyway.oskari.1_45_4.skip", true)) {
+            return;
+        }
         sotkanetId = PropertyUtil.getOptional(PROP_DS_SOTKA, -1);
         userIndicatorsId = PropertyUtil.getOptional(PROP_DS_USER, -1);
         final boolean oldAutoCommit = conn.getAutoCommit();
