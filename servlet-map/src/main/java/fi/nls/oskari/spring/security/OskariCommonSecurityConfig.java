@@ -33,10 +33,6 @@ public class OskariCommonSecurityConfig extends WebSecurityConfigurerAdapter {
         http
             .headers().frameOptions().disable()
             .and()
-                // IMPORTANT! Only antMatch for logoutUrl, otherwise SAML security filters are passed even if active
-                //            also server-extensions with custom config are affected
-                // FIXME: When we want to use SAML singleLogout, we should disable this and call /saml/SingleLogout
-                .antMatcher(logoutUrl)
                 // NOTE! With CSRF enabled logout needs to happen with POST request
                 .logout()
                 .logoutUrl(logoutUrl)
