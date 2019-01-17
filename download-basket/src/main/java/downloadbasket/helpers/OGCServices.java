@@ -189,14 +189,18 @@ public class OGCServices {
 	 *            add namespace to layer name
 	 * @param serviceUrl
 	 *            add namespace to layer name
+	 *  @param version
+	 *            version parameter value in the url
 	 * @return WFS GET feature URL
 	 */
-	public static String doGetFeatureUrl(String srs, OskariLayer oskariLayer, boolean addNameSpace, String serviceUrl) throws JSONException {
+	public static String doGetFeatureUrl(String srs, OskariLayer oskariLayer, boolean addNameSpace, String serviceUrl, String version) throws JSONException {
 		String getFeatureUrl = "";
 		StringBuilder s = new StringBuilder();
 		s.append(serviceUrl);
 
-		s.append("?SERVICE=wfs&version=1.1.0&request=GetFeature&srsName=");
+		s.append("?SERVICE=wfs&version=");
+		s.append(version);
+		s.append("&request=GetFeature&srsName=");
 		s.append(srs);
 		s.append("&typeNames=");
 
