@@ -28,11 +28,12 @@ public class DownloadServicesTest {
         File inputGmlFile = new File(inputDirectory + "\\" + inputFileName);
         File gmlBoundaryFile = new File(outputDirectory, inputFileName + "-temp");
 
-        DownloadServices service = new DownloadServices();
+        DownloadServices downladServices = new DownloadServices();
+        XMLHelperServices xmlHelperServices = new XMLHelperServices();
 
-        service.NormalizeGmlForGpx(inputGmlFile, gmlBoundaryFile);
+        xmlHelperServices.NormalizeGmlForGpx(inputGmlFile, gmlBoundaryFile);
 
-        DataStore storeBoundary = service.GetGmlDataStoreForGpx(gmlBoundaryFile);
+        DataStore storeBoundary = downladServices.GetGmlDataStoreForGpx(gmlBoundaryFile);
         String[] typeNamesBoundary = storeBoundary.getTypeNames();
 
         for (int i = 0; i < typeNamesBoundary.length; i++) {
@@ -42,5 +43,20 @@ public class DownloadServicesTest {
 
             Assert.assertTrue("Should have features", itBoundary.hasNext());
         }
+    }
+
+    @Test
+    public void TestGmlNormalizationForShp() throws Exception {
+
+        String inputDirectory = "C:\\shpTest\\input";
+        String inputFileName = "testFile.gml";
+        File inputFile= new File(inputDirectory, inputFileName);
+
+        String outputDirectory = "C:\\shpTest\\output";
+        String outputFileName = inputFileName + "-temp";
+        File outputFile = new File(outputDirectory, outputFileName);
+
+        XMLHelperServices xmlHelperServices = new XMLHelperServices();
+        xmlHelperServices.NormalizeGmlForShp(inputFile, outputFile);
     }
 }

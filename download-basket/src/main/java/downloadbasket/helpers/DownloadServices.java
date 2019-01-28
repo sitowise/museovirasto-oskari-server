@@ -123,6 +123,9 @@ public class DownloadServices {
         String gmlFileName = basketId + ".gml";
         File gmlFile = new File(dir0, gmlFileName);
 
+        String gmlNormalizedForShpFileName = basketId + "-normalizedForShp.gml";
+        File gmlNormalizedForShpFile= new File(dir0, gmlNormalizedForShpFileName);
+
         String gmlBoundaryFileName = basketId + "-boundary.gml";
         File gmlBoundaryFile = new File(dir0, gmlBoundaryFileName);
 
@@ -177,9 +180,16 @@ public class DownloadServices {
             }
         }
 
+        try {
+            XMLHelperServices xmlHelperServices = new XMLHelperServices();
+            xmlHelperServices.NormalizeGmlForShp(gmlFile, gmlNormalizedForShpFile);
+        } catch (Exception ex){
+            LOGGER.error("XML normalization for shape file failed: ", ex);
+        }
+
         Map<String, String> connectionParams = new HashMap<>();
         connectionParams.put("DriverName", "GML");
-        connectionParams.put("DatasourceName", new File(dir0, gmlFileName).getAbsolutePath());
+        connectionParams.put("DatasourceName", new File(dir0, gmlNormalizedForShpFileName).getAbsolutePath());
         OGRDataStoreFactory factory = new BridjOGRDataStoreFactory();
         if (!factory.isAvailable()) {
             LOGGER.error("GDAL library is not found for data export -- http://www.gdal.org/");
@@ -303,7 +313,12 @@ public class DownloadServices {
         LOGGER.error("Test: 2");
 
         // GPX file
-        NormalizeGmlForGpx(gmlFile, gmlBoundaryFile);
+        try {
+            XMLHelperServices xmlHelperServices = new XMLHelperServices();
+            xmlHelperServices.NormalizeGmlForGpx(gmlFile, gmlBoundaryFile);;
+        } catch (Exception ex){
+            LOGGER.error("XML normalization for gpx file failed: ", ex);
+        }
         DataStore storeBoundary = GetGmlDataStoreForGpx(gmlBoundaryFile);
 
         String[] typeNamesBoundary = storeBoundary.getTypeNames();
@@ -373,48 +388,6 @@ public class DownloadServices {
         }
         itBoundary.close();
         return features4326Boundary;
-    }
-
-    public void NormalizeGmlForGpx(File inputGmlFile, File outputGmlFile) throws IOException {
-        FileReader fr = new FileReader(inputGmlFile);
-        String s = null;
-        String totalStr = "";
-        try (BufferedReader br = new BufferedReader(fr)) {
-            while ((s = br.readLine()) != null) {
-                totalStr += s;
-            }
-            String resultString = totalStr;
-
-            resultString = resultString.replaceAll("<gml:LinearRing>", "<gml:LineString>");
-            resultString = resultString.replaceAll("</gml:LinearRing>", "</gml:LineString>");
-
-            resultString = resultString.replaceAll("<gml:exterior>", "");
-            resultString = resultString.replaceAll("</gml:exterior>", "");
-            resultString = resultString.replaceAll("<gml:outerBoundaryIs>", "");
-            resultString = resultString.replaceAll("</gml:outerBoundaryIs>", "");
-
-            resultString = resultString.replaceAll("<gml:Polygon>", "");
-            resultString = resultString.replaceAll("</gml:Polygon>", "");
-            resultString = resultString.replaceAll("<gml:MultiPolygon", "<gml:MultiLineString>");
-            resultString = resultString.replaceAll("</gml:MultiPolygon", "</gml:MultiLineString>");
-            resultString = resultString.replaceAll("<gml:polygonMember>", "<gml:lineStringMember>");
-            resultString = resultString.replaceAll("</gml:polygonMember>", "</gml:lineStringMember>");
-
-
-            resultString = resultString.replaceAll("<gml:MultiSurface>", "<gml:MultiLineString>");
-            resultString = resultString.replaceAll("</gml:MultiSurface>", "</gml:MultiLineString>");
-            resultString = resultString.replaceAll("<gml:surfaceMember>", "<gml:lineStringMember>");
-            resultString = resultString.replaceAll("</gml:surfaceMember>", "</gml:lineStringMember>");
-
-            resultString = resultString.replaceAll("<gml:MultiCurve>", "<gml:MultiLineString>");
-            resultString = resultString.replaceAll("</gml:MultiCurve>", "</gml:MultiLineString>");
-            resultString = resultString.replaceAll("<gml:curveMember>", "<gml:lineStringMember>");
-            resultString = resultString.replaceAll("</gml:curveMember>", "</gml:lineStringMember>");
-
-            FileWriter fw = new FileWriter(outputGmlFile);
-            fw.write(resultString);
-            fw.close();
-        }
     }
 
     public DataStore GetGmlDataStoreForGpx(File gmlFile) throws IOException {
