@@ -88,7 +88,7 @@ public class PDF {
     private static final float FONT_SIZE_SCALE = 10f;
 
     private static final float OFFSET_DATE_RIGHT = PDFBoxUtil.mmToPt(40);
-    private static final float OFFSET_DATE_TOP = PDFBoxUtil.mmToPt(10);
+    private static final float OFFSET_DATE_BOTTOM = PDFBoxUtil.mmToPt(5);
 
     private static final float OFFSET_LOGO_LEFT = PDFBoxUtil.mmToPt(10);
     private static final float OFFSET_LOGO_BOTTOM = PDFBoxUtil.mmToPt(5);
@@ -96,6 +96,9 @@ public class PDF {
 
     private static final float OFFSET_SCALE_LEFT = PDFBoxUtil.mmToPt(40);
     private static final float OFFSET_SCALE_BOTTOM = PDFBoxUtil.mmToPt(5);
+    
+    private static  final float OFFSET_COORD_LEFT = PDFBoxUtil.mmToPt(10);
+    private static  final float OFFSET_COORD_BOTTOM = PDFBoxUtil.mmToPt(5);
 
     private static final double[] SCALE_LINE_DISTANCES_METRES = new double[24];
 
@@ -150,12 +153,13 @@ public class PDF {
         float y = (pageSize.getHeight() - mapHeight) / 2;
 
         try (PDPageContentStream stream = new PDPageContentStream(doc, page, AppendMode.APPEND, false)) {
-            drawTitle(stream, request, pageSize, mapHeight);
-            drawLogo(doc, stream, request);
+            drawTitle(stream, request, pageSize, mapWidth, mapHeight);
             drawScale(stream, request);
             drawDate(stream, request, pageSize);
+            drawCoordinates(stream, request);
             drawLayers(doc, stream, request.getLayers(), layerImages,
                     x, y, mapWidth, mapHeight);
+            drawLogo(doc, stream, request, x, y, mapHeight);
             drawBorder(stream, x, y, mapWidth, mapHeight);
         }
     }
@@ -193,21 +197,21 @@ public class PDF {
     }
 
     private static void drawTitle(PDPageContentStream stream,
-            PrintRequest request, PDRectangle pageSize, float mapHeight) throws IOException {
+            PrintRequest request, PDRectangle pageSize, float mapWidth, float mapHeight) throws IOException {
         String title = request.getTitle();
         if (title == null || title.isEmpty()) {
             return;
         }
 
-        float x = pageSize.getWidth() / 2;
+        float x = (pageSize.getWidth() - mapWidth) / 2;
         float marginBottomPx = (pageSize.getHeight() - mapHeight) / 2;
         float y = marginBottomPx + mapHeight + 5;
 
-        PDFBoxUtil.drawTextCentered(stream, title, FONT, FONT_SIZE, x, y);
+        PDFBoxUtil.drawText(stream, title, FONT, FONT_SIZE, x, y);
     }
 
     private static void drawLogo(PDDocument doc, PDPageContentStream stream,
-            PrintRequest request) throws IOException {
+            PrintRequest request, float mapImgPosX, float mapImgPosY, float mapImgHeight) throws IOException {
         if (!request.isShowLogo() || LOGO_PATH == null || LOGO_PATH.isEmpty()) {
             return;
         }
@@ -243,13 +247,9 @@ public class PDF {
 
         try {
             PDImageXObject img = LosslessFactory.createFromImage(doc, logo);
-            float x = OFFSET_LOGO_LEFT;
-            float y = OFFSET_LOGO_BOTTOM;
-            // Maintain the aspect ratio of the image
-            float f = LOGO_HEIGHT / img.getHeight();
-            float w = img.getWidth() * f;
-            float h = LOGO_HEIGHT;
-            stream.drawImage(img, x, y, w, h);
+            float x = mapImgPosX;
+            float y = mapImgPosY + mapImgHeight - img.getHeight();
+            stream.drawImage(img, x, y, img.getWidth(), img.getHeight());
         } catch (IOException e) {
             LOG.warn(e, "Failed to draw logo");
         }
@@ -263,7 +263,7 @@ public class PDF {
 
         String date = SDF.format(new Date());
         float x = pageSize.getWidth() - OFFSET_DATE_RIGHT;
-        float y = pageSize.getHeight() - OFFSET_DATE_TOP;
+        float y = OFFSET_DATE_BOTTOM;
         PDFBoxUtil.drawText(stream, date, FONT, FONT_SIZE, x, y);
     }
 
@@ -394,6 +394,29 @@ public class PDF {
         stream.addRect(x, y, mapWidthPt, mapHeightPt);
         stream.stroke();
         stream.restoreGraphicsState();
+    }
+    
+    private static  void drawCoordinates(PDPageContentStream stream, PrintRequest request) {
+        if (!request.isShowCoordinates()) {
+            return;
+        }
+        
+        try {
+            final double[] bbox = AsyncImageLoader.getBoundingBox(
+                    request.getEast(), request.getNorth(),
+                    request.getResolution(), request.getWidth(), request.getHeight());
+            
+            String coordStr1 = "P: " + ((int) bbox[1]);
+            String coordStr2 = "I: " + ((int) bbox[0]);
+            
+            float x = OFFSET_COORD_LEFT;
+            float y = OFFSET_COORD_BOTTOM;
+            
+            PDFBoxUtil.drawText(stream, coordStr1, FONT, FONT_SIZE_SCALE, x, y + 15);
+            PDFBoxUtil.drawText(stream, coordStr2, FONT, FONT_SIZE_SCALE, x, y);
+        } catch (IOException e) {
+            LOG.warn(e, "Failed to draw coordinates");
+        }
     }
 
 }

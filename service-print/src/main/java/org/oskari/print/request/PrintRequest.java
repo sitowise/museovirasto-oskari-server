@@ -19,6 +19,7 @@ public class PrintRequest {
     private boolean showLogo;
     private boolean showScale;
     private boolean showDate;
+    private boolean showCoordinates;
     private String title;
     private List<PrintLayer> layers;
     private String scaleText;
@@ -154,5 +155,12 @@ public class PrintRequest {
     public boolean isScaleText(){
         return (this.scaleText != null && !this.scaleText.isEmpty());
     }
-
+    
+    public boolean isShowCoordinates() {
+        return showCoordinates;
+    }
+    
+    public void setShowCoordinates(boolean showCoordinates) {
+        this.showCoordinates = showCoordinates;
+    }
 }
