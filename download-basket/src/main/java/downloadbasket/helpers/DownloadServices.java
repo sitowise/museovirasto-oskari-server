@@ -364,6 +364,10 @@ public class DownloadServices {
             for (Property property : featureBoundary.getProperties()) {
                 String nameBoundary = property.getName().toString();
                 Object valueBoundary = featureBoundary.getAttribute(nameBoundary);
+                //Quick fix to handle null values. It should be an empty string at this point (GDAL version problem?)
+                if (valueBoundary == null){
+                    valueBoundary = "";
+                }
                 if (valueBoundary.getClass().equals(String.class)) {
                     String newValueBoundary = valueBoundary.toString().trim();
                     int lastIndexBoundary = newValueBoundary.length() - 1;
