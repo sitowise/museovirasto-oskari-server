@@ -3,6 +3,7 @@ package fi.nls.oskari.spring.security.ad;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -15,10 +16,12 @@ import fi.nls.oskari.log.Logger;
 import fi.nls.oskari.spring.SpringEnvHelper;
 import fi.nls.oskari.spring.security.OskariLoginFailureHandler;
 import fi.nls.oskari.util.PropertyUtil;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Profile(SpringEnvHelper.PROFILE_LOGIN_AD)
 @Configuration
 @EnableWebSecurity
+@Order(2)
 public class ADSecurityConfig extends WebSecurityConfigurerAdapter {
 
     private Logger log = LogFactory.getLogger(ADSecurityConfig.class);
@@ -41,25 +44,23 @@ public class ADSecurityConfig extends WebSecurityConfigurerAdapter {
                 this.domain, this.url);
 
         UserDetailsContextMapper userDetailsContextMapper = new UserDetailsContextMapperImpl();
-
-        authenticationProvider
-                .setUserDetailsContextMapper(userDetailsContextMapper);
+        authenticationProvider.setUserDetailsContextMapper(userDetailsContextMapper);
 
         http.authenticationProvider(authenticationProvider);
 
-        http.csrf().disable();
         http.headers().frameOptions().disable();
 
-        final String loginurl = env.getLoginUrl();
-        http
-                // IMPORTANT! Only antMatch for processing url, otherwise SAML
-                // security filters are passed even if both are active
-                .antMatcher(loginurl).formLogin().loginProcessingUrl(loginurl)
+        // require form parameter "_csrf" OR "X-XSRF-TOKEN" header with token as value or respond with an error message
+        http.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
+
+        // IMPORTANT! Only antMatch for processing url, otherwise SAML security filters are passed even if both are active
+        http.formLogin()
+                .loginProcessingUrl(env.getLoginUrl())
                 .passwordParameter(env.getParam_password())
                 .usernameParameter(env.getParam_username())
-                .failureHandler(
-                        new OskariLoginFailureHandler("/?loginState=failed"))
+                .failureHandler(new OskariLoginFailureHandler("/?loginState=failed"))
                 .successHandler(new AuthenticationSuccessHandler())
                 .loginPage("/");
+
     }
 }

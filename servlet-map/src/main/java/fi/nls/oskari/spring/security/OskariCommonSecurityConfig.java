@@ -15,7 +15,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
  */
 @Configuration
 @EnableWebSecurity
-@Order(2)
+@Order(100)
 public class OskariCommonSecurityConfig extends WebSecurityConfigurerAdapter {
 
     private Logger log = LogFactory.getLogger(OskariCommonSecurityConfig.class);

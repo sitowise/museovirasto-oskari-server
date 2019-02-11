@@ -5,13 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.ldap.core.DirContextAdapter;
-import org.springframework.ldap.core.DirContextOperations;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
+
 
 import fi.nls.oskari.log.LogFactory;
 import fi.nls.oskari.log.Logger;
@@ -19,6 +13,13 @@ import fi.nls.oskari.service.UserService;
 import fi.nls.oskari.spring.security.OskariUserHelper;
 import fi.nls.oskari.user.DatabaseUserService;
 import fi.nls.oskari.util.PropertyUtil;
+import org.springframework.ldap.core.DirContextAdapter;
+import org.springframework.ldap.core.DirContextOperations;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
 
 class UserDetailsContextMapperImpl
         implements UserDetailsContextMapper, Serializable {
@@ -76,7 +77,7 @@ class UserDetailsContextMapperImpl
 
     @Override
     public UserDetails mapUserFromContext(DirContextOperations ctx,
-            String username, Collection<? extends GrantedAuthority> authority) {
+                                          String username, Collection<? extends GrantedAuthority> authority) {
         try {
             final fi.nls.oskari.domain.User user = handleUser(ctx, username,
                     authority);
