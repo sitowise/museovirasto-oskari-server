@@ -106,7 +106,7 @@
         <com.google.guava.version>18.0</com.google.guava.version>
         <!-- Test deps versions -->
         <powermock.version>1.5</powermock.version>
-        <junit.version>4.11</junit.version>
+        <junit.version>4.13.1</junit.version>
 
         <log4j.version>1.2.17</log4j.version>
         <slf4j.version>1.7.12</slf4j.version>
