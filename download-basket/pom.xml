@@ -20,7 +20,7 @@
 		<commons-io.version>2.6</commons-io.version>
 		<gdal.version>2.2.0</gdal.version>
 		<opencsv.version>3.9</opencsv.version>
-		<apache-poi.version>3.17</apache-poi.version>
+		<apache-poi.version>4.1.1</apache-poi.version>
 	</properties>
 	<dependencies>
 		<dependency>
